@@ -1,0 +1,17 @@
+---
+version: 1
+applications:
+  - name: gitlab-runner
+    path: runner
+    buildpacks:
+      - https://github.com/cloudfoundry/apt-buildpack
+      - binary_buildpack
+    no-route: true
+    health-check-type: process
+    instances: 1
+    memory: ((runner-memory))
+    command: gitlab-runner run 
+    env:
+      CI_SERVER_URL: ((ci_server_url))
+      RUNNER_NAME: ((runner_name))
+      AUTHENTICATION_TOKEN: ((authentication_token))

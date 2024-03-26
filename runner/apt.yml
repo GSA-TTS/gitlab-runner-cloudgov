@@ -1,0 +1,16 @@
+---
+keys:
+- https://packages.gitlab.com/runner/gitlab-runner/gpgkey
+- https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key
+repos:
+- deb https://packages.gitlab.com/runner/gitlab-runner/ubuntu/ xenial main
+- deb https://packages.cloudfoundry.org/debian stable main
+packages:
+- gitlab-runner
+- cf-cli
+
+# Unlikely these are also needed, but gitlab-runner-cf had them.
+# - libwww-perl
+# - libjson-perl
+# - libterm-readkey-perl
+# - gnupg2
