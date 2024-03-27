@@ -15,3 +15,11 @@ applications:
       CI_SERVER_URL: ((ci_server_url))
       RUNNER_NAME: ((runner_name))
       AUTHENTICATION_TOKEN: ((authentication_token))
+  - name: gitlab-worker
+    docker:
+      image: ubuntu:latest
+    no-route: true
+    health-check-type: process
+    instances: 0
+    memory: ((worker-memory))
+
