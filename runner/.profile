@@ -23,6 +23,9 @@ CF_API="https://api.fr.cloud.gov"
 cf api "${CF_API}"
 cf auth "${CF_USERNAME}" "${CF_PASSWORD}"
 
+# Install the App Autoscaler CLI plugin (can we do this at staging?)
+cf install-plugin -r CF-Community "app-autoscaler-plugin"
+
 if [ -z "$CI_SERVER_URL" ]; then
     exit_with_failure 'CI_SERVER_URL is missing'
 fi
