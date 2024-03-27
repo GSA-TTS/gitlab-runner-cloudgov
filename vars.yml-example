@@ -3,3 +3,4 @@ ci_server_url: https://gitlab.com/
 runner_name: my-runner-name
 runner-memory: 512M
 worker-memory: 512M
+service-account-instance: my-service-account

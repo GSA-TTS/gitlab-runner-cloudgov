@@ -20,21 +20,28 @@ Currently this just eases the task of deploying the `gitlab-runner` binary and r
     ```
     cf target -o sandbox-gsa -s bret.mogilefsky
     ```
+3. Create a [cloud.gov service account](https://cloud.gov/docs/services/cloud-gov-service-account/), tagged with `gitlab-service-account`
+    ```
+    cf create-service cloud-gov-service-account space-deployer SERVICENAME -t "gitlab-service-account"
+    ```
 
-3. Copy `vars.yml-template` to `vars.yml`
+4. Copy `vars.yml-template` to `vars.yml`
     ```
     cp vars.yml-template vars.yml
     ```
 
-4. Edit `vars.yml` and modify the values there as needed. In particular, you must supply an `authentication_token` provided by the target GitLab URL.
+5. Edit `vars.yml` and modify the values there as needed. In particular, you must 
+    * supply the `authentication_token` provided when you [configure the runner at the target GitLab URL](https://docs.gitlab.com/ee/tutorials/create_register_first_runner/#create-and-register-a-project-runner)
+    * supply the `service-account-instance` name that you used when you created the service instance in a previous step
 
-5. Deploy the GitLab runner
+6. Deploy the GitLab runner
     ```
     cf push --vars-file vars.yml
     ```
-6. Check to see that the runner has registered itself in GitLab
+7. Check to see that the runner has registered itself in GitLab
 
 ## TODO
 
 - Add a `gitlab-worker` app
-- Write a [custom `gitlab-runner` Executor](https://docs.gitlab.com/runner/executors/custom.html) that uses `cf run-task gitlab-runner -w -c $@` (refer to [the libvirt example](https://docs.gitlab.com/runner/executors/custom_examples/libvirt.html))
+- Write a [custom `gitlab-runner` Executor](https://docs.gitlab.com/runner/executors/custom.html) that uses `cf ssh gitlab-worker $@` (refer to [the libvirt example](https://docs.gitlab.com/runner/executors/custom_examples/libvirt.html))
+- [Configure a bound S3 bucket as the cache](https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-runnerscaches3-section)
