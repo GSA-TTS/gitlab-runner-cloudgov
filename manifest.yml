@@ -10,18 +10,19 @@ applications:
     health-check-type: process
     instances: 1
     memory: ((runner-memory))
-    command: gitlab-runner run 
+    command: gitlab-runner run
     services:
       - ((service-account-instance))
     env:
       CI_SERVER_URL: ((ci_server_url))
       RUNNER_NAME: ((runner_name))
       AUTHENTICATION_TOKEN: ((authentication_token))
-  - name: gitlab-worker
-    docker:
-      image: ubuntu:latest
-    no-route: true
-    health-check-type: process
-    instances: 0
-    memory: ((worker-memory))
-
+#   Turning this down - Will try having executor launch new instances
+#   - name: gitlab-worker
+#     docker:
+#       image: ubuntu:latest
+#     no-route: true
+#     health-check-type: process
+#     instances: 0
+#     memory: ((worker-memory))
+# 

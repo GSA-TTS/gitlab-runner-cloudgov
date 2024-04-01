@@ -1,0 +1,10 @@
+[[runners]]
+  executor = "cf"
+  [runners.cf]
+  #config_exec = "/home/vcap/app/cf-driver/config.sh"
+
+  prepare_exec = "/home/vcap/app/cf-driver/prepare.sh"
+
+  run_exec = "/home/vcap/app/cf-driver/run.sh"
+
+  cleanup_exec = "/home/vcap/app/cf-driver/cleanup.sh"
