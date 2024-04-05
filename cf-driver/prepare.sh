@@ -21,16 +21,19 @@ start_executor_app () {
 
 install_dependencies () {
     # Install Git LFS, git comes pre installed with ubuntu image.
-    lxc exec "$CONTAINER_ID" -- sh -c 'curl -s "https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh" | sudo bash'
-    lxc exec "$CONTAINER_ID" -- sh -c "apt-get install -y git-lfs"
+    cf ssh "$CONTAINER_ID" -c 'curl -s "https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh" | sudo bash'
+    cf ssh "$CONTAINER_ID" -c "apt-get install -y git-lfs"
 
     # Install gitlab-runner binary since we need for cache/artifacts.
-    lxc exec "$CONTAINER_ID" -- sh -c 'curl -L --output /usr/local/bin/gitlab-runner "https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-linux-amd64"'
-    lxc exec "$CONTAINER_ID" -- sh -c "chmod +x /usr/local/bin/gitlab-runner"
+    cf ssh "$CONTAINER_ID" -c 'curl -L --output /usr/local/bin/gitlab-runner "https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-linux-amd64"'
+    cf ssh "$CONTAINER_ID" -c "chmod +x /usr/local/bin/gitlab-runner"
 }
 
-echo "Running in $CONTAINER_ID"
-
+echo "Starting $CONTAINER_ID with image $CCUSTOM_ENV_CI_JOB_IMAGE"
 start_container
 
-install_dependencies
+# XXX -I don't like slapping things onto every image - Let's see what breaks without it
+#echo "Installing dependencies into $CONTAINER_ID"
+#install_dependencies
+
+echo "$CONTAINER_ID preparation complete"
