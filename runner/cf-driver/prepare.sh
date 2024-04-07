@@ -4,6 +4,9 @@
 
 currentDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source ${currentDir}/base.sh # Get variables from base.
+if [ -z "$WORKER_MEMORY" ]; then
+    WORKER_MEMORY="512M"
+fi
 
 set -eo pipefail
 
@@ -16,7 +19,7 @@ start_executor_app () {
         cf delete "$CONTAINER_ID"
     fi
 
-    cf push "$CONTAINER_ID" --docker-image "$CUSTOM_ENV_CI_JOB_IMAGE" --no-route --health-check-style process
+    cf push "$CONTAINER_ID" --docker-image "$CUSTOM_ENV_CI_JOB_IMAGE" --no-route --health-check-style process --memory "$WORKER_MEMORY"
 }
 
 install_dependencies () {

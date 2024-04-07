@@ -45,3 +45,5 @@ Currently this just eases the task of deploying the `gitlab-runner` binary and r
 - Add a `gitlab-worker` app
 - Write a [custom `gitlab-runner` Executor](https://docs.gitlab.com/runner/executors/custom.html) that uses `cf ssh gitlab-worker $@` (refer to [the libvirt example](https://docs.gitlab.com/runner/executors/custom_examples/libvirt.html))
 - [Configure a bound S3 bucket as the cache](https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-runnerscaches3-section)
+- Tests!
+- Documentation
