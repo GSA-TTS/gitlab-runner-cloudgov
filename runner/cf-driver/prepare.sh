@@ -1,4 +1,4 @@
-!/usr/bin/env bash
+#!/usr/bin/env bash
 
 # Prepare a runner executor application in CloudFoundry
 
@@ -13,7 +13,7 @@ set -eo pipefail
 # trap any error, and mark it as a system failure.
 trap "exit $SYSTEM_FAILURE_EXIT_CODE" ERR
 
-start_executor_app () {
+start_container () {
     if cf app --guid "$CONTAINER_ID" >/dev/null 2>/dev/null ; then
         echo 'Found old instance of runner executor, deleting'
         cf delete "$CONTAINER_ID"
