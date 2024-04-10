@@ -17,6 +17,7 @@ applications:
       CI_SERVER_URL: ((ci_server_url))
       RUNNER_NAME: ((runner_name))
       AUTHENTICATION_TOKEN: ((authentication_token))
+      DEFAULT_JOB_IMAGE: ((default_job_image))
 #   Turning this down - Will try having executor launch new instances
 #   - name: gitlab-worker
 #     docker:
