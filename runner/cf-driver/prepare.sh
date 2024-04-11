@@ -19,21 +19,28 @@ start_container () {
         cf delete "$CONTAINER_ID"
     fi
 
-    cf push "$CONTAINER_ID" --docker-image "$CUSTOM_ENV_CI_JOB_IMAGE" --no-route --health-check-style process --memory "$WORKER_MEMORY"
+    cf push "$CONTAINER_ID" --docker-image "$CUSTOM_ENV_CI_JOB_IMAGE" --no-route --health-check-type process -m "$WORKER_MEMORY"
 }
 
 install_dependencies () {
     # Build a command to try and install git and git-lfs on common distros.
     # Of course, RedHat/UBI will need more help to add RPM repos with the correct
     # version. RedHat support TODO
-    cf ssh "$CONTAINER_ID" -c 'which apk && apk add git && apk add git-lfs; which apt-get && apt-get update && apt-get install -y git git-lfs'
+    cf ssh "$CONTAINER_ID" -c '(which apk && apk add git && apk add git-lfs) || \
+                               (which apt-get && apt-get update && apt-get install -y git git-lfs) || \
+                               (which git && which git-lfs) || \
+                               (echo "git and/or git-lfs missing and I do not know what to do about it" && exit 1)'
 
     # gitlab-runner-helper includes a limited subset of gitlab-runner functionality
     # plus Git and Git-LFS. https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/index.html
     #
     # Install gitlab-runner-helper binary since we need for cache/artifacts. 
+    # XXX - /bin/bash: line 1: curl: command not found
+    #       chmod: cannot access '/usr/bin/gitlab-runner-helper': No such file or directory
     # TODO: Pin the version and support more arches than X86_64
-    cf ssh "$CONTAINER_ID" -c 'curl -L --output /usr/bin/gitlab-runner-helper "https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/binaries/gitlab-runner-helper/gitlab-runner-helper.x86_64"; chmod +x /usr/bin/gitlab-runner-helper'
+    cf ssh "$CONTAINER_ID" -c 'curl -L --output /usr/bin/gitlab-runner-helper \
+                               "https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/binaries/gitlab-runner-helper/gitlab-runner-helper.x86_64"; \
+                               chmod +x /usr/bin/gitlab-runner-helper'
 }
 
 echo "Starting $CONTAINER_ID with image $CUSTOM_ENV_CI_JOB_IMAGE"

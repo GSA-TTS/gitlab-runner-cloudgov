@@ -9,10 +9,10 @@ applications:
     no-route: true
     health-check-type: process
     instances: 1
-    memory: ((runner-memory))
+    memory: ((runner_memory))
     command: gitlab-runner run
     services:
-      - ((service-account-instance))
+      - ((service_account_instance))
     env:
       CI_SERVER_URL: ((ci_server_url))
       RUNNER_NAME: ((runner_name))
