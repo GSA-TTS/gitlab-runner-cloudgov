@@ -14,16 +14,21 @@ applications:
     services:
       - ((service_account_instance))
     env:
-      CI_SERVER_URL: ((ci_server_url))
-      RUNNER_NAME: ((runner_name))
-      AUTHENTICATION_TOKEN: ((authentication_token))
+      # These are used by .profile
       DEFAULT_JOB_IMAGE: ((default_job_image))
-#   Turning this down - Will try having executor launch new instances
-#   - name: gitlab-worker
-#     docker:
-#       image: ubuntu:latest
-#     no-route: true
-#     health-check-type: process
-#     instances: 0
-#     memory: ((worker-memory))
-# 
+      # Remaining vars are used directly by gitlab-runner register
+      # See gitlab-runner register --help for available vars
+      CI_SERVER_TOKEN: ((ci_server_token))
+      CI_SERVER_URL: ((ci_server_url))
+      RUNNER_EXECUTOR: ((runner_executor))
+      RUNNER_NAME: ((runner_name))
+      # Remaining runner configuration is generally static. In order to surface
+      # the entire configuration input, we are using envvars for all of it.
+      RUNNER_BUILDS_DIR: "/tmp/build"
+      RUNNER_CACHE_DIR: "/tmp/cache"
+      CUSTOM_CLEANUP_EXEC: "/home/vcap/app/cf-driver/cleanup.sh"
+      CUSTOM_PREPARE_EXEC: "/home/vcap/app/cf-driver/prepare.sh"
+      CUSTOM_RUN_EXEC: "/home/vcap/app/cf-driver/run.sh"
+      REGISTER_NON_INTERACTIVE: true
+      # TODO - Add timeouts like CUSTOM_CLEANUP_EXEC_TIMEOUT
+

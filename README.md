@@ -31,8 +31,8 @@ Currently this just eases the task of deploying the `gitlab-runner` binary and r
     ```
 
 5. Edit `vars.yml` and modify the values there as needed. In particular, you must 
-    * supply the `authentication_token` provided when you [configure the runner at the target GitLab URL](https://docs.gitlab.com/ee/tutorials/create_register_first_runner/#create-and-register-a-project-runner)
-    * supply the `service-account-instance` name that you used when you created the service instance in a previous step
+    * supply the `ci_server_token` provided when you [configure the runner at the target GitLab URL](https://docs.gitlab.com/ee/tutorials/create_register_first_runner/#create-and-register-a-project-runner)
+    * supply the `service_account_instance` name that you used when you created the service instance in a previous step
 
 6. Deploy the GitLab runner
     ```
@@ -47,3 +47,12 @@ Currently this just eases the task of deploying the `gitlab-runner` binary and r
 - [Configure a bound S3 bucket as the cache](https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-runnerscaches3-section)
 - Tests!
 - Documentation
+
+## Design Decisions
+
+### Use environment variables to register gitlab-runner
+
+Recent versions of `gitlab-runner` expose almost all initial configuration
+variables for the `register` subcommand as environment variables. This allows
+us to do almost all configuration in `manifest.yml` and skip modifying
+command line options in `runner/.profile` or having a .toml add on.
