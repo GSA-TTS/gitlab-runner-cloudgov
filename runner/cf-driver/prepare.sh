@@ -25,28 +25,30 @@ start_container () {
 install_dependencies () {
     # Build a command to try and install git and git-lfs on common distros.
     # Of course, RedHat/UBI will need more help to add RPM repos with the correct
-    # version. RedHat support TODO
-    cf ssh "$CONTAINER_ID" -c '(which apk && apk add git && apk add git-lfs) || \
-                               (which apt-get && apt-get update && apt-get install -y git git-lfs) || \
-                               (which git && which git-lfs) || \
-                               (echo "git and/or git-lfs missing and I do not know what to do about it" && exit 1)'
+    # version. TODO - RedHat support
+    echo "[cf-driver] Ensuring git, git-lfs, and curl are installed"
+    cf ssh "$CONTAINER_ID" -c '(which git && which git-lfs && which curl) || \
+                               (which apk && apk add git git-lfs curl) || \
+                               (which apt-get && apt-get update && apt-get install -y git git-lfs curl) || \
+                               (echo "Required packages missing and I do not know what to do about it" && exit 1)'
 
     # gitlab-runner-helper includes a limited subset of gitlab-runner functionality
     # plus Git and Git-LFS. https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/index.html
     #
-    # Install gitlab-runner-helper binary since we need for cache/artifacts. 
-    # XXX - /bin/bash: line 1: curl: command not found
-    #       chmod: cannot access '/usr/bin/gitlab-runner-helper': No such file or directory
+    # Install gitlab-runner-helper binary since we need to manage cache/artifacts.
+    # Symlinks gitlab-runner to avoid having to alter more of the executor.
     # TODO: Pin the version and support more arches than X86_64
+    echo "[cf-driver] Installing gitlab-runner-helper"
     cf ssh "$CONTAINER_ID" -c 'curl -L --output /usr/bin/gitlab-runner-helper \
                                "https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/binaries/gitlab-runner-helper/gitlab-runner-helper.x86_64"; \
-                               chmod +x /usr/bin/gitlab-runner-helper'
+                               chmod +x /usr/bin/gitlab-runner-helper; \
+                               ln -s /usr/bin/gitlab-runner-helper /usr/bin/gitlab-runner'
 }
 
-echo "Starting $CONTAINER_ID with image $CUSTOM_ENV_CI_JOB_IMAGE"
+echo "[cf-driver] Starting $CONTAINER_ID with image $CUSTOM_ENV_CI_JOB_IMAGE"
 start_container
 
-echo "Installing dependencies into $CONTAINER_ID"
+echo "[cf-driver] Installing dependencies into $CONTAINER_ID"
 install_dependencies
 
-echo "$CONTAINER_ID preparation complete"
+echo "[cf-driver] $CONTAINER_ID preparation complete"
