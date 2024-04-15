@@ -42,11 +42,14 @@ Currently this just eases the task of deploying the `gitlab-runner` binary and r
 
 ## TODO
 
-- Add a `gitlab-worker` app
-- Write a [custom `gitlab-runner` Executor](https://docs.gitlab.com/runner/executors/custom.html) that uses `cf ssh gitlab-worker $@` (refer to [the libvirt example](https://docs.gitlab.com/runner/executors/custom_examples/libvirt.html))
 - [Configure a bound S3 bucket as the cache](https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-runnerscaches3-section)
-- Tests!
-- Documentation
+- Set custom executor timeouts based on measurements.
+- Add linting and tests.
+- Improve documentation.
+- Add support for RedHat based images in `prepare.sh`.
+- Add version pinning and support for other architectures to `gitlab-runner-helper`
+  installation in `prepare.sh`.
+
 
 ## Design Decisions
 
