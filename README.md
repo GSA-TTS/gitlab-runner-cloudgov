@@ -1,9 +1,16 @@
 # gitlab-runner-cloudgov
-Code for running GitLab CI/CD jobs on cloud.gov
+Code for running GitLab CI/CD jobs on cloud.gov or another CloudFoundry based
+PaaS.
 
-## Status
+## How it works
 
-Currently this just eases the task of deploying the `gitlab-runner` binary and registering it with GitLab. It still uses the `shell` Executor to run jobs, though I've left pointers for adding a `custom` Executor that uses `cf run-task` as the next step.
+This is a custom executor borrowing ideas from https://docs.gitlab.com/runner/executors/custom.html.
+
+It runs a "manager" GitLab Runner instance responsible for listening for new
+jobs. Each job is run on a new application instance in CloudFoundry using the
+specified OCI image.
+
+![Fig 1 - Job sequence overview](doc/gitlab-runner-cf-driver-sequence.png)
 
 ## Deploying
 
@@ -49,7 +56,6 @@ Currently this just eases the task of deploying the `gitlab-runner` binary and r
 - Add support for RedHat based images in `prepare.sh`.
 - Add version pinning and support for other architectures to `gitlab-runner-helper`
   installation in `prepare.sh`.
-
 
 ## Design Decisions
 
