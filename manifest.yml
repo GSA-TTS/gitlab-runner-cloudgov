@@ -31,4 +31,8 @@ applications:
       CUSTOM_RUN_EXEC: "/home/vcap/app/cf-driver/run.sh"
       REGISTER_NON_INTERACTIVE: true
       # TODO - Add timeouts like CUSTOM_CLEANUP_EXEC_TIMEOUT
-
+      #
+      # DANGER: Do not set RUNNER_DEBUG to true without reading
+      # https://docs.gitlab.com/runner/faq/#enable-debug-logging-mode
+      # and ensuring job logs are removed to avoid leaking secrets.
+      #RUNNER_DEBUG: "true"
