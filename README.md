@@ -12,6 +12,9 @@ specified OCI image.
 
 ![Fig 1 - Job sequence overview](doc/gitlab-runner-cf-driver-sequence.png)
 
+The runner manager registration and other flow details are shown
+in [Runner Execution Flow](https://gitlab.com/gitlab-org/gitlab-runner/-/tree/main/docs?ref_type=heads#runner-execution-flow).
+
 ## Deploying
 
 1. Log in to cloud.gov
@@ -45,7 +48,11 @@ specified OCI image.
     ```
     cf push --vars-file vars.yml
     ```
-7. Check to see that the runner has registered itself in GitLab
+7. Check to see that the runner has registered itself in GitLab under your project
+   repository under Settings -> CI/CD -> Runners (Expand)
+
+At this point the runner should be available to run jobs. See [Use GitLab - Use CI/CD to build your application - Getting started](https://docs.gitlab.com/ee/ci/)
+for much more on GitLab CI/CD and runners.
 
 ## TODO
 
