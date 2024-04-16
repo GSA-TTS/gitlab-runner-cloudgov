@@ -1,4 +1,8 @@
 ---
+# Information for the gitlab runner repository came from here...
+#   https://packages.gitlab.com/install/repositories/runner/gitlab-runner/config_file.list?os=ubuntu&dist=xenial&source=script
+# ...which in turn was derived from here...
+#   https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh
 keys:
 - https://packages.gitlab.com/runner/gitlab-runner/gpgkey
 - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key

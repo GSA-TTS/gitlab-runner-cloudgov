@@ -1,0 +1,56 @@
+@startuml
+
+title GitLab Runner CloudFoundry Executor - Job Sequence
+
+'skinparam monochrome true
+
+'autonumber
+
+participant "GitLab" as gitlab
+participant "GitLab Runner Manager" as manager
+participant "CloudFoundry PaaS" as cf
+participant "GitLab Runner App Instance" as cfrunner
+participant "Cache/Artifact Storage" as cache
+' Start
+
+manager -> gitlab : Connect and wait for job
+
+group Run job
+gitlab -> manager : Submit new GitLab CI job
+
+group Prepare instance
+' prepare.sh
+manager -> cf : **cf push** to create new instance using defined OCI **image**
+cf -> manager : Block until instance is ready
+
+manager -> cfrunner : **cf ssh** to install prereqs and **gitlab-runner-helper**
+cfrunner -> manager : Return output
+end
+
+loop Run substages
+' run.sh
+manager -> cfrunner : **cf ssh** to run job steps
+cfrunner -> gitlab : Request code via Git
+gitlab -> cfrunner : Return code
+cfrunner -> cache : Request cache/artifacts
+cache -> cfrunner : Return cache/artifacts
+
+cfrunner -> cfrunner : execute job steps
+
+cfrunner -> cache : Write cache/artifacts
+
+cfrunner -> manager : Return job output
+end
+
+group Cleanup instance
+manager -> cf : **cf delete** to remove instance
+end
+
+group Return results
+manager -> cache : Request artifacts
+cache -> manager : Return artifacts
+manager -> gitlab : Return job results
+end
+
+end
+@enduml

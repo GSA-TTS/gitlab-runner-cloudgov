@@ -1,9 +1,19 @@
 # gitlab-runner-cloudgov
-Code for running GitLab CI/CD jobs on cloud.gov
+Code for running GitLab CI/CD jobs on cloud.gov or another CloudFoundry based
+PaaS.
 
-## Status
+## How it works
 
-Currently this just eases the task of deploying the `gitlab-runner` binary and registering it with GitLab. It still uses the `shell` Executor to run jobs, though I've left pointers for adding a `custom` Executor that uses `cf run-task` as the next step.
+This is a custom executor borrowing ideas from https://docs.gitlab.com/runner/executors/custom.html.
+
+It runs a "manager" GitLab Runner instance responsible for listening for new
+jobs. Each job is run on a new application instance in CloudFoundry using the
+specified OCI image.
+
+![Fig 1 - Job sequence overview](doc/gitlab-runner-cf-driver-sequence.png)
+
+The runner manager registration and other flow details are shown
+in [Runner Execution Flow](https://gitlab.com/gitlab-org/gitlab-runner/-/tree/main/docs?ref_type=heads#runner-execution-flow).
 
 ## Deploying
 
@@ -20,21 +30,45 @@ Currently this just eases the task of deploying the `gitlab-runner` binary and r
     ```
     cf target -o sandbox-gsa -s bret.mogilefsky
     ```
+3. Create a [cloud.gov service account](https://cloud.gov/docs/services/cloud-gov-service-account/), tagged with `gitlab-service-account`
+    ```
+    cf create-service cloud-gov-service-account space-deployer SERVICENAME -t "gitlab-service-account"
+    ```
 
-3. Copy `vars.yml-template` to `vars.yml`
+4. Copy `vars.yml-template` to `vars.yml`
     ```
     cp vars.yml-template vars.yml
     ```
 
-4. Edit `vars.yml` and modify the values there as needed. In particular, you must supply an `authentication_token` provided by the target GitLab URL.
+5. Edit `vars.yml` and modify the values there as needed. In particular, you must 
+    * supply the `ci_server_token` provided when you [configure the runner at the target GitLab URL](https://docs.gitlab.com/ee/tutorials/create_register_first_runner/#create-and-register-a-project-runner)
+    * supply the `service_account_instance` name that you used when you created the service instance in a previous step
 
-5. Deploy the GitLab runner
+6. Deploy the GitLab runner
     ```
     cf push --vars-file vars.yml
     ```
-6. Check to see that the runner has registered itself in GitLab
+7. Check to see that the runner has registered itself in GitLab under your project
+   repository under Settings -> CI/CD -> Runners (Expand)
+
+At this point the runner should be available to run jobs. See [Use GitLab - Use CI/CD to build your application - Getting started](https://docs.gitlab.com/ee/ci/)
+for much more on GitLab CI/CD and runners.
 
 ## TODO
 
-- Add a `gitlab-worker` app
-- Write a [custom `gitlab-runner` Executor](https://docs.gitlab.com/runner/executors/custom.html) that uses `cf run-task gitlab-runner -w -c $@` (refer to [the libvirt example](https://docs.gitlab.com/runner/executors/custom_examples/libvirt.html))
+- [Configure a bound S3 bucket as the cache](https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-runnerscaches3-section)
+- Set custom executor timeouts based on measurements.
+- Add linting and tests.
+- Improve documentation.
+- Add support for RedHat based images in `prepare.sh`.
+- Add version pinning and support for other architectures to `gitlab-runner-helper`
+  installation in `prepare.sh`.
+
+## Design Decisions
+
+### Use environment variables to register gitlab-runner
+
+Recent versions of `gitlab-runner` expose almost all initial configuration
+variables for the `register` subcommand as environment variables. This allows
+us to do almost all configuration in `manifest.yml` and skip modifying
+command line options in `runner/.profile` or having a .toml add on.
