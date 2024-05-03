@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
+# trap any error, and mark it as a system failure.
+trap "exit $SYSTEM_FAILURE_EXIT_CODE" ERR
+
 # Prepare a runner executor application in CloudFoundry
 
 currentDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
@@ -8,18 +13,15 @@ if [ -z "$WORKER_MEMORY" ]; then
     WORKER_MEMORY="512M"
 fi
 
-set -eo pipefail
-
-# trap any error, and mark it as a system failure.
-trap "exit $SYSTEM_FAILURE_EXIT_CODE" ERR
-
 start_container () {
     if cf app --guid "$CONTAINER_ID" >/dev/null 2>/dev/null ; then
         echo 'Found old instance of runner executor, deleting'
         cf delete "$CONTAINER_ID"
     fi
 
-    cf push "$CONTAINER_ID" --docker-image "$CUSTOM_ENV_CI_JOB_IMAGE" --no-route --health-check-type process -m "$WORKER_MEMORY"
+    cf push "$CONTAINER_ID" --f ${currentDir}/worker-manifest.yml \
+       --docker-image "$CUSTOM_ENV_CI_JOB_IMAGE" -m "$WORKER_MEMORY" \
+       -var "object_store_instance=${OBJECT_STORE_INSTANCE}"
 }
 
 install_dependencies () {

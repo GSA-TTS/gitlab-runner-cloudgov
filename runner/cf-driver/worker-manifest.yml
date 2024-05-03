@@ -1,0 +1,9 @@
+---
+version: 1
+applications:
+  - name: gitlab-worker
+    no-route: true
+    health-check-type: process
+    services:
+      - ((object_store_instance))
+    # Additional settings are passed via CLI by prepare.sh

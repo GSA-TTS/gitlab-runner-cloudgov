@@ -30,9 +30,15 @@ in [Runner Execution Flow](https://gitlab.com/gitlab-org/gitlab-runner/-/tree/ma
     ```
     cf target -o sandbox-gsa -s bret.mogilefsky
     ```
+
 3. Create a [cloud.gov service account](https://cloud.gov/docs/services/cloud-gov-service-account/), tagged with `gitlab-service-account`
     ```
     cf create-service cloud-gov-service-account space-deployer SERVICENAME -t "gitlab-service-account"
+    ```
+
+4. Create a [cloud.gov brokered S3 bucket](https://cloud.gov/docs/services/s3/) - `basic-sandbox` is suggested as this will store temporary artifacts and cache. Note that `BUCKETNAME` will have a prefix prepended so it only needs to be unique to the space, not globally.
+    ```
+    cf create-service s3 basic-sandbox BUCKETNAME
     ```
 
 4. Copy `vars.yml-template` to `vars.yml`
