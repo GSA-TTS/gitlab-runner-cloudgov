@@ -33,12 +33,12 @@ in [Runner Execution Flow](https://gitlab.com/gitlab-org/gitlab-runner/-/tree/ma
 
 3. Create a [cloud.gov service account](https://cloud.gov/docs/services/cloud-gov-service-account/), tagged with `gitlab-service-account`
     ```
-    cf create-service cloud-gov-service-account space-deployer SERVICENAME -t "gitlab-service-account"
+    cf create-service cloud-gov-service-account space-deployer SERVICE_ACCOUNT_INSTANCE -t "gitlab-service-account"
     ```
 
 4. Create a [cloud.gov brokered S3 bucket](https://cloud.gov/docs/services/s3/) - `basic-sandbox` is suggested as this will store temporary artifacts and cache. Note that `BUCKETNAME` will have a prefix prepended so it only needs to be unique to the space, not globally.
     ```
-    cf create-service s3 basic-sandbox BUCKETNAME
+    cf create-service s3 basic-sandbox OBJECT_STORE_INSTANCE
     ```
 
 4. Copy `vars.yml-template` to `vars.yml`
@@ -48,7 +48,8 @@ in [Runner Execution Flow](https://gitlab.com/gitlab-org/gitlab-runner/-/tree/ma
 
 5. Edit `vars.yml` and modify the values there as needed. In particular, you must 
     * supply the `ci_server_token` provided when you [configure the runner at the target GitLab URL](https://docs.gitlab.com/ee/tutorials/create_register_first_runner/#create-and-register-a-project-runner)
-    * supply the `service_account_instance` name that you used when you created the service instance in a previous step
+    * supply the `service_account_instance` name that you used when you created the service instance in step 3
+    * supply the `object_store_instance` name that you used when you created the brokered S3 bucket in step 4
 
 6. Deploy the GitLab runner
     ```
