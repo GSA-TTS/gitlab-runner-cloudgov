@@ -3,12 +3,12 @@
 set -euo pipefail
 
 # trap any error, and mark it as a system failure.
-trap "exit $SYSTEM_FAILURE_EXIT_CODE" ERR
+trap 'exit $SYSTEM_FAILURE_EXIT_CODE' ERR
 
 # Prepare a runner executor application in CloudFoundry
 
 currentDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source ${currentDir}/base.sh # Get variables from base.
+source "${currentDir}/base.sh" # Get variables from base.
 if [ -z "$WORKER_MEMORY" ]; then
     WORKER_MEMORY="512M"
 fi
@@ -19,7 +19,7 @@ start_container () {
         cf delete "$CONTAINER_ID"
     fi
 
-    cf push "$CONTAINER_ID" --f ${currentDir}/worker-manifest.yml \
+    cf push "$CONTAINER_ID" -f "${currentDir}/worker-manifest.yml" \
        --docker-image "$CUSTOM_ENV_CI_JOB_IMAGE" -m "$WORKER_MEMORY" \
        -var "object_store_instance=${OBJECT_STORE_INSTANCE}"
 }
