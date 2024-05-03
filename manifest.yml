@@ -13,6 +13,7 @@ applications:
     command: gitlab-runner run
     services:
       - ((service_account_instance))
+      - ((object_store_instance))
     env:
       # These are used by .profile
       DEFAULT_JOB_IMAGE: ((default_job_image))
