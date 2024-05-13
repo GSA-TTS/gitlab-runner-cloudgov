@@ -9,3 +9,4 @@ runner_name: my-runner-name
 runner_memory: 512M
 worker_memory: 512M
 service_account_instance: my-service-account
+object_store_instance: my-brokered-bucket
