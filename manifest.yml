@@ -37,3 +37,4 @@ applications:
       # https://docs.gitlab.com/runner/faq/#enable-debug-logging-mode
       # and ensuring job logs are removed to avoid leaking secrets.
       #RUNNER_DEBUG: "true"
+      OBJECT_STORE_INSTANCE: ((object_store_instance))
