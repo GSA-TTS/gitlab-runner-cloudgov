@@ -3,15 +3,29 @@
 set -euo pipefail
 
 # trap any error, and mark it as a system failure.
-trap 'exit $SYSTEM_FAILURE_EXIT_CODE' ERR
+# Also cleans up TMPVARFILE (set in create_temporary_varfile).
+trap 'rm -f "$TMPVARFILE"; exit $SYSTEM_FAILURE_EXIT_CODE' ERR
+trap 'rm -f "$TMPVARFILE"' EXIT
 
 # Prepare a runner executor application in CloudFoundry
 
 currentDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source "${currentDir}/base.sh" # Get variables from base.
-if [ -z "$WORKER_MEMORY" ]; then
+if [ -z "${WORKER_MEMORY-}" ]; then
     WORKER_MEMORY="512M"
 fi
+
+create_temporary_varfile () {
+    # A less leak-prone way to share secrets into the worker which will not
+    # be able to parse VCAP_CONFIGURATION
+    TMPVARFILE=$(mktemp /tmp/gitlab-runner-worker-manifest.XXXXXXXXXX)
+
+    for v in RUNNER_NAME CACHE_TYPE CACHE_S3_SERVER_ADDRESS CACHE_S3_BUCKET_LOCATION CACHE_S3_BUCKET_NAME CACHE_S3_BUCKET_NAME CACHE_S3_ACCESS_KEY CACHE_S3_SECRET_KEY; do
+        echo "$v: \"$v\"" >> "$TMPVARFILE"
+    done
+
+    echo "Added $(wc -l "$TMPVARFILE") lines to $TMPVARFILE"
+}
 
 start_container () {
     if cf app --guid "$CONTAINER_ID" >/dev/null 2>/dev/null ; then
@@ -21,7 +35,7 @@ start_container () {
 
     cf push "$CONTAINER_ID" -f "${currentDir}/worker-manifest.yml" \
        --docker-image "$CUSTOM_ENV_CI_JOB_IMAGE" -m "$WORKER_MEMORY" \
-       -var "object_store_instance=${OBJECT_STORE_INSTANCE}"
+       --vars-file "$TMPVARFILE"
 }
 
 install_dependencies () {
@@ -46,6 +60,9 @@ install_dependencies () {
                                chmod +x /usr/bin/gitlab-runner-helper; \
                                ln -s /usr/bin/gitlab-runner-helper /usr/bin/gitlab-runner'
 }
+
+echo "[cf-driver] Preparing environment variables for $CONTAINER_ID"
+create_temporary_varfile
 
 echo "[cf-driver] Starting $CONTAINER_ID with image $CUSTOM_ENV_CI_JOB_IMAGE"
 start_container
