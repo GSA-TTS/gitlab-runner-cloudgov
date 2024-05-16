@@ -63,7 +63,8 @@ for much more on GitLab CI/CD and runners.
 
 ## TODO
 
-- [Configure a bound S3 bucket as the cache](https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-runnerscaches3-section)
+- Make it possible to run DAST/a11y/other tests requiring a running copy of the
+  application and a separate scanning process.
 - Set custom executor timeouts based on measurements.
 - Add linting and tests.
 - Improve documentation.
