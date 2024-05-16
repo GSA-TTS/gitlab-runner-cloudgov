@@ -36,7 +36,8 @@ in [Runner Execution Flow](https://gitlab.com/gitlab-org/gitlab-runner/-/tree/ma
     cf create-service cloud-gov-service-account space-deployer SERVICE_ACCOUNT_INSTANCE -t "gitlab-service-account"
     ```
 
-4. Create a [cloud.gov brokered S3 bucket](https://cloud.gov/docs/services/s3/) - `basic-sandbox` is suggested as this will store temporary artifacts and cache. Note that `BUCKETNAME` will have a prefix prepended so it only needs to be unique to the space, not globally.
+4. Create a [cloud.gov brokered S3 bucket](https://cloud.gov/docs/services/s3/) - `basic-sandbox` is suggested as this will store temporary artifacts and cache.
+   Note that `OBJECT_STORE_INSTANCE` only needs to be unique within the specific space as it will have a prefix prepended to create the S3 bucket name.
     ```
     cf create-service s3 basic-sandbox OBJECT_STORE_INSTANCE
     ```
