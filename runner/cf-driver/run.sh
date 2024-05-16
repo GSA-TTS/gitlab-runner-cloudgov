@@ -21,4 +21,4 @@ if ! cf ssh "$CONTAINER_ID" < "${1}"; then
     exit "$BUILD_FAILURE_EXIT_CODE"
 fi
 
-printf "[cf-driver] Completed SSH session with %s to run steps" "$CONTAINER_ID"n
+printf "[cf-driver] Completed SSH session with %s to run steps" "$CONTAINER_ID"
