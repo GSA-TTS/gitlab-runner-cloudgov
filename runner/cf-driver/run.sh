@@ -7,12 +7,12 @@ source "${currentDir}/base.sh"
 
 printf "[cf-driver] Using SSH to connect to %s and run steps" "$CONTAINER_ID"
 
-if [ -n "$RUNNER_DEBUG" ] && [ "$RUNNER_DEBUG" = "true" ]; then
+if [ -n "${RUNNER_DEBUG-}" ] && [ "$RUNNER_DEBUG" == "true" ]; then
     # DANGER: There may be sensitive information in this output.
     # Generated job logs should be removed after this is used.
-    printf "[cf-driver] RUNNER_DEBUG: About to run the following:\n--------"
+    printf "[cf-driver] RUNNER_DEBUG: About to run the following:\n======"
     cat "$1"
-    printf "--------\n[cf-driver] RUNNER_DEBUG: End command display"
+    printf "=========[cf-driver] RUNNER_DEBUG: End command display"
 fi
 
 if ! cf ssh "$CONTAINER_ID" < "${1}"; then
@@ -21,4 +21,4 @@ if ! cf ssh "$CONTAINER_ID" < "${1}"; then
     exit "$BUILD_FAILURE_EXIT_CODE"
 fi
 
-printf "[cf-driver] Completed SSH session with %s to run steps" "$CONTAINER_ID"
+printf "[cf-driver] Completed SSH session with %s to run steps" "$CONTAINER_ID"n
