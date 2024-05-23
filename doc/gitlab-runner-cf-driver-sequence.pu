@@ -10,7 +10,7 @@ participant "GitLab" as gitlab
 participant "GitLab Runner Manager" as manager
 participant "CloudFoundry PaaS" as cf
 participant "GitLab Runner App Instance" as cfrunner
-participant "Cache/Artifact Storage" as cache
+participant "Cache Storage" as cache
 ' Start
 
 manager -> gitlab : Connect and wait for job
@@ -32,12 +32,12 @@ loop Run substages
 manager -> cfrunner : **cf ssh** to run job steps
 cfrunner -> gitlab : Request code via Git
 gitlab -> cfrunner : Return code
-cfrunner -> cache : Request cache/artifacts
-cache -> cfrunner : Return cache/artifacts
+cfrunner -> cache : Request cache
+cache -> cfrunner : Return cache
 
 cfrunner -> cfrunner : execute job steps
 
-cfrunner -> cache : Write cache/artifacts
+cfrunner -> cache : Write cache
 
 cfrunner -> manager : Return job output
 end
@@ -47,8 +47,6 @@ manager -> cf : **cf delete** to remove instance
 end
 
 group Return results
-manager -> cache : Request artifacts
-cache -> manager : Return artifacts
 manager -> gitlab : Return job results
 end
 

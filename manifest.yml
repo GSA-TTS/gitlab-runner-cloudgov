@@ -13,6 +13,7 @@ applications:
     command: gitlab-runner run
     services:
       - ((service_account_instance))
+      - ((object_store_instance))
     env:
       # These are used by .profile
       DEFAULT_JOB_IMAGE: ((default_job_image))
@@ -35,4 +36,5 @@ applications:
       # DANGER: Do not set RUNNER_DEBUG to true without reading
       # https://docs.gitlab.com/runner/faq/#enable-debug-logging-mode
       # and ensuring job logs are removed to avoid leaking secrets.
-      #RUNNER_DEBUG: "true"
+      RUNNER_DEBUG: "false"
+      OBJECT_STORE_INSTANCE: ((object_store_instance))
