@@ -38,6 +38,52 @@ start_container () {
        --vars-file "$TMPVARFILE"
 }
 
+start_service () {
+    container_id="$1"
+    image_name="$2"
+    container_entrypoint="$3"
+    container_command="$4"
+
+    if [ -z "$container_id" ] || [ -z "$image_name" ]; then
+       echo 'Usage: start_service CONTAINER_ID IMAGE_NAME CONTAINER_ENTRYPOINT CONTAINER_COMMAND'
+       exit 1
+    fi
+    if [ -n "$container_entrypoint" ] || [ -n "$container_command" ]; then
+        # TODO - cf push allows use of -c or --start-command but not a separate
+        # entrypoint. May need to add logic to gracefully convert entrypoint to
+        # a command.
+        echo 'container_entrypoint and container_command are not yet supported in services - Sorry!'
+        exit 1
+    fi
+
+    if cf app --guid "$container_id" >/dev/null 2>/dev/null ; then
+        echo 'Found old instance of runner service, deleting'
+        cf delete "$container_id"
+    fi
+
+    # TODO - Figure out how to handle command and non-global memory definition
+    cf push "$container_id" --docker-image "$image_name" -m "$WORKER_MEMORY"
+}
+
+start_services () {
+    container_id_base="$1"
+    ci_job_services="$2"
+
+    if [ -z "$ci_job_services" ]; then
+       echo "No services defined in ci_job_services - Skipping service startup"
+       return
+    fi
+
+    for l in $(echo "$ci_job_services" | jq -rc '.[]'); do
+        container_id="${container_id_base}-svc-"$(echo "$l" | jq -r '. | .alias | select(. != null)')
+        image_name=$(echo "$l" | jq -r '. | .name | select(. != null)')
+        container_entrypoint=$(echo "$l" | jq -r '. | .entrypoint| select(. != null)')
+        container_command=$(echo "$l" | jq -r '. | .command | select(. != null)')
+
+        start_service "$container_id" "$image_name" "$container_entrypoint" "$container_command"
+    done
+}
+
 install_dependencies () {
     # Build a command to try and install git and git-lfs on common distros.
     # Of course, RedHat/UBI will need more help to add RPM repos with the correct
@@ -60,6 +106,11 @@ install_dependencies () {
                                chmod +x /usr/bin/gitlab-runner-helper; \
                                ln -s /usr/bin/gitlab-runner-helper /usr/bin/gitlab-runner'
 }
+
+if [ -n "$CUSTOM_ENV_CI_JOB_SERVICES" ]; then
+    echo "[cf-driver] Starting services"
+    start_services "$CONTAINER_ID" "$CUSTOM_ENV_CI_JOB_SERVICES"
+fi
 
 echo "[cf-driver] Preparing environment variables for $CONTAINER_ID"
 create_temporary_varfile
