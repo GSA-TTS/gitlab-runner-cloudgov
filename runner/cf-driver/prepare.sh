@@ -39,10 +39,11 @@ start_container () {
 }
 
 start_service () {
-    container_id="$1"
-    image_name="$2"
-    container_entrypoint="$3"
-    container_command="$4"
+    alias_name="$1"
+    container_id="$2"
+    image_name="$3"
+    container_entrypoint="$4"
+    container_command="$5"
 
     if [ -z "$container_id" ] || [ -z "$image_name" ]; then
        echo 'Usage: start_service CONTAINER_ID IMAGE_NAME CONTAINER_ENTRYPOINT CONTAINER_COMMAND'
@@ -63,6 +64,22 @@ start_service () {
 
     # TODO - Figure out how to handle command and non-global memory definition
     cf push "$container_id" --docker-image "$image_name" -m "$WORKER_MEMORY"
+
+    cf map-route "$container_id" apps.internal --hostname "$alias_name"
+}
+
+allow_access_to_service () {
+    source_app="$1"
+    destination_service_app="$2"
+    current_org=$(echo "$VCAP_APPLICATION" | jq --raw-output ".organization_name")
+    current_space=$(echo "$VCAP_APPLICATION" | jq --raw-output ".space_name")
+
+    # TODO NOTE: This is foolish and allows all TCP ports for now.
+    # This is limiting and sloppy.
+    protocol="tcp"
+    ports="20-10000"
+
+    cf add-network-policy "$source_app" "$destination_service_app" -o "$current_org" -s "$current_space" --protocol "$protocol" --port "$ports"
 }
 
 start_services () {
@@ -75,12 +92,14 @@ start_services () {
     fi
 
     for l in $(echo "$ci_job_services" | jq -rc '.[]'); do
-        container_id="${container_id_base}-svc-"$(echo "$l" | jq -r '. | .alias | select(. != null)')
+        alias_name=$(echo "$l" | jq -r '. | .alias | select(. != null)')
+        container_id="${container_id_base}-svc-${alias_name}"
         image_name=$(echo "$l" | jq -r '. | .name | select(. != null)')
         container_entrypoint=$(echo "$l" | jq -r '. | .entrypoint| select(. != null)')
         container_command=$(echo "$l" | jq -r '. | .command | select(. != null)')
 
-        start_service "$container_id" "$image_name" "$container_entrypoint" "$container_command"
+        start_service "$alias_name" "$container_id" "$image_name" "$container_entrypoint" "$container_command"
+        allow_access_to_service "$container_id_base" "$container_id"
     done
 }
 
@@ -107,11 +126,6 @@ install_dependencies () {
                                ln -s /usr/bin/gitlab-runner-helper /usr/bin/gitlab-runner'
 }
 
-if [ -n "$CUSTOM_ENV_CI_JOB_SERVICES" ]; then
-    echo "[cf-driver] Starting services"
-    start_services "$CONTAINER_ID" "$CUSTOM_ENV_CI_JOB_SERVICES"
-fi
-
 echo "[cf-driver] Preparing environment variables for $CONTAINER_ID"
 create_temporary_varfile
 
@@ -120,5 +134,10 @@ start_container
 
 echo "[cf-driver] Installing dependencies into $CONTAINER_ID"
 install_dependencies
+
+if [ -n "$CUSTOM_ENV_CI_JOB_SERVICES" ]; then
+    echo "[cf-driver] Starting services"
+    start_services "$CONTAINER_ID" "$CUSTOM_ENV_CI_JOB_SERVICES"
+fi
 
 echo "[cf-driver] $CONTAINER_ID preparation complete"

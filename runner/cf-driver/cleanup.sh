@@ -26,7 +26,6 @@ cleanup_services () {
     done
 }
 
-
 if [ -n "$CUSTOM_ENV_CI_JOB_SERVICES" ]; then
     echo "[cf-driver] Cleaning up services"
     cleanup_services "$CONTAINER_ID" "$CUSTOM_ENV_CI_JOB_SERVICES"
