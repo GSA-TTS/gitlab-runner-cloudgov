@@ -62,6 +62,32 @@ in [Runner Execution Flow](https://gitlab.com/gitlab-org/gitlab-runner/-/tree/ma
 At this point the runner should be available to run jobs. See [Use GitLab - Use CI/CD to build your application - Getting started](https://docs.gitlab.com/ee/ci/)
 for much more on GitLab CI/CD and runners.
 
+## Troubleshooting
+
+### Viewing manager instance logs
+
+Problems with runner registration often requiring viewing it's logs.
+
+~~~
+cf logs --recent RUNNER-NAME
+~~~
+
+### "Request error: Get https://API-URL/v2/info: dial tcp X.X.X.X:443: connect: connection refused"
+
+The GitLab Runner manager needs to contact the CloudFoundry API to schedule
+runner applications. This indicates your CloudFoundry space security group may
+be too restrictive or not set.
+
+For a production deployment you should use tightly controlled egress filtering,
+ideally with a name based proxy.
+
+Test Only - For a basic test environment with no privileged access you can use
+the following to apply a loose egress security group policy on cloud.gov:
+
+~~~
+bind cf bind-security-group public_networks_egress ORG_NAME --space SPACE_NAME
+~~~
+
 ## TODO
 
 - Make it possible to run DAST/a11y/other tests requiring a running copy of the
