@@ -63,8 +63,10 @@ start_service () {
     fi
 
     # TODO - Figure out how to handle command and non-global memory definition
-    cf push "$container_id" --docker-image "$image_name" -m "$WORKER_MEMORY"
+    cf push "$container_id" --docker-image "$image_name" -m "$WORKER_MEMORY" \
+        --no-route --health-check-type process
 
+    echo "DEBUG: cf map-route $container_id apps.internal --hostname $alias_name"
     cf map-route "$container_id" apps.internal --hostname "$alias_name"
 }
 
@@ -79,7 +81,10 @@ allow_access_to_service () {
     protocol="tcp"
     ports="20-10000"
 
-    cf add-network-policy "$source_app" "$destination_service_app" -o "$current_org" -s "$current_space" --protocol "$protocol" --port "$ports"
+    cf add-network-policy "$source_app" \
+        --destination-app "$destination_service_app" \
+        -o "$current_org" -s "$current_space" \
+        --protocol "$protocol" --port "$ports"
 }
 
 start_services () {
