@@ -67,7 +67,7 @@ start_service () {
         --no-route --health-check-type process
 
     echo "DEBUG: cf map-route $container_id apps.internal --hostname $alias_name"
-    cf map-route "$container_id" apps.internal --hostname "$alias_name"
+    cf map-route "$container_id" apps.internal --hostname "$container_id"
 }
 
 allow_access_to_service () {

@@ -3,7 +3,9 @@
 # This is sourced by prepare, run, and cleanup
 
 # This name will be long. Hopefully not too long!
-CONTAINER_ID="runner-$CUSTOM_ENV_CI_RUNNER_ID-project-$CUSTOM_ENV_CI_PROJECT_ID-concurrent-$CUSTOM_ENV_CI_CONCURRENT_PROJECT_ID-$CUSTOM_ENV_CI_JOB_ID"
+# Any changes to this pattern need to be mirrored in .gitlab-ci.yml when
+# used to prefix service names.
+CONTAINER_ID="glrw-r$CUSTOM_ENV_CI_RUNNER_ID-p$CUSTOM_ENV_CI_PROJECT_ID-c$CUSTOM_ENV_CI_CONCURRENT_PROJECT_ID-j$CUSTOM_ENV_CI_JOB_ID"
 
 # Set a fallback if not set but complain
 if [ -v "$DEFAULT_JOB_IMAGE" ]; then
