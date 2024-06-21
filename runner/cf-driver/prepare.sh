@@ -24,12 +24,12 @@ create_temporary_varfile () {
         echo "$v: \"$v\"" >> "$TMPVARFILE"
     done
 
-    echo "Added $(wc -l "$TMPVARFILE") lines to $TMPVARFILE"
+    echo "[cf-driver] [DEBUG] Added $(wc -l "$TMPVARFILE") lines to $TMPVARFILE"
 }
 
 start_container () {
     if cf app --guid "$CONTAINER_ID" >/dev/null 2>/dev/null ; then
-        echo 'Found old instance of runner executor, deleting'
+        echo '[cf-driver] Found old instance of runner executor, deleting'
         cf delete "$CONTAINER_ID"
     fi
 
@@ -53,12 +53,12 @@ start_service () {
         # TODO - cf push allows use of -c or --start-command but not a separate
         # entrypoint. May need to add logic to gracefully convert entrypoint to
         # a command.
-        echo 'container_entrypoint and container_command are not yet supported in services - Sorry!'
+        echo '[cf-driver] container_entrypoint and container_command are not yet supported in services - Sorry!'
         exit 1
     fi
 
     if cf app --guid "$container_id" >/dev/null 2>/dev/null ; then
-        echo 'Found old instance of runner service, deleting'
+        echo '[cf-driver] Found old instance of runner service, deleting'
         cf delete "$container_id"
     fi
 
@@ -66,7 +66,6 @@ start_service () {
     cf push "$container_id" --docker-image "$image_name" -m "$WORKER_MEMORY" \
         --no-route --health-check-type process
 
-    echo "DEBUG: cf map-route $container_id apps.internal --hostname $alias_name"
     cf map-route "$container_id" apps.internal --hostname "$container_id"
 }
 
@@ -92,7 +91,7 @@ start_services () {
     ci_job_services="$2"
 
     if [ -z "$ci_job_services" ]; then
-       echo "No services defined in ci_job_services - Skipping service startup"
+       echo "[cf-driver] No services defined in ci_job_services - Skipping service startup"
        return
     fi
 

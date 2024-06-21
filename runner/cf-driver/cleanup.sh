@@ -19,8 +19,8 @@ cleanup_services () {
        return
     fi
 
-    for l in $(echo "$ci_job_services" | jq -rc '.[]'); do
-        container_id="${container_id_base}-svc-"$(echo "$l" | jq -r '. | .alias | select(. != null)')
+    for a in $(echo "$ci_job_services" | jq -rc '.[] | select(.alias != null).alias'); do
+        container_id="${container_id_base}-svc-${a}"
 
         cf delete -f "$container_id"
     done
