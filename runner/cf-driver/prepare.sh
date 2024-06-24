@@ -96,11 +96,11 @@ start_services () {
     fi
 
     for l in $(echo "$ci_job_services" | jq -rc '.[]'); do
-        alias_name=$(echo "$l" | jq -r '. | .alias | select(. != null)')
+        alias_name=$(echo "$l" | jq -r '.alias | select(.)')
         container_id="${container_id_base}-svc-${alias_name}"
-        image_name=$(echo "$l" | jq -r '. | .name | select(. != null)')
-        container_entrypoint=$(echo "$l" | jq -r '. | .entrypoint| select(. != null)')
-        container_command=$(echo "$l" | jq -r '. | .command | select(. != null)')
+        image_name=$(echo "$l" | jq -r '.name | select(.)')
+        container_entrypoint=$(echo "$l" | jq -r '.entrypoint | select(.)')
+        container_command=$(echo "$l" | jq -r '.command | select(.)')
 
         start_service "$alias_name" "$container_id" "$image_name" "$container_entrypoint" "$container_command"
         allow_access_to_service "$container_id_base" "$container_id"
