@@ -28,12 +28,13 @@ create_temporary_varfile () {
 }
 
 start_container () {
-    if cf app --guid "$CONTAINER_ID" >/dev/null 2>/dev/null ; then
+    container_id="$1"
+    if cf app --guid "$container_id" >/dev/null 2>/dev/null ; then
         echo '[cf-driver] Found old instance of runner executor, deleting'
-        cf delete "$CONTAINER_ID"
+        cf delete -f "$container_id"
     fi
 
-    cf push "$CONTAINER_ID" -f "${currentDir}/worker-manifest.yml" \
+    cf push "$container_id" -f "${currentDir}/worker-manifest.yml" \
        --docker-image "$CUSTOM_ENV_CI_JOB_IMAGE" -m "$WORKER_MEMORY" \
        --vars-file "$TMPVARFILE"
 }
@@ -59,7 +60,7 @@ start_service () {
 
     if cf app --guid "$container_id" >/dev/null 2>/dev/null ; then
         echo '[cf-driver] Found old instance of runner service, deleting'
-        cf delete "$container_id"
+        cf delete -f "$container_id"
     fi
 
     # TODO - Figure out how to handle command and non-global memory definition
@@ -110,11 +111,13 @@ start_services () {
 }
 
 install_dependencies () {
+    container_id="$1"
+
     # Build a command to try and install git and git-lfs on common distros.
     # Of course, RedHat/UBI will need more help to add RPM repos with the correct
     # version. TODO - RedHat support
     echo "[cf-driver] Ensuring git, git-lfs, and curl are installed"
-    cf ssh "$CONTAINER_ID" -c '(which git && which git-lfs && which curl) || \
+    cf ssh "$container_id" -c '(which git && which git-lfs && which curl) || \
                                (which apk && apk add git git-lfs curl) || \
                                (which apt-get && apt-get update && apt-get install -y git git-lfs curl) || \
                                (echo "Required packages missing and I do not know what to do about it" && exit 1)'
@@ -126,7 +129,7 @@ install_dependencies () {
     # Symlinks gitlab-runner to avoid having to alter more of the executor.
     # TODO: Pin the version and support more arches than X86_64
     echo "[cf-driver] Installing gitlab-runner-helper"
-    cf ssh "$CONTAINER_ID" -c 'curl -L --output /usr/bin/gitlab-runner-helper \
+    cf ssh "$container_id" -c 'curl -L --output /usr/bin/gitlab-runner-helper \
                                "https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/binaries/gitlab-runner-helper/gitlab-runner-helper.x86_64"; \
                                chmod +x /usr/bin/gitlab-runner-helper; \
                                ln -s /usr/bin/gitlab-runner-helper /usr/bin/gitlab-runner'
@@ -136,10 +139,10 @@ echo "[cf-driver] Preparing environment variables for $CONTAINER_ID"
 create_temporary_varfile
 
 echo "[cf-driver] Starting $CONTAINER_ID with image $CUSTOM_ENV_CI_JOB_IMAGE"
-start_container
+start_container "$CONTAINER_ID"
 
 echo "[cf-driver] Installing dependencies into $CONTAINER_ID"
-install_dependencies
+install_dependencies "$CONTAINER_ID"
 
 if [ -n "$CUSTOM_ENV_CI_JOB_SERVICES" ]; then
     echo "[cf-driver] Starting services"
