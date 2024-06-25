@@ -96,9 +96,11 @@ start_services () {
     fi
 
     for l in $(echo "$ci_job_services" | jq -rc '.[]'); do
-        alias_name=$(echo "$l" | jq -r '.alias | select(.)')
+        # Using jq -er to fail of alias or name are not found
+        alias_name=$(echo "$l" | jq -er '.alias | select(.)')
         container_id="${container_id_base}-svc-${alias_name}"
-        image_name=$(echo "$l" | jq -r '.name | select(.)')
+        image_name=$(echo "$l" | jq -er '.name | select(.)')
+        # Using jq -r to allow entrypoint and command to be empty
         container_entrypoint=$(echo "$l" | jq -r '.entrypoint | select(.)')
         container_command=$(echo "$l" | jq -r '.command | select(.)')
 
