@@ -121,6 +121,7 @@ install_dependencies () {
         --command 'source /etc/profile && (which git && which git-lfs && which curl) || \
                                (which apk && apk add git git-lfs curl) || \
                                (which apt-get && apt-get update && apt-get install -y git git-lfs curl) || \
+                               (which yum && yum install git git-lfs curl) || \
                                (echo "[cf-driver] Required packages missing and install attempt failed" && exit 1)'
 
     # gitlab-runner-helper includes a limited subset of gitlab-runner functionality
