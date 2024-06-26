@@ -85,7 +85,7 @@ Test Only - For a basic test environment with no privileged access you can use
 the following to apply a loose egress security group policy on cloud.gov:
 
 ~~~
-bind cf bind-security-group public_networks_egress ORG_NAME --space SPACE_NAME
+cf bind-security-group public_networks_egress ORG_NAME --space SPACE_NAME
 ~~~
 
 ## TODO
