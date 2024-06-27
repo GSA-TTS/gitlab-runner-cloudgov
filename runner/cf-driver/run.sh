@@ -15,7 +15,7 @@ if [ -n "${RUNNER_DEBUG-}" ] && [ "$RUNNER_DEBUG" == "true" ]; then
     printf "=========[cf-driver] RUNNER_DEBUG: End command display"
 fi
 
-if ! cf ssh "$CONTAINER_ID" < "${1}"; then
+if ! cf ssh "$CONTAINER_ID" -c "source /etc/profile" < "${1}"; then
     # Exit using the variable, to make the build as failure in GitLab
     # CI.
     exit "$BUILD_FAILURE_EXIT_CODE"
