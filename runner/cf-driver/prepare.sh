@@ -117,10 +117,12 @@ install_dependencies () {
     # Of course, RedHat/UBI will need more help to add RPM repos with the correct
     # version. TODO - RedHat support
     echo "[cf-driver] Ensuring git, git-lfs, and curl are installed"
-    cf ssh "$container_id" -c '(which git && which git-lfs && which curl) || \
+    cf ssh "$container_id" --request-pseudo-tty \
+        --command 'source /etc/profile && (which git && which git-lfs && which curl) || \
                                (which apk && apk add git git-lfs curl) || \
                                (which apt-get && apt-get update && apt-get install -y git git-lfs curl) || \
-                               (echo "Required packages missing and I do not know what to do about it" && exit 1)'
+                               (which yum && yum install git git-lfs curl) || \
+                               (echo "[cf-driver] Required packages missing and install attempt failed" && exit 1)'
 
     # gitlab-runner-helper includes a limited subset of gitlab-runner functionality
     # plus Git and Git-LFS. https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/index.html
