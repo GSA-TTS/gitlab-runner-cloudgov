@@ -117,7 +117,7 @@ install_dependencies () {
     # Of course, RedHat/UBI will need more help to add RPM repos with the correct
     # version. TODO - RedHat support
     echo "[cf-driver] Ensuring git, git-lfs, and curl are installed"
-    cf ssh "$container_id" --request-pseudo-tty \
+    cf ssh "$container_id" \
         --command 'source /etc/profile && (which git && which git-lfs && which curl) || \
                                (which apk && apk add git git-lfs curl) || \
                                (which apt-get && apt-get update && apt-get install -y git git-lfs curl) || \
