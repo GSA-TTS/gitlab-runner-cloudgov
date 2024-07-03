@@ -63,9 +63,18 @@ start_service () {
         cf delete -f "$container_id"
     fi
 
-    # TODO - Figure out how to handle command and non-global memory definition
-    cf push "$container_id" --docker-image "$image_name" -m "$WORKER_MEMORY" \
-        --no-route --health-check-type process
+    if [ "$image_name" =~ "registry.gitlab.com" ]; then
+        CF_DOCKER_PASSWORD=$CUSTOM_ENV_CI_REGISTRY_PASSWORD \
+        cf push "$container_id" \
+            --docker-image "$image_name" \
+            --docker-username "$CUSTOM_ENV_CI_REGISTRY_USER" \
+            -m "$WORKER_MEMORY" --no-route --health-check-type process
+    else
+        # TODO - Figure out how to handle command and non-global memory definition
+        cf push "$container_id" \
+            --docker-image "$image_name" \
+            -m "$WORKER_MEMORY" --no-route --health-check-type process
+    fi
 
     cf map-route "$container_id" apps.internal --hostname "$container_id"
 }
