@@ -2,6 +2,11 @@
 Code for running GitLab CI/CD jobs on cloud.gov or another CloudFoundry based
 PaaS.
 
+* [How it works](#how-it-works)
+* [Deploying](#deploying)
+* [Troubleshooting](#troubleshooting)
+* [Design Decisions](#design-decisions)
+
 ## How it works
 
 This is a custom executor borrowing ideas from https://docs.gitlab.com/runner/executors/custom.html.
@@ -10,7 +15,25 @@ It runs a "manager" GitLab Runner instance responsible for listening for new
 jobs. Each job is run on a new application instance in CloudFoundry using the
 specified OCI image.
 
-![Fig 1 - Job sequence overview](doc/gitlab-runner-cf-driver-sequence.png)
+![Fig 1 - Components](doc/gitlab-runner-cf-driver-components.png)
+__[source](doc/gitlab-runner-cf-driver-components.pu)__
+
+The relevant components of the solution are shown above with two running stages.
+* "GitLab Runner - Manager" - This is the persistent application defined in this
+  very repository. It registers with the GitLab instance and waits for further
+  instructions.
+* "GitLab Runner - Worker" - The manager starts worker application instances
+  using the container image you specify and runs job steps via CloudFoundry
+  `cf ssh` calls into the running containers.
+* "GitLab Runner - Service" - Optional service instances can be started for use
+  by the Worker instances. These run as separate apps using the container
+  image you specify.
+
+![Fig 2 - Job sequence overview](doc/gitlab-runner-cf-driver-sequence.png)
+__[source](doc/gitlab-runner-cf-sequence-overview.pu)__
+
+The above sequence diagram illustrates the series of events in a given job run.
+Optional service lifecycles are not shown, but run as part of the `prepare` phase.
 
 The runner manager registration and other flow details are shown
 in [Runner Execution Flow](https://gitlab.com/gitlab-org/gitlab-runner/-/tree/main/docs?ref_type=heads#runner-execution-flow).

@@ -1,4 +1,6 @@
 @startuml
+' PlantUML >= 2023.8 required
+!theme C4_brown from <C4/themes>
 !include <C4/C4_Container>
 
 HIDE_STEREOTYPE()
@@ -9,12 +11,16 @@ Boundary(gitlabcom, "GitLab"){
     Container_Ext(gitlab, "GitLab Server","")
 }
 
+Boundary(aws, "AWS") {
+    Container_Ext(bucket, "Cloud.gov brokered S3 bucket")
+}
+
 Boundary(cloudgov, "Cloud.gov") {
     Container_Ext(cloudgovapi, "Cloud.gov API")
     Boundary(myorg, "My Organization") {
         Boundary(myrunnerspace, "My Runner Space") {
             Container(manager, "GitLab Runner Manager", "Manager")
-            Container(worker1, "GitLab Runner Worker", "Job1 - Functional Tests")
+            Container(worker1, "GitLab Runner Worker", "- Functional Tests")
             Container(servicedb1, "GitLab Runner Service", "Job1 - Database")
 
             Container(worker2, "GitLab Runner Worker", "Job2 - Accessibility Tests")
@@ -28,5 +34,7 @@ manager --> worker1 : Runs job steps [ssh tcp/22]
 manager --> worker2 : Runs job steps [ssh tcp/22]
 worker1 --> servicedb1 : Reads/writes ephemeral database [pgsql tcp/5432]
 worker2 --> serviceapp2 : Interacts with test instance of application [http tcp/80]
+worker1 -u-> bucket : Read/write cache [https tcp/443]
+worker2 -u-> bucket : Read/write cache [https tcp/443]
 
 @enduml
