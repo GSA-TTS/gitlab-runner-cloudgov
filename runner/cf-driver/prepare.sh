@@ -12,6 +12,7 @@ trap 'rm -f "$TMPVARFILE"' EXIT
 currentDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source "${currentDir}/base.sh" # Get variables from base.
 if [ -z "${WORKER_MEMORY-}" ]; then
+    # Some jobs may fail with less than 512M, e.g., `npm i`
     WORKER_MEMORY="512M"
 fi
 
