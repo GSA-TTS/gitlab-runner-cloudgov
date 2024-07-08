@@ -7,47 +7,47 @@ title GitLab Runner CloudFoundry Executor - Job Sequence
 'autonumber
 
 participant "GitLab" as gitlab
-participant "GitLab Runner Manager" as manager
+participant "GitLab Runner - Manager" as glrm
 participant "CloudFoundry PaaS" as cf
-participant "GitLab Runner App Instance" as cfrunner
+participant "GitLab Runner - Worker" as glrw
 participant "Cache Storage" as cache
 ' Start
 
-manager -> gitlab : Connect and wait for job
+glrm -> gitlab : Connect and wait for job
 
 group Run job
-gitlab -> manager : Submit new GitLab CI job
+gitlab -> glrm : Submit new GitLab CI job
 
 group Prepare instance
 ' prepare.sh
-manager -> cf : **cf push** to create new instance using defined OCI **image**
-cf -> manager : Block until instance is ready
+glrm -> cf : **cf push** to create new instance using defined OCI **image**
+cf -> glrm : Block until instance is ready
 
-manager -> cfrunner : **cf ssh** to install prereqs and **gitlab-runner-helper**
-cfrunner -> manager : Return output
+glrm -> glrw : **cf ssh** to install prereqs and **gitlab-runner-helper**
+glrw -> glrm : Return output
 end
 
 loop Run substages
 ' run.sh
-manager -> cfrunner : **cf ssh** to run job steps
-cfrunner -> gitlab : Request code via Git
-gitlab -> cfrunner : Return code
-cfrunner -> cache : Request cache
-cache -> cfrunner : Return cache
+glrm -> glrw : **cf ssh** to run job steps
+glrw -> gitlab : Request code via Git
+gitlab -> glrw : Return code
+glrw -> cache : Request cache
+cache -> glrw : Return cache
 
-cfrunner -> cfrunner : execute job steps
+glrw -> glrw : execute job steps
 
-cfrunner -> cache : Write cache
+glrw -> cache : Write cache
 
-cfrunner -> manager : Return job output
+glrw -> glrm : Return job output
 end
 
 group Cleanup instance
-manager -> cf : **cf delete** to remove instance
+glrm -> cf : **cf delete** to remove instance
 end
 
 group Return results
-manager -> gitlab : Return job results
+glrm -> gitlab : Return job results
 end
 
 end
