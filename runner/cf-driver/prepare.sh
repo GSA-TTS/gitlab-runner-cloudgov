@@ -64,7 +64,7 @@ start_service () {
         cf delete -f "$container_id"
     fi
 
-    if [ "$image_name" =~ "registry.gitlab.com" ]; then
+    if [[ "$image_name" =~ "registry.gitlab.com" ]]; then
         CF_DOCKER_PASSWORD=$CUSTOM_ENV_CI_REGISTRY_PASSWORD \
         cf push "$container_id" \
             --docker-image "$image_name" \
