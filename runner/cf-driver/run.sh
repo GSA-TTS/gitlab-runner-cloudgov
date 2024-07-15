@@ -5,7 +5,7 @@
 currentDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source "${currentDir}/base.sh"
 
-printf "[cf-driver] Using SSH to connect to %s and run steps\n" "$CONTAINER_ID"
+printf "[cf-driver] Using SSH to connect to %s and run '%s' step\n" "$CONTAINER_ID" $2
 
 if [ -n "${RUNNER_DEBUG-}" ] && [ "$RUNNER_DEBUG" == "true" ]; then
     # DANGER: There may be sensitive information in this output.
@@ -21,4 +21,4 @@ if ! cf ssh "$CONTAINER_ID" -c "source /etc/profile" < "${1}"; then
     exit "$BUILD_FAILURE_EXIT_CODE"
 fi
 
-printf "[cf-driver] Completed SSH session with %s to run steps\n" "$CONTAINER_ID"
+printf "[cf-driver] Completed SSH session with %s to run '%s' step\n" "$CONTAINER_ID" $2
