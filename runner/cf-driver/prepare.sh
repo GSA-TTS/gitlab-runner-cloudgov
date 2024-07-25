@@ -65,7 +65,7 @@ start_service () {
         '--no-route'
     )
 
-    if [ -n "$container_entrypoint" ]; then
+    if [ -n "$container_entrypoint" ] || [ -n "$container_command" ]; then
         push_args+=('-c' "${container_entrypoint[@]}" "${container_command[@]}")
     fi
 
