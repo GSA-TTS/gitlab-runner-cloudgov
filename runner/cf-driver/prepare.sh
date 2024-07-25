@@ -51,32 +51,31 @@ start_service () {
        echo 'Usage: start_service CONTAINER_ID IMAGE_NAME CONTAINER_ENTRYPOINT CONTAINER_COMMAND'
        exit 1
     fi
-    if [ -n "$container_entrypoint" ] || [ -n "$container_command" ]; then
-        # TODO - cf push allows use of -c or --start-command but not a separate
-        # entrypoint. May need to add logic to gracefully convert entrypoint to
-        # a command.
-        echo '[cf-driver] container_entrypoint and container_command are not yet supported in services - Sorry!'
-        exit 1
-    fi
 
     if cf app --guid "$container_id" >/dev/null 2>/dev/null ; then
         echo '[cf-driver] Found old instance of runner service, deleting'
         cf delete -f "$container_id"
     fi
 
-    if [[ "$image_name" =~ "registry.gitlab.com" ]]; then
-        CF_DOCKER_PASSWORD=$CUSTOM_ENV_CI_REGISTRY_PASSWORD \
-        cf push "$container_id" \
-            --docker-image "$image_name" \
-            --docker-username "$CUSTOM_ENV_CI_REGISTRY_USER" \
-            -m "$WORKER_MEMORY" --no-route --health-check-type process
-    else
-        # TODO - Figure out how to handle command and non-global memory definition
-        cf push "$container_id" \
-            --docker-image "$image_name" \
-            -m "$WORKER_MEMORY" --no-route --health-check-type process
+    push_args=(
+        "$container_id"
+        '-m' "$WORKER_MEMORY"
+        '--docker-image' "$image_name"
+        '--health-check-type' 'process'
+        '--no-route'
+    )
+
+    if [ -n "$container_entrypoint" ]; then
+        push_args+=('-c' "${container_entrypoint[@]}" "${container_command[@]}")
     fi
 
+    if echo "$image_name" | grep "registry.gitlab.com"; then
+        declare -x CF_DOCKER_PASSWORD=$CUSTOM_ENV_CI_REGISTRY_PASSWORD
+        push_args+=('--docker-username' "$CUSTOM_ENV_CI_REGISTRY_USER")
+    fi
+
+    # TODO - Figure out how to handle non-global memory definition
+    cf push "${push_args[@]}"
     cf map-route "$container_id" apps.internal --hostname "$container_id"
 }
 
