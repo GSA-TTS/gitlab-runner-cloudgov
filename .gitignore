@@ -1,4 +1,9 @@
 ﻿vars.yml
+
+#zip files
+*.zip
+#files folder
+/files
 # Local .terraform directories
 .terraform.lock.hcl
 **/.terraform/*
