@@ -10,3 +10,5 @@ runner_memory: 512M
 worker_memory: 512M
 service_account_instance: my-service-account
 object_store_instance: my-brokered-bucket
+docker_hub_user: my-docker-user
+docker_hub_token: my-docker-token

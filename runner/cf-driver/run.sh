@@ -7,6 +7,9 @@ source "${currentDir}/base.sh"
 
 printf "[cf-driver] Using SSH to connect to %s and run '%s' step\n" "$CONTAINER_ID" $2
 
+# Add line below script shebang to source the /etc/profile
+sed -i '2isource /etc/profile \n' $1
+
 if [ -n "${RUNNER_DEBUG-}" ] && [ "$RUNNER_DEBUG" == "true" ]; then
     # DANGER: There may be sensitive information in this output.
     # Generated job logs should be removed after this is used.
@@ -15,7 +18,7 @@ if [ -n "${RUNNER_DEBUG-}" ] && [ "$RUNNER_DEBUG" == "true" ]; then
     printf "\n=========\n[cf-driver] RUNNER_DEBUG: End command display\n"
 fi
 
-if ! cf ssh "$CONTAINER_ID" -c "source /etc/profile" < "${1}"; then
+if ! cf ssh "$CONTAINER_ID" < "${1}"; then
     # Exit using the variable, to make the build as failure in GitLab
     # CI.
     exit "$BUILD_FAILURE_EXIT_CODE"

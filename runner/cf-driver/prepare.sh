@@ -12,6 +12,7 @@ trap 'rm -f "$TMPVARFILE"' EXIT
 currentDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source "${currentDir}/base.sh" # Get variables from base.
 if [ -z "${WORKER_MEMORY-}" ]; then
+    # Some jobs may fail with less than 512M, e.g., `npm i`
     WORKER_MEMORY="512M"
 fi
 
@@ -27,16 +28,55 @@ create_temporary_varfile () {
     echo "[cf-driver] [DEBUG] Added $(wc -l "$TMPVARFILE") lines to $TMPVARFILE"
 }
 
+get_registry_credentials () {
+    image_name="$1"
+
+    # Note: the regex for non-docker image locations is not air-tight--
+    #       the definition for the format is a little loose, for one thing,
+    #       but this should work for most cases and can be revisited when
+    #       we're working with more a more robust set of language features
+    #       and can better parse the image name.
+
+    if echo "$image_name" | grep -q "registry.gitlab.com"; then
+        # Detect GitLab CR and use provided environment to authenticate
+        echo "$CUSTOM_ENV_CI_REGISTRY_USER" "$CUSTOM_ENV_CI_REGISTRY_PASSWORD"
+
+    elif echo "$image_name" | grep -q -P '^(?!registry-\d+.docker.io)[\w-]+(?:\.[\w-]+)+'; then
+        # Detect non-Docker registry that we aren't supporting auth for yet
+        return 0
+
+    elif [ -n "$DOCKER_HUB_TOKEN" ] && [ -n "$DOCKER_HUB_USER" ]; then
+        # Default to Docker Hub credentials when available
+        echo "$DOCKER_HUB_USER" "$DOCKER_HUB_TOKEN"
+    fi
+}
+
 start_container () {
     container_id="$1"
+    image_name="$CUSTOM_ENV_CI_JOB_IMAGE"
+
     if cf app --guid "$container_id" >/dev/null 2>/dev/null ; then
         echo '[cf-driver] Found old instance of runner executor, deleting'
         cf delete -f "$container_id"
     fi
 
-    cf push "$container_id" -f "${currentDir}/worker-manifest.yml" \
-       --docker-image "$CUSTOM_ENV_CI_JOB_IMAGE" -m "$WORKER_MEMORY" \
+    push_args=(
+       "$container_id"
+       -f "${currentDir}/worker-manifest.yml"
+       -m "$WORKER_MEMORY"
        --vars-file "$TMPVARFILE"
+       --docker-image "$image_name"
+    )
+
+    local docker_user docker_pass
+    read -r docker_user docker_pass <<< "$(get_registry_credentials "$image_name")"
+
+    if [ -n "$docker_user" ] && [ -n "$docker_pass" ]; then
+        push_args+=('--docker-username' "${docker_user}")
+        local -x CF_DOCKER_PASSWORD="${docker_pass}"
+    fi
+
+    cf push "${push_args[@]}"
 }
 
 start_service () {
@@ -50,23 +90,34 @@ start_service () {
        echo 'Usage: start_service CONTAINER_ID IMAGE_NAME CONTAINER_ENTRYPOINT CONTAINER_COMMAND'
        exit 1
     fi
-    if [ -n "$container_entrypoint" ] || [ -n "$container_command" ]; then
-        # TODO - cf push allows use of -c or --start-command but not a separate
-        # entrypoint. May need to add logic to gracefully convert entrypoint to
-        # a command.
-        echo '[cf-driver] container_entrypoint and container_command are not yet supported in services - Sorry!'
-        exit 1
-    fi
 
     if cf app --guid "$container_id" >/dev/null 2>/dev/null ; then
         echo '[cf-driver] Found old instance of runner service, deleting'
         cf delete -f "$container_id"
     fi
 
-    # TODO - Figure out how to handle command and non-global memory definition
-    cf push "$container_id" --docker-image "$image_name" -m "$WORKER_MEMORY" \
-        --no-route --health-check-type process
+    push_args=(
+        "$container_id"
+        '-m' "$WORKER_MEMORY"
+        '--docker-image' "$image_name"
+        '--health-check-type' 'process'
+        '--no-route'
+    )
 
+    if [ -n "$container_entrypoint" ] || [ -n "$container_command" ]; then
+        push_args+=('-c' "${container_entrypoint[@]}" "${container_command[@]}")
+    fi
+
+    local docker_user docker_pass
+    read -r docker_user docker_pass <<< "$(get_registry_credentials "$image_name")"
+
+    if [ -n "$docker_user" ] && [ -n "$docker_pass" ]; then
+        push_args+=('--docker-username' "${docker_user}")
+        local -x CF_DOCKER_PASSWORD="${docker_pass}"
+    fi
+
+    # TODO - Figure out how to handle non-global memory definition
+    cf push "${push_args[@]}"
     cf map-route "$container_id" apps.internal --hostname "$container_id"
 }
 
