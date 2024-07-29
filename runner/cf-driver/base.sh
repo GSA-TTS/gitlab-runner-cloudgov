@@ -13,5 +13,10 @@ if [ -z "$DEFAULT_JOB_IMAGE" ]; then
     echo "WARNING: DEFAULT_JOB_IMAGE not set! Falling back to ${DEFAULT_JOB_IMAGE}"
 fi
 
+# Complain if no Docker Hub credentials so we aren't bad neighbors
+if [ -z "$DOCKER_HUB_USER" ] || [ -z "$DOCKER_HUB_TOKEN" ]; then
+    echo "WARNING: Docker Hub credentials not set! Falling back to public access which could result in rate limiting."
+fi
+
 # Use a custom image if provided, else fallback to configured default
 CUSTOM_ENV_CI_JOB_IMAGE="${CUSTOM_ENV_CI_JOB_IMAGE:=$DEFAULT_JOB_IMAGE}"
