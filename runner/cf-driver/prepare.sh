@@ -31,11 +31,22 @@ create_temporary_varfile () {
 get_registry_credentials () {
     image_name="$1"
 
+    # Note: the regex for non-docker image locations is not air-tight--
+    #       the definition for the format is a little loose, for one thing,
+    #       but this should work for most cases and can be revisited when
+    #       we're working with more a more robust set of language features
+    #       and can better parse the image name.
+
     if echo "$image_name" | grep -q "registry.gitlab.com"; then
+        # Detect GitLab CR and use provided environment to authenticate
         echo "$CUSTOM_ENV_CI_REGISTRY_USER" "$CUSTOM_ENV_CI_REGISTRY_PASSWORD"
+
     elif echo "$image_name" | grep -q -P '^(?!registry-\d+.docker.io)[\w-]+(?:\.[\w-]+)+'; then
+        # Detect non-Docker registry that we aren't supporting auth for yet
         return 0
+
     elif [ -n "$DOCKER_HUB_TOKEN" ] && [ -n "$DOCKER_HUB_USER" ]; then
+        # Default to Docker Hub credentials when available
         echo "$DOCKER_HUB_USER" "$DOCKER_HUB_TOKEN"
     fi
 }
