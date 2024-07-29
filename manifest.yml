@@ -21,6 +21,8 @@ applications:
       # See gitlab-runner register --help for available vars
       CI_SERVER_TOKEN: ((ci_server_token))
       CI_SERVER_URL: ((ci_server_url))
+      DOCKER_HUB_USER: ((docker_hub_user))
+      DOCKER_HUB_TOKEN: ((docker_hub_token))
       RUNNER_EXECUTOR: ((runner_executor))
       RUNNER_NAME: ((runner_name))
       # Remaining runner configuration is generally static. In order to surface

@@ -28,16 +28,44 @@ create_temporary_varfile () {
     echo "[cf-driver] [DEBUG] Added $(wc -l "$TMPVARFILE") lines to $TMPVARFILE"
 }
 
+get_registry_credentials () {
+    image_name="$1"
+
+    if echo "$image_name" | grep -q "registry.gitlab.com"; then
+        echo "$CUSTOM_ENV_CI_REGISTRY_USER" "$CUSTOM_ENV_CI_REGISTRY_PASSWORD"
+    elif echo "$image_name" | grep -q -P '^(?!registry-\d+.docker.io)[\w-]+(?:\.[\w-]+)+'; then
+        return 0
+    elif [ -n "$DOCKER_HUB_TOKEN" ] && [ -n "$DOCKER_HUB_USER" ]; then
+        echo "$DOCKER_HUB_USER" "$DOCKER_HUB_TOKEN"
+    fi
+}
+
 start_container () {
     container_id="$1"
+    image_name="$CUSTOM_ENV_CI_JOB_IMAGE"
+
     if cf app --guid "$container_id" >/dev/null 2>/dev/null ; then
         echo '[cf-driver] Found old instance of runner executor, deleting'
         cf delete -f "$container_id"
     fi
 
-    cf push "$container_id" -f "${currentDir}/worker-manifest.yml" \
-       --docker-image "$CUSTOM_ENV_CI_JOB_IMAGE" -m "$WORKER_MEMORY" \
+    push_args=(
+       "$container_id"
+       -f "${currentDir}/worker-manifest.yml"
+       -m "$WORKER_MEMORY"
        --vars-file "$TMPVARFILE"
+       --docker-image "$image_name"
+    )
+
+    local docker_user docker_pass
+    read -r docker_user docker_pass <<< "$(get_registry_credentials "$image_name")"
+
+    if [ -n "$docker_user" ] && [ -n "$docker_pass" ]; then
+        push_args+=('--docker-username' "${docker_user}")
+        local -x CF_DOCKER_PASSWORD="${docker_pass}"
+    fi
+
+    cf push "${push_args[@]}"
 }
 
 start_service () {
@@ -69,9 +97,12 @@ start_service () {
         push_args+=('-c' "${container_entrypoint[@]}" "${container_command[@]}")
     fi
 
-    if echo "$image_name" | grep "registry.gitlab.com"; then
-        declare -x CF_DOCKER_PASSWORD=$CUSTOM_ENV_CI_REGISTRY_PASSWORD
-        push_args+=('--docker-username' "$CUSTOM_ENV_CI_REGISTRY_USER")
+    local docker_user docker_pass
+    read -r docker_user docker_pass <<< "$(get_registry_credentials "$image_name")"
+
+    if [ -n "$docker_user" ] && [ -n "$docker_pass" ]; then
+        push_args+=('--docker-username' "${docker_user}")
+        local -x CF_DOCKER_PASSWORD="${docker_pass}"
     fi
 
     # TODO - Figure out how to handle non-global memory definition
