@@ -118,6 +118,8 @@ start_service () {
 
     # TODO - Figure out how to handle non-global memory definition
     cf push "${push_args[@]}"
+
+    # Map route and export a FQDN. We assume apps.internal as the domain.
     cf map-route "$container_id" apps.internal --hostname "$container_id"
 }
 

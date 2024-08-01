@@ -30,6 +30,7 @@ applications:
       RUNNER_BUILDS_DIR: "/tmp/build"
       RUNNER_CACHE_DIR: "/tmp/cache"
       CUSTOM_CLEANUP_EXEC: "/home/vcap/app/cf-driver/cleanup.sh"
+      CUSTOM_CONFIG_EXEC: "/home/vcap/app/cf-driver/config.sh"
       CUSTOM_PREPARE_EXEC: "/home/vcap/app/cf-driver/prepare.sh"
       CUSTOM_RUN_EXEC: "/home/vcap/app/cf-driver/run.sh"
       REGISTER_NON_INTERACTIVE: true
