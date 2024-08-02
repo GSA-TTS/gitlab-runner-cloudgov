@@ -3,9 +3,9 @@
 set -euo pipefail
 
 # trap any error, and mark it as a system failure.
-# Also cleans up TMPVARFILE (set in create_temporary_varfile).
-trap 'rm -f "$TMPVARFILE"; exit $SYSTEM_FAILURE_EXIT_CODE' ERR
-trap 'rm -f "$TMPVARFILE"' EXIT
+# Also cleans up TMPMANIFEST(set in create_temporary_manifest).
+trap 'rm -f "$TMPMANIFEST"; exit $SYSTEM_FAILURE_EXIT_CODE' ERR
+trap 'rm -f "$TMPMANIFEST"' EXIT
 
 # Prepare a runner executor application in CloudFoundry
 
@@ -15,18 +15,6 @@ if [ -z "${WORKER_MEMORY-}" ]; then
     # Some jobs may fail with less than 512M, e.g., `npm i`
     WORKER_MEMORY="512M"
 fi
-
-create_temporary_varfile () {
-    # A less leak-prone way to share secrets into the worker which will not
-    # be able to parse VCAP_CONFIGURATION
-    TMPVARFILE=$(mktemp /tmp/gitlab-runner-worker-manifest.XXXXXXXXXX)
-
-    for v in RUNNER_NAME CACHE_TYPE CACHE_S3_SERVER_ADDRESS CACHE_S3_BUCKET_LOCATION CACHE_S3_BUCKET_NAME CACHE_S3_BUCKET_NAME CACHE_S3_ACCESS_KEY CACHE_S3_SECRET_KEY; do
-        echo "$v: \"$v\"" >> "$TMPVARFILE"
-    done
-
-    echo "[cf-driver] [DEBUG] Added $(wc -l "$TMPVARFILE") lines to $TMPVARFILE"
-}
 
 get_registry_credentials () {
     image_name="$1"
@@ -51,6 +39,28 @@ get_registry_credentials () {
     fi
 }
 
+create_temporary_manifest () {
+    # A less leak-prone way to share secrets into the worker which will not
+    # be able to parse VCAP_CONFIGURATION
+    TMPMANIFEST=$(mktemp /tmp/gitlab-runner-worker-manifest.XXXXXXXXXX)
+    chmod 600 "$TMPMANIFEST"
+    cat "${currentDir}/worker-manifest.yml" > "$TMPMANIFEST"
+
+    # Align additional environment variables with YAML at end of source manifest
+    local padding="      "
+
+    for v in RUNNER_NAME CACHE_TYPE CACHE_S3_SERVER_ADDRESS CACHE_S3_BUCKET_LOCATION CACHE_S3_BUCKET_NAME CACHE_S3_ACCESS_KEY CACHE_S3_SECRET_KEY; do
+        echo "${padding}${v}: \"${!v}\"" >> "$TMPMANIFEST"
+    done
+
+    # Add any CI_SERVICE_x variables populated by start_service()
+    for v in "${!CI_SERVICE_@}"; do
+        echo "${padding}${v}: \"${!v}\"" >> "$TMPMANIFEST"
+    done
+
+    echo "[cf-driver] [DEBUG] $(wc -l < "$TMPMANIFEST") lines in $TMPMANIFEST"
+}
+
 start_container () {
     container_id="$1"
     image_name="$CUSTOM_ENV_CI_JOB_IMAGE"
@@ -62,9 +72,8 @@ start_container () {
 
     push_args=(
        "$container_id"
-       -f "${currentDir}/worker-manifest.yml"
+       -f "$TMPMANIFEST"
        -m "$WORKER_MEMORY"
-       --vars-file "$TMPVARFILE"
        --docker-image "$image_name"
     )
 
@@ -121,23 +130,7 @@ start_service () {
 
     # Map route and export a FQDN. We assume apps.internal as the domain.
     cf map-route "$container_id" apps.internal --hostname "$container_id"
-}
-
-allow_access_to_service () {
-    source_app="$1"
-    destination_service_app="$2"
-    current_org=$(echo "$VCAP_APPLICATION" | jq --raw-output ".organization_name")
-    current_space=$(echo "$VCAP_APPLICATION" | jq --raw-output ".space_name")
-
-    # TODO NOTE: This is foolish and allows all TCP ports for now.
-    # This is limiting and sloppy.
-    protocol="tcp"
-    ports="20-10000"
-
-    cf add-network-policy "$source_app" \
-        --destination-app "$destination_service_app" \
-        -o "$current_org" -s "$current_space" \
-        --protocol "$protocol" --port "$ports"
+    export "CI_SERVICE_${alias_name}"="${container_id}.apps.internal"
 }
 
 start_services () {
@@ -159,6 +152,37 @@ start_services () {
         container_command=$(echo "$l" | jq -r '.command | select(.)')
 
         start_service "$alias_name" "$container_id" "$image_name" "$container_entrypoint" "$container_command"
+    done
+}
+
+allow_access_to_service () {
+    source_app="$1"
+    destination_service_app="$2"
+    current_org=$(echo "$VCAP_APPLICATION" | jq --raw-output ".organization_name")
+    current_space=$(echo "$VCAP_APPLICATION" | jq --raw-output ".space_name")
+
+    # TODO NOTE: This is foolish and allows all TCP ports for now.
+    # This is limiting and sloppy.
+    protocol="tcp"
+    ports="20-10000"
+
+    cf add-network-policy "$source_app" \
+        --destination-app "$destination_service_app" \
+        -o "$current_org" -s "$current_space" \
+        --protocol "$protocol" --port "$ports"
+}
+
+allow_access_to_services () {
+    container_id_base="$1"
+    ci_job_services="$2"
+
+    if [ -z "$ci_job_services" ]; then
+       echo "[cf-driver] No services defined in ci_job_services - Skipping service allowance"
+       return
+    fi
+
+    for l in $(echo "$ci_job_services" | jq -rc '.[]'); do
+        container_id="${container_id_base}-svc-${alias_name}"
         allow_access_to_service "$container_id_base" "$container_id"
     done
 }
@@ -190,8 +214,13 @@ install_dependencies () {
                                ln -s /usr/bin/gitlab-runner-helper /usr/bin/gitlab-runner'
 }
 
-echo "[cf-driver] Preparing environment variables for $CONTAINER_ID"
-create_temporary_varfile
+if [ -n "$CUSTOM_ENV_CI_JOB_SERVICES" ]; then
+    echo "[cf-driver] Starting services"
+    start_services "$CONTAINER_ID" "$CUSTOM_ENV_CI_JOB_SERVICES"
+fi
+
+echo "[cf-driver] Preparing manifest for $CONTAINER_ID"
+create_temporary_manifest
 
 echo "[cf-driver] Starting $CONTAINER_ID with image $CUSTOM_ENV_CI_JOB_IMAGE"
 start_container "$CONTAINER_ID"
@@ -199,9 +228,10 @@ start_container "$CONTAINER_ID"
 echo "[cf-driver] Installing dependencies into $CONTAINER_ID"
 install_dependencies "$CONTAINER_ID"
 
+# Allowing access last so services and the worker are all present
 if [ -n "$CUSTOM_ENV_CI_JOB_SERVICES" ]; then
-    echo "[cf-driver] Starting services"
-    start_services "$CONTAINER_ID" "$CUSTOM_ENV_CI_JOB_SERVICES"
+    echo "[cf-driver] Enabling access from worker to services"
+    allow_access_to_services "$CONTAINER_ID" "$CUSTOM_ENV_CI_JOB_SERVICES"
 fi
 
 echo "[cf-driver] $CONTAINER_ID preparation complete"
