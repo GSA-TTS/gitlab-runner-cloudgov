@@ -10,12 +10,13 @@ CONTAINER_ID="glrw-r$CUSTOM_ENV_CI_RUNNER_ID-p$CUSTOM_ENV_CI_PROJECT_ID-c$CUSTOM
 # Set a fallback if not set but complain
 if [ -z "$DEFAULT_JOB_IMAGE" ]; then
     DEFAULT_JOB_IMAGE="ubuntu:latest"
-    echo "WARNING: DEFAULT_JOB_IMAGE not set! Falling back to ${DEFAULT_JOB_IMAGE}"
+    echo "WARNING: DEFAULT_JOB_IMAGE not set! Falling back to ${DEFAULT_JOB_IMAGE}" 1>&2
+
 fi
 
 # Complain if no Docker Hub credentials so we aren't bad neighbors
 if [ -z "$DOCKER_HUB_USER" ] || [ -z "$DOCKER_HUB_TOKEN" ]; then
-    echo "WARNING: Docker Hub credentials not set! Falling back to public access which could result in rate limiting."
+    echo "WARNING: Docker Hub credentials not set! Falling back to public access which could result in rate limiting." 1>&2
 fi
 
 # Use a custom image if provided, else fallback to configured default

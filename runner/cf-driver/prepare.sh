@@ -3,9 +3,10 @@
 set -euo pipefail
 
 # trap any error, and mark it as a system failure.
-# Also cleans up TMPVARFILE (set in create_temporary_varfile).
-trap 'rm -f "$TMPVARFILE"; exit $SYSTEM_FAILURE_EXIT_CODE' ERR
-trap 'rm -f "$TMPVARFILE"' EXIT
+
+# Also cleans up TMPMANIFEST(set in create_temporary_manifest).
+trap 'rm -f "$TMPMANIFEST"; exit $SYSTEM_FAILURE_EXIT_CODE' ERR
+trap 'rm -f "$TMPMANIFEST"' EXIT
 
 # Prepare a runner executor application in CloudFoundry
 
@@ -51,6 +52,7 @@ get_registry_credentials () {
     fi
 }
 
+
 start_container () {
     container_id="$1"
     image_name="$CUSTOM_ENV_CI_JOB_IMAGE"
@@ -58,13 +60,13 @@ start_container () {
     if cf app --guid "$container_id" >/dev/null 2>/dev/null ; then
         echo '[cf-driver] Found old instance of runner executor, deleting'
         cf delete -f "$container_id"
+
     fi
 
     push_args=(
        "$container_id"
-       -f "${currentDir}/worker-manifest.yml"
+       -f "$TMPMANIFEST"
        -m "$WORKER_MEMORY"
-       --vars-file "$TMPVARFILE"
        --docker-image "$image_name"
     )
 
@@ -118,24 +120,10 @@ start_service () {
 
     # TODO - Figure out how to handle non-global memory definition
     cf push "${push_args[@]}"
+
+    # Map route and export a FQDN. We assume apps.internal as the domain.
     cf map-route "$container_id" apps.internal --hostname "$container_id"
-}
-
-allow_access_to_service () {
-    source_app="$1"
-    destination_service_app="$2"
-    current_org=$(echo "$VCAP_APPLICATION" | jq --raw-output ".organization_name")
-    current_space=$(echo "$VCAP_APPLICATION" | jq --raw-output ".space_name")
-
-    # TODO NOTE: This is foolish and allows all TCP ports for now.
-    # This is limiting and sloppy.
-    protocol="tcp"
-    ports="20-10000"
-
-    cf add-network-policy "$source_app" \
-        --destination-app "$destination_service_app" \
-        -o "$current_org" -s "$current_space" \
-        --protocol "$protocol" --port "$ports"
+    export "CI_SERVICE_${alias_name}"="${container_id}.apps.internal"
 }
 
 start_services () {
@@ -157,6 +145,38 @@ start_services () {
         container_command=$(echo "$l" | jq -r '.command | select(.)')
 
         start_service "$alias_name" "$container_id" "$image_name" "$container_entrypoint" "$container_command"
+    done
+}
+
+allow_access_to_service () {
+    source_app="$1"
+    destination_service_app="$2"
+    current_org=$(echo "$VCAP_APPLICATION" | jq --raw-output ".organization_name")
+    current_space=$(echo "$VCAP_APPLICATION" | jq --raw-output ".space_name")
+
+    # TODO NOTE: This is foolish and allows all TCP ports for now.
+    # This is limiting and sloppy.
+    protocol="tcp"
+    ports="20-10000"
+
+    cf add-network-policy "$source_app" \
+        --destination-app "$destination_service_app" \
+        -o "$current_org" -s "$current_space" \
+        --protocol "$protocol" --port "$ports"
+}
+
+
+allow_access_to_services () {
+    container_id_base="$1"
+    ci_job_services="$2"
+
+    if [ -z "$ci_job_services" ]; then
+       echo "[cf-driver] No services defined in ci_job_services - Skipping service allowance"
+       return
+    fi
+
+    for l in $(echo "$ci_job_services" | jq -rc '.[]'); do
+        container_id="${container_id_base}-svc-${alias_name}"
         allow_access_to_service "$container_id_base" "$container_id"
     done
 }
@@ -188,8 +208,13 @@ install_dependencies () {
                                ln -s /usr/bin/gitlab-runner-helper /usr/bin/gitlab-runner'
 }
 
-echo "[cf-driver] Preparing environment variables for $CONTAINER_ID"
-create_temporary_varfile
+if [ -n "$CUSTOM_ENV_CI_JOB_SERVICES" ]; then
+    echo "[cf-driver] Starting services"
+    start_services "$CONTAINER_ID" "$CUSTOM_ENV_CI_JOB_SERVICES"
+fi
+
+echo "[cf-driver] Preparing manifest for $CONTAINER_ID"
+create_temporary_manifest
 
 echo "[cf-driver] Starting $CONTAINER_ID with image $CUSTOM_ENV_CI_JOB_IMAGE"
 start_container "$CONTAINER_ID"
@@ -197,9 +222,10 @@ start_container "$CONTAINER_ID"
 echo "[cf-driver] Installing dependencies into $CONTAINER_ID"
 install_dependencies "$CONTAINER_ID"
 
+# Allowing access last so services and the worker are all present
 if [ -n "$CUSTOM_ENV_CI_JOB_SERVICES" ]; then
-    echo "[cf-driver] Starting services"
-    start_services "$CONTAINER_ID" "$CUSTOM_ENV_CI_JOB_SERVICES"
+    echo "[cf-driver] Enabling access from worker to services"
+    allow_access_to_services "$CONTAINER_ID" "$CUSTOM_ENV_CI_JOB_SERVICES"
 fi
 
 echo "[cf-driver] $CONTAINER_ID preparation complete"
