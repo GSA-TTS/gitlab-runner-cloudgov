@@ -11,6 +11,7 @@ CONTAINER_ID="glrw-r$CUSTOM_ENV_CI_RUNNER_ID-p$CUSTOM_ENV_CI_PROJECT_ID-c$CUSTOM
 if [ -z "$DEFAULT_JOB_IMAGE" ]; then
     DEFAULT_JOB_IMAGE="ubuntu:latest"
     echo "WARNING: DEFAULT_JOB_IMAGE not set! Falling back to ${DEFAULT_JOB_IMAGE}" 1>&2
+
 fi
 
 # Complain if no Docker Hub credentials so we aren't bad neighbors
