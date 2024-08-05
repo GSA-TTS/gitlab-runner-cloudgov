@@ -2,10 +2,45 @@
 Code for running GitLab CI/CD jobs on cloud.gov or another CloudFoundry based
 PaaS.
 
+* [Differences from other GitLab Runner executor types](#differences-from-other-gitlab-runner-executor-types)
 * [How it works](#how-it-works)
 * [Deploying](#deploying)
 * [Troubleshooting](#troubleshooting)
 * [Design Decisions](#design-decisions)
+
+## Differences from other GitLab Runner executor types
+
+The goal of this runner executor is to support most CI/CD use cases without
+needing to modify your `.gitlab-ci.yml`. Please note the current limitiations
+and differences in comparison to the Docker executor:
+
+* __No shared filesystem or direct exec capability__ - Some
+  executors can share filesystems between containers and directly execute processes
+  in containers. CloudFoundry does not support sharing filesystems and only supports
+  use of SSH to execute into a running container. This runner attempts to transparently
+  work around these limitations where possible. Your CI job may require significant
+  modification if it relies on either of these features.
+* __Use CI_SERVICE_alias for service DNS names__ - Ephemeral networks like the Docker networks
+  used for the Docker executor are not available in CloudFoundry. This means
+  that each service you create lives in a common internal DNS namespace with
+  other services in the same CloudFoundry space. The cloud.gov runner populates
+  a `CI_SERCVCE_<alias>` variable for each service defined in a job. Here is an
+  example snippet of GitLab CI Yaml showing the definition of a service and how
+  the job steps can then connect to that service:
+  ~~~yaml
+  # Start a HTTP "echo" service and then send a request to it
+  echo-test-job:
+    stage: test
+    image: ubuntu:jammy
+  services:
+  - name: http-https-echo:latest
+    # Note "echo" is the alias name, so the CI_SERVICE_alias variable key name
+    # for this service is CI_SERVICE_echo
+    alias: echo
+  script:
+  # Using the CI_SERVICE_alias to provide the FQDN of the service
+  - curl http://${CI_SERVICE_echo}:8080
+  ~~~
 
 ## How it works
 
