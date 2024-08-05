@@ -15,16 +15,15 @@ applications:
       - ((service_account_instance))
       - ((object_store_instance))
     env:
-      # These are used by .profile
       DEFAULT_JOB_IMAGE: ((default_job_image))
-      # Remaining vars are used directly by gitlab-runner register
-      # See gitlab-runner register --help for available vars
+      # See gitlab-runner register --help for available vars.
       CI_SERVER_TOKEN: ((ci_server_token))
       CI_SERVER_URL: ((ci_server_url))
       DOCKER_HUB_USER: ((docker_hub_user))
       DOCKER_HUB_TOKEN: ((docker_hub_token))
       RUNNER_EXECUTOR: ((runner_executor))
       RUNNER_NAME: ((runner_name))
+      OBJECT_STORE_INSTANCE: ((object_store_instance))
       # Remaining runner configuration is generally static. In order to surface
       # the entire configuration input, we are using envvars for all of it.
       RUNNER_BUILDS_DIR: "/tmp/build"
@@ -39,4 +38,4 @@ applications:
       # https://docs.gitlab.com/runner/faq/#enable-debug-logging-mode
       # and ensuring job logs are removed to avoid leaking secrets.
       RUNNER_DEBUG: "false"
-      OBJECT_STORE_INSTANCE: ((object_store_instance))
+
