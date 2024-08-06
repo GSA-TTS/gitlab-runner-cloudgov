@@ -8,10 +8,11 @@ module "object_store_instance" {
   cf_org_name      = var.cf_org_name
   cf_space_name    = var.cf_space_name
   name             = var.object_store_instance
+  s3_plan_name     = "basic-sandbox"
 }
 
 resource "cloudfoundry_app" "gitlab-runner" {
-    name = var.runner_name
+    name = var.app_name
     space = data.cloudfoundry_space.space.id
     path = "${path.module}/files/src.zip"
     buildpacks = ["https://github.com/cloudfoundry/apt-buildpack", "binary_buildpack"]
@@ -44,6 +45,8 @@ resource "cloudfoundry_app" "gitlab-runner" {
       # and ensuring job logs are removed to avoid leaking secrets.
       RUNNER_DEBUG = "false"
       OBJECT_STORE_INSTANCE = var.object_store_instance
+      DOCKER_HUB_USER = var.docker_hub_user
+      DOCKER_HUB_TOKEN = var.docker_hub_token
     }
     service_binding {
         service_instance = data.cloudfoundry_service_instance.runner_service_account.id     
