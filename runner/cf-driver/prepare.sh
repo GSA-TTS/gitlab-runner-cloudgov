@@ -52,6 +52,27 @@ get_registry_credentials () {
     fi
 }
 
+create_temporary_manifest () {
+    # A less leak-prone way to share secrets into the worker which will not
+    # be able to parse VCAP_CONFIGURATION
+    TMPMANIFEST=$(mktemp /tmp/gitlab-runner-worker-manifest.XXXXXXXXXX)
+    chmod 600 "$TMPMANIFEST"
+    cat "${currentDir}/worker-manifest.yml" > "$TMPMANIFEST"
+
+    # Align additional environment variables with YAML at end of source manifest
+    local padding="      "
+
+    for v in RUNNER_NAME CACHE_TYPE CACHE_S3_SERVER_ADDRESS CACHE_S3_BUCKET_LOCATION CACHE_S3_BUCKET_NAME CACHE_S3_ACCESS_KEY CACHE_S3_SECRET_KEY; do
+        echo "${padding}${v}: \"${!v}\"" >> "$TMPMANIFEST"
+    done
+
+    # Add any CI_SERVICE_x variables populated by start_service()
+    for v in "${!CI_SERVICE_@}"; do
+        echo "${padding}${v}: \"${!v}\"" >> "$TMPMANIFEST"
+    done
+
+    echo "[cf-driver] [DEBUG] $(wc -l < "$TMPMANIFEST") lines in $TMPMANIFEST"
+}
 
 start_container () {
     container_id="$1"

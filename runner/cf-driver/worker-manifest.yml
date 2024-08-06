@@ -9,3 +9,4 @@ applications:
       RUNNER_BUILDS_DIR: "/tmp/build"
       RUNNER_CACHE_DIR: "/tmp/cache"
       CACHE_SHARED: "true"
+# Additional items may be added below this point in prepare.sh
