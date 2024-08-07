@@ -5,10 +5,10 @@
 currentDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source "${currentDir}/base.sh"
 
-printf "[cf-driver] Using SSH to connect to %s and run '%s' step\n" "$CONTAINER_ID" $2
+printf "[cf-driver] Using SSH to connect to %s and run '%s' step\n" "$CONTAINER_ID" "$2"
 
 # Add line below script shebang to source the /etc/profile
-sed -i '2isource /etc/profile \n' $1
+sed -i '2isource /etc/profile \n' "$1"
 
 if [ -n "${RUNNER_DEBUG-}" ] && [ "$RUNNER_DEBUG" == "true" ]; then
     # DANGER: There may be sensitive information in this output.
@@ -24,4 +24,4 @@ if ! cf ssh "$CONTAINER_ID" < "${1}"; then
     exit "$BUILD_FAILURE_EXIT_CODE"
 fi
 
-printf "[cf-driver] Completed SSH session with %s to run '%s' step\n" "$CONTAINER_ID" $2
+printf "[cf-driver] Completed SSH session with %s to run '%s' step\n" "$CONTAINER_ID" "$2"
