@@ -3,7 +3,6 @@
 set -euo pipefail
 
 # trap any error, and mark it as a system failure.
-
 # Also cleans up TMPMANIFEST(set in create_temporary_manifest).
 trap 'rm -f "$TMPMANIFEST"; exit $SYSTEM_FAILURE_EXIT_CODE' ERR
 trap 'rm -f "$TMPMANIFEST"' EXIT
@@ -16,18 +15,6 @@ if [ -z "${WORKER_MEMORY-}" ]; then
     # Some jobs may fail with less than 512M, e.g., `npm i`
     WORKER_MEMORY="512M"
 fi
-
-create_temporary_varfile () {
-    # A less leak-prone way to share secrets into the worker which will not
-    # be able to parse VCAP_CONFIGURATION
-    TMPVARFILE=$(mktemp /tmp/gitlab-runner-worker-manifest.XXXXXXXXXX)
-
-    for v in RUNNER_NAME CACHE_TYPE CACHE_S3_SERVER_ADDRESS CACHE_S3_BUCKET_LOCATION CACHE_S3_BUCKET_NAME CACHE_S3_BUCKET_NAME CACHE_S3_ACCESS_KEY CACHE_S3_SECRET_KEY; do
-        echo "$v: \"$v\"" >> "$TMPVARFILE"
-    done
-
-    echo "[cf-driver] [DEBUG] Added $(wc -l "$TMPVARFILE") lines to $TMPVARFILE"
-}
 
 get_registry_credentials () {
     image_name="$1"
@@ -81,7 +68,6 @@ start_container () {
     if cf app --guid "$container_id" >/dev/null 2>/dev/null ; then
         echo '[cf-driver] Found old instance of runner executor, deleting'
         cf delete -f "$container_id"
-
     fi
 
     push_args=(
@@ -185,7 +171,6 @@ allow_access_to_service () {
         -o "$current_org" -s "$current_space" \
         --protocol "$protocol" --port "$ports"
 }
-
 
 allow_access_to_services () {
     container_id_base="$1"
