@@ -12,7 +12,7 @@ module "object_store_instance" {
 }
 
 resource "cloudfoundry_app" "gitlab-runner" {
-    name = var.app_name
+    name = var.runner_app_name
     space = data.cloudfoundry_space.space.id
     path = "${path.module}/files/src.zip"
     buildpacks = ["https://github.com/cloudfoundry/apt-buildpack", "binary_buildpack"]

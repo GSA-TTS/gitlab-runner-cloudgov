@@ -80,7 +80,7 @@ variable "runner_service_bindings" {
   default     = []
 }
 
-variable "app_name"{
+variable "runner_app_name"{
   type = string
   default = "gitlab-runner"
   description = "Cloud Foundry App Name"
