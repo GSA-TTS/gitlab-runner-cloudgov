@@ -3,9 +3,10 @@
 set -euo pipefail
 
 # trap any error, and mark it as a system failure.
-# Also cleans up TMPMANIFEST(set in create_temporary_manifest).
-trap 'rm -f "$TMPMANIFEST"; exit $SYSTEM_FAILURE_EXIT_CODE' ERR
-trap 'rm -f "$TMPMANIFEST"' EXIT
+# Also cleans up TMPFILES created in create_temporary_manifest and start_service
+trap 'rm -f "${TMPFILES[@]}"; exit $SYSTEM_FAILURE_EXIT_CODE' ERR
+trap 'rm -f "${TMPFILES[@]}"' EXIT
+TMPFILES=()
 
 # Prepare a runner executor application in CloudFoundry
 
@@ -43,6 +44,7 @@ create_temporary_manifest () {
     # A less leak-prone way to share secrets into the worker which will not
     # be able to parse VCAP_CONFIGURATION
     TMPMANIFEST=$(mktemp /tmp/gitlab-runner-worker-manifest.XXXXXXXXXX)
+    TMPFILES+=("$TMPMANIFEST")
     chmod 600 "$TMPMANIFEST"
     cat "${currentDir}/worker-manifest.yml" > "$TMPMANIFEST"
 
@@ -94,10 +96,14 @@ start_service () {
     image_name="$3"
     container_entrypoint="$4"
     container_command="$5"
+    container_vars="$6"
+    job_vars="$7"
 
     if [ -z "$container_id" ] || [ -z "$image_name" ]; then
-       echo 'Usage: start_service CONTAINER_ID IMAGE_NAME CONTAINER_ENTRYPOINT CONTAINER_COMMAND'
-       exit 1
+        echo 'Usage: start_service CONTAINER_ID IMAGE_NAME \
+            CONTAINER_ENTRYPOINT CONTAINER_COMMAND \
+            CONTAINER_VARS JOB_VARS'
+        exit 1
     fi
 
     if cf app --guid "$container_id" >/dev/null 2>/dev/null ; then
@@ -112,6 +118,31 @@ start_service () {
         '--health-check-type' 'process'
         '--no-route'
     )
+
+    if [ -n "$container_vars" ]; then
+        SVCMANIFEST=$(mktemp /tmp/gitlab-runner-svc-manifest.XXXXXXXXXX)
+        TMPFILES+=("$SVCMANIFEST")
+        chmod 600 "$SVCMANIFEST"
+
+        {
+            echo "---"
+            echo "applications:"
+            echo "- name: $container_id"
+            echo "  env:"
+        } >>"$SVCMANIFEST"
+
+        declare -A vars=()
+        while read -r var; do
+            read -r key val <<<"$var"
+            vars[$key]="$val"
+        done <<<"$job_vars"$'\n'"$container_vars"
+
+        for key in "${!vars[@]}"; do
+            echo "    $key: ${vars[$key]}" >>"$SVCMANIFEST"
+        done
+
+        push_args+=('-f' "$SVCMANIFEST")
+    fi
 
     if [ -n "$container_entrypoint" ] || [ -n "$container_command" ]; then
         push_args+=('-c' "${container_entrypoint[@]}" "${container_command[@]}")
@@ -142,16 +173,26 @@ start_services () {
        return
     fi
 
-    for l in $(echo "$ci_job_services" | jq -rc '.[]'); do
+    services=$(jq -rc '.services[]' "$JOB_RESPONSE_FILE")
+    job_vars=$(jq -r \
+        '.variables[] | select((.key | test("^(?!(CI|GITLAB)_)"))) | [.key, .value] | @sh' \
+        "$JOB_RESPONSE_FILE")
+
+    for l in $services; do
         # Using jq -er to fail of alias or name are not found
         alias_name=$(echo "$l" | jq -er '.alias | select(.)')
-        container_id="${container_id_base}-svc-${alias_name}"
         image_name=$(echo "$l" | jq -er '.name | select(.)')
-        # Using jq -r to allow entrypoint and command to be empty
+        container_id="${container_id_base}-svc-${alias_name}"
+
+        # Using jq -r to allow entrypoint, command, and variables to be empty
         container_entrypoint=$(echo "$l" | jq -r '.entrypoint | select(.)')
         container_command=$(echo "$l" | jq -r '.command | select(.)')
 
-        start_service "$alias_name" "$container_id" "$image_name" "$container_entrypoint" "$container_command"
+        # start_service will further process the variables, so just compact it
+        container_vars=$(echo "$l" | jq -r '.variables[] | [.key, .value] | @sh')
+
+        start_service "$alias_name" "$container_id" "$image_name" \
+            "$container_entrypoint" "$container_command" "$container_vars" "$job_vars"
     done
 }
 
