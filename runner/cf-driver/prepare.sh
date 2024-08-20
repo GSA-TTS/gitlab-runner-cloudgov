@@ -95,15 +95,15 @@ start_service () {
     alias_name="$1"
     container_id="$2"
     image_name="$3"
-    container_entrypoint="$4"
-    container_command="$5"
-    container_vars="$6"
+    service_entrypoint="$4"
+    service_command="$5"
+    service_vars="$6"
     job_vars="$7"
 
     if [ -z "$container_id" ] || [ -z "$image_name" ]; then
         echo 'Usage: start_service CONTAINER_ID IMAGE_NAME \
-            CONTAINER_ENTRYPOINT CONTAINER_COMMAND \
-            CONTAINER_VARS JOB_VARS'
+            SERVICE_ENTRYPOINT SERVICE_COMMAND \
+            SERVICE_VARS JOB_VARS'
         exit 1
     fi
 
@@ -120,7 +120,7 @@ start_service () {
         '--no-route'
     )
 
-    if [ -n "$container_vars" ]; then
+    if [ -n "$service_vars" ]; then
         SVCMANIFEST=$(mktemp /tmp/gitlab-runner-svc-manifest.XXXXXXXXXX)
         TMPFILES+=("$SVCMANIFEST")
         chmod 600 "$SVCMANIFEST"
@@ -136,7 +136,7 @@ start_service () {
         while read -r var; do
             read -r key val <<<"$var"
             vars[$key]="$val"
-        done <<<"$job_vars"$'\n'"$container_vars"
+        done <<<"$job_vars"$'\n'"$service_vars"
 
         for key in "${!vars[@]}"; do
             echo "    $key: ${vars[$key]}" >>"$SVCMANIFEST"
@@ -145,8 +145,8 @@ start_service () {
         push_args+=('-f' "$SVCMANIFEST")
     fi
 
-    if [ -n "$container_entrypoint" ] || [ -n "$container_command" ]; then
-        push_args+=('-c' "${container_entrypoint[@]}" "${container_command[@]}")
+    if [ -n "$service_entrypoint" ] || [ -n "$service_command" ]; then
+        push_args+=('-c' "${service_entrypoint[@]}" "${service_command[@]}")
     fi
 
     local docker_user docker_pass
@@ -188,14 +188,14 @@ start_services () {
         container_id="${container_id_base}-svc-${alias_name}"
 
         # Using jq -r to allow entrypoint, command, and variables to be empty
-        container_entrypoint=$(echo "$l" | jq -r '.entrypoint | select(.)')
-        container_command=$(echo "$l" | jq -r '.command | select(.)')
+        service_entrypoint=$(echo "$l" | jq -r '.entrypoint | select(.)')
+        service_command=$(echo "$l" | jq -r '.command | select(.)')
 
         # start_service will further process the variables, so just compact it
-        container_vars=$(echo "$l" | jq -r '.variables[] | [.key, .value] | @sh')
+        service_vars=$(echo "$l" | jq -r '.variables[] | [.key, .value] | @sh')
 
         start_service "$alias_name" "$container_id" "$image_name" \
-            "$container_entrypoint" "$container_command" "$container_vars" "$job_vars"
+            "$service_entrypoint" "$service_command" "$service_vars" "$job_vars"
     done
 }
 
