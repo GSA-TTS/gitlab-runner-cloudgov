@@ -14,7 +14,7 @@ currentDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source "${currentDir}/base.sh" # Get variables from base.
 if [ -z "${WORKER_MEMORY-}" ]; then
     # Some jobs may fail with less than 512M, e.g., `npm i`
-    WORKER_MEMORY="512M"
+    WORKER_MEMORY="768M"
 fi
 
 get_registry_credentials () {
@@ -73,10 +73,11 @@ start_container () {
     fi
 
     push_args=(
-       "$container_id"
-       -f "$TMPMANIFEST"
-       -m "$WORKER_MEMORY"
-       --docker-image "$image_name"
+        "$container_id"
+        -f "$TMPMANIFEST"
+        -m "$WORKER_MEMORY"
+        -k "2GB"
+        --docker-image "$image_name"
     )
 
     local docker_user docker_pass
