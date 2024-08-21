@@ -52,13 +52,13 @@ variable "runner_name" {
 variable "runner_memory" {
   type = number
   default = 512
-  description = "Cloud Foundry Organization"
+  description = "Manager Runner Memory"
 }
 
 variable "worker_memory" {
   type = string
   default = ""
-  description = "Cloud Foundry Organization"
+  description = "Worker Memory"
 }
 
 variable "service_account_instance" {
@@ -70,12 +70,30 @@ variable "service_account_instance" {
 variable "object_store_instance" {
   type = string
   default = ""
-  description = "Cloud Foundry Organization"
+  description = "S3 Bucket for Gitlab Runner"
 }
 
 #Todo: dynamic service bindings
 variable "runner_service_bindings" {
   type        = list(object({ service_instance = string }))
-  description = "A list of service instances that should be bound to the thanos app"
+  description = "A list of service instances that should be bound to the gitlab runner app"
   default     = []
+}
+
+variable "runner_app_name"{
+  type = string
+  default = "gitlab-runner"
+  description = "Cloud Foundry App Name"
+}
+
+variable "docker_hub_user"{
+  type = string
+  default = ""
+  description = "Docker Hub User"
+}
+
+variable "docker_hub_token"{
+  type = string
+  default = ""
+  description = "Docker Hub Token"
 }
