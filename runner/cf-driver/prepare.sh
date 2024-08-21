@@ -120,7 +120,9 @@ start_service () {
         '--no-route'
     )
 
-    if [ -n "$service_vars" ]; then
+    if [ -n "$job_vars" ] || [ -n "$service_vars" ]; then
+        declare -A vars=()
+
         SVCMANIFEST=$(mktemp /tmp/gitlab-runner-svc-manifest.XXXXXXXXXX)
         TMPFILES+=("$SVCMANIFEST")
         chmod 600 "$SVCMANIFEST"
@@ -131,13 +133,23 @@ start_service () {
             echo "- name: $container_id"
             echo "  env:"
         } >>"$SVCMANIFEST"
+    fi
 
-        declare -A vars=()
+    if [ -n "$job_vars" ]; then
         while read -r var; do
             read -r key val <<<"$var"
             vars[$key]="$val"
-        done <<<"$job_vars"$'\n'"$service_vars"
+        done <<<"$job_vars"
+    fi
 
+    if [ -n "$service_vars" ]; then
+        while read -r var; do
+            read -r key val <<<"$var"
+            vars[$key]="$val"
+        done <<<"$service_vars"
+    fi
+
+    if [ "${#vars[@]}" -gt 0 ]; then
         for key in "${!vars[@]}"; do
             echo "    $key: ${vars[$key]}" >>"$SVCMANIFEST"
         done
@@ -178,7 +190,7 @@ start_services () {
     # See: https://docs.gitlab.com/runner/executors/custom.html#job-response
     services=$(jq -rc '.services[]' "$JOB_RESPONSE_FILE")
     job_vars=$(jq -r \
-        '.variables[] | select((.key | test("^(?!(CI|GITLAB)_)"))) | [.key, .value] | @sh' \
+        '.variables[]? | select((.key | test("^(?!(CI|GITLAB)_)"))) | [.key, .value] | @sh' \
         "$JOB_RESPONSE_FILE")
 
     for l in $services; do
@@ -192,7 +204,7 @@ start_services () {
         service_command=$(echo "$l" | jq -r '.command | select(.)')
 
         # start_service will further process the variables, so just compact it
-        service_vars=$(echo "$l" | jq -r '.variables[] | [.key, .value] | @sh')
+        service_vars=$(echo "$l" | jq -r '.variables[]? | [.key, .value] | @sh')
 
         start_service "$alias_name" "$container_id" "$image_name" \
             "$service_entrypoint" "$service_command" "$service_vars" "$job_vars"
