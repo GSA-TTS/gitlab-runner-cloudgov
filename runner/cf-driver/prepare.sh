@@ -76,7 +76,7 @@ start_container () {
         "$container_id"
         -f "$TMPMANIFEST"
         -m "$WORKER_MEMORY"
-        -k "2GB"
+        -k "$WORKER_DISK_SIZE"
         --docker-image "$image_name"
     )
 
