@@ -52,13 +52,13 @@ variable "runner_name" {
 variable "runner_memory" {
   type        = number
   default     = 512
-  description = "Manager Runner Memory"
+  description = "Manager Runner Memory in MB"
 }
 
 variable "worker_memory" {
   type        = string
-  default     = "768M"
-  description = "Worker Memory"
+  default     = "512M"
+  description = "Worker Memory - Unit required (e.g. 512M or 2G)"
 }
 
 variable "worker_disk_size" {
