@@ -8,6 +8,7 @@ runner_executor: custom
 runner_name: my-runner-name
 runner_memory: 512M
 worker_memory: 512M
+worker_disk_size: 1G
 service_account_instance: my-service-account
 object_store_instance: my-brokered-bucket
 docker_hub_user: my-docker-user

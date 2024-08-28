@@ -24,6 +24,8 @@ applications:
       RUNNER_EXECUTOR: ((runner_executor))
       RUNNER_NAME: ((runner_name))
       OBJECT_STORE_INSTANCE: ((object_store_instance))
+      WORKER_MEMORY: ((worker_memory))
+      WORKER_DISK_SIZE: ((worker_disk_size))
       # Remaining runner configuration is generally static. In order to surface
       # the entire configuration input, we are using envvars for all of it.
       RUNNER_BUILDS_DIR: "/tmp/build"
