@@ -1,0 +1,3 @@
+[submodule "doc/compliance"]
+	path = doc/compliance
+	url = git@github.com:GSA-TTS/devtools-compliance.git
