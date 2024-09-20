@@ -16,4 +16,7 @@ if [ ! -f "$oscal_location/trestle-config.yaml" ]; then
   git submodule update
 fi
 
+current_branch=`git rev-parse --abbrev-ref HEAD`
+(cd "$oscal_location" && (git switch "$current_branch" 2>/dev/null || git switch -c "$current_branch"))
+
 docker run -it --rm -v "$oscal_location:/app/docs:rw" ghcr.io/gsa-tts/trestle:$trestle_tag "$command" "$@"
