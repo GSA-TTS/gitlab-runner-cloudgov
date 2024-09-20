@@ -10,6 +10,10 @@ fi
 
 oscal_location="$(dirname "$(realpath "$0")")/../doc/compliance"
 
-echo "$oscal_location"
+if [ ! -f "$oscal_location/trestle-config.yaml" ]; then
+  echo "Compliance submodule is not cloned yet!"
+  git submodule init
+  git submodule update
+fi
 
 docker run -it --rm -v "$oscal_location:/app/docs:rw" ghcr.io/gsa-tts/trestle:$trestle_tag "$command" "$@"
