@@ -107,7 +107,7 @@ in [Runner Execution Flow](https://gitlab.com/gitlab-org/gitlab-runner/-/tree/ma
     cp vars.yml-template vars.yml
     ```
 
-5. Edit `vars.yml` and modify the values there as needed. In particular, you must 
+5. Edit `vars.yml` and modify the values there as needed. In particular, you must
     * supply the `ci_server_token` provided when you [configure the runner at the target GitLab URL](https://docs.gitlab.com/ee/tutorials/create_register_first_runner/#create-and-register-a-project-runner)
     * supply the `service_account_instance` name that you used when you created the service instance in step 3
     * supply the `object_store_instance` name that you used when you created the brokered S3 bucket in step 4
@@ -167,3 +167,34 @@ Recent versions of `gitlab-runner` expose almost all initial configuration
 variables for the `register` subcommand as environment variables. This allows
 us to do almost all configuration in `manifest.yml` and skip modifying
 command line options in `runner/.profile` or having a .toml add on.
+
+## Compliance Documentation
+
+Security controls and other compliance documents for the DevTools SaaS system live at https://github.com/GSA-TTS/devtools-compliance and also as a git submodule under `/doc/compliance`
+
+From this repo, run `bin/trestle` to start a trestle CLI with helper scripts for maintaining and updating the documents.
+
+See the [docker-trestle README](https://github.com/gsa-tts/docker-trestle) for help with the individual scripts.
+
+### Git Submodule Commands
+
+See git's [submodule documentation](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
+for more information on tracking changes to the compliance files.
+
+#### Cloning this project
+
+`git clone --recurse-submodules <<REPO_ADDRESS>>`
+
+#### Pull changes including OSCAL changes
+
+`git pull --recurse-submodules`
+
+#### Push changes including OSCAL changes
+
+`git push --recurse-submodules=check` _then_ `git push --recurse-submodules=on-demand`
+
+#### Helpful config settings:
+
+* `git config diff.submodule log`
+* `git config status.submodulesummary 1`
+* `git config push.recurseSubmodules check`
