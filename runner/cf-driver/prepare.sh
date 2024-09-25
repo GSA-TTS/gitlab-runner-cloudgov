@@ -80,6 +80,15 @@ start_container () {
         --docker-image "$image_name"
     )
 
+    # Entrypoint & command aren't available w/o loading job res file
+    img_data=$(jq -rc '.image' "$JOB_RESPONSE_FILE")
+    container_entrypoint=$(echo "$img_data" | jq -r '.entrypoint | select(.)')
+    container_command=$(echo "$img_data" | jq -r '.command | select(.)')
+
+    if [ -n "$container_entrypoint" ] || [ -n "$container_command" ]; then
+        push_args+=('-c' "${container_entrypoint[@]}" "${container_command[@]}")
+    fi
+
     local docker_user docker_pass
     read -r docker_user docker_pass <<< "$(get_registry_credentials "$image_name")"
 
