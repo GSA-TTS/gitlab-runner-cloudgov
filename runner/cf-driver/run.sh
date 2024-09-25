@@ -8,7 +8,8 @@ source "${currentDir}/base.sh"
 printf "[cf-driver] Using SSH to connect to %s and run '%s' step\n" "$CONTAINER_ID" "$2"
 
 # Add line below script shebang to source the /etc/profile
-sed -i '2isource /etc/profile \n' "$1"
+sed -i '2isource /etc/environment\n' "$1"
+sed -i '2isource /etc/profile\n' "$1"
 
 if [ -n "${RUNNER_DEBUG-}" ] && [ "$RUNNER_DEBUG" == "true" ]; then
     # DANGER: There may be sensitive information in this output.
