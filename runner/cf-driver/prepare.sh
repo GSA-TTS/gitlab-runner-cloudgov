@@ -273,10 +273,15 @@ install_dependencies () {
     # Symlinks gitlab-runner to avoid having to alter more of the executor.
     # TODO: Pin the version and support more arches than X86_64
     echo "[cf-driver] Installing gitlab-runner-helper"
-    cf ssh "$container_id" -c 'curl -L --output /usr/bin/gitlab-runner-helper \
-                               "https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/binaries/gitlab-runner-helper/gitlab-runner-helper.x86_64"; \
-                               chmod +x /usr/bin/gitlab-runner-helper; \
-                               ln -s /usr/bin/gitlab-runner-helper /usr/bin/gitlab-runner'
+
+    helper_dir='bin'
+    helper_path="$helper_dir/gitlab-runner-helper" # PATH'ed in run.sh
+
+    cf ssh "$container_id" -c "mkdir -p ${helper_dir}; \
+                               curl -L --output ${helper_path} \
+                               'https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/binaries/gitlab-runner-helper/gitlab-runner-helper.x86_64'; \
+                               chmod +x ${helper_path}; \
+                               ln -s 'gitlab-runner-helper' ${helper_dir}/gitlab-runner"
 }
 
 if [ -n "$CUSTOM_ENV_CI_JOB_SERVICES" ]; then
