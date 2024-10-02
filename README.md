@@ -198,3 +198,4 @@ for more information on tracking changes to the compliance files.
 * `git config diff.submodule log`
 * `git config status.submodulesummary 1`
 * `git config push.recurseSubmodules check`
+* `git config submodule.recurse true`
