@@ -9,11 +9,12 @@ printf "[cf-driver] Using SSH to connect to %s and run '%s' step\n" "$CONTAINER_
 
 # Add line below script's shebang to source
 # /etc/profile, etc/environment & the $HOME/bin
-sed -i '' '1a\
+sed -e '1a\
 source /etc/profile
 source /etc/environment
 PATH="$HOME/bin:$PATH"
-' "$1"
+' "$1" >"$1.tmp"
+mv -- "$1.tmp" "$1"
 
 if [ -n "${RUNNER_DEBUG-}" ] && [ "$RUNNER_DEBUG" == "true" ]; then
     # DANGER: There may be sensitive information in this output.
