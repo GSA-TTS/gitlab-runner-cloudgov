@@ -7,10 +7,14 @@ source "${currentDir}/base.sh"
 
 printf "[cf-driver] Using SSH to connect to %s and run '%s' step\n" "$CONTAINER_ID" "$2"
 
-# Add line below script shebang to source the /etc/profile
-sed -i '2iPATH="$HOME/bin:$PATH"\n' "$1"
-sed -i '2isource /etc/environment\n' "$1"
-sed -i '2isource /etc/profile\n' "$1"
+# Add line below script's shebang to source
+# /etc/profile, etc/environment & the $HOME/bin
+sed -e '1a\
+source /etc/profile
+source /etc/environment
+PATH="$HOME/bin:$PATH"
+' "$1" >"$1.tmp"
+mv -- "$1.tmp" "$1"
 
 if [ -n "${RUNNER_DEBUG-}" ] && [ "$RUNNER_DEBUG" == "true" ]; then
     # DANGER: There may be sensitive information in this output.
