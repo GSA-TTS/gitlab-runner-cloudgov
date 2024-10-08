@@ -30,7 +30,7 @@ variable "ci_server_url" {
 
 variable "default_job_image" {
   type        = string
-  default     = "ubuntu:jammy"
+  default     = "ubuntu:24.04"
   description = "Default Job Image"
 }
 

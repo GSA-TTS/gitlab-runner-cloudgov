@@ -2,7 +2,7 @@ cf_org_name       = ""
 cf_space_name     = ""
 ci_server_token   = ""
 ci_server_url     = "https://gitlab.com/"
-default_job_image = "ubuntu:jammy"
+default_job_image = "ubuntu:24.04"
 # Two executors are supported:
 #  custom - Runs jobs in new application instances, deleted after the run.
 #  shell - Runs jobs directly on the Runner manager.
