@@ -9,7 +9,7 @@ CONTAINER_ID="glrw-r$CUSTOM_ENV_CI_RUNNER_ID-p$CUSTOM_ENV_CI_PROJECT_ID-c$CUSTOM
 
 # Set a fallback if not set but complain
 if [ -z "$DEFAULT_JOB_IMAGE" ]; then
-    DEFAULT_JOB_IMAGE="ubuntu:latest"
+    DEFAULT_JOB_IMAGE="ubuntu:24.04"
     echo "WARNING: DEFAULT_JOB_IMAGE not set! Falling back to ${DEFAULT_JOB_IMAGE}" 1>&2
 
 fi

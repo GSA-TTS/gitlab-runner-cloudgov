@@ -33,7 +33,7 @@ and differences in comparison to the Docker executor:
   # Start a HTTP "echo" service and then send a request to it
   echo-test-job:
     stage: test
-    image: ubuntu:jammy
+    image: ubuntu:24.04
   services:
   - name: http-https-echo:latest
     # Note "echo" is the alias name, so the CI_SERVICE_alias variable key name
