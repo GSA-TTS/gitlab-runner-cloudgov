@@ -98,10 +98,10 @@ in [Runner Execution Flow](https://gitlab.com/gitlab-org/gitlab-runner/-/tree/ma
     using a proxy such as the [cg-egress-proxy](https://github.com/GSA-TTS/cg-egress-proxy).
   * For testing/non-production deployments you may consider opening up full
     Internet access from the runners.
-    > [!WARNING]
-    > Open egress Internet access may result in data exfiltration, participation
-    > in a botnet, or worse if you allow anonymous or untrusted contributors
-    > to submit code that is run by CI/CD.
+    **(⚠️  WARNING ⚠️  - 
+    Open egress Internet access may result in data exfiltration, participation
+    in a botnet, or worse if you allow anonymous or untrusted contributors
+    to submit code that is run by CI/CD.)**
     To allow open internet access bind the `public_networks_egress` security group
     to your runner space:
     ~~~
