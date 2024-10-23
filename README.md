@@ -75,6 +75,39 @@ Optional service lifecycles are not shown, but run as part of the `prepare` phas
 The runner manager registration and other flow details are shown
 in [Runner Execution Flow](https://gitlab.com/gitlab-org/gitlab-runner/-/tree/main/docs?ref_type=heads#runner-execution-flow).
 
+## Prerequisites
+
+* **GitLab access and ownership of one or more projects/repos** - The runners
+  need a GitLab service to get their instructions from. This is a good time to
+  familiarize yourself with [registering runners](https://docs.gitlab.com/runner/register/)
+  and generating runner tokens.
+
+* **A cloud.gov organization** - You need a cloud.gov organization to deploy your runner(s) into. See
+  [Get access to cloud.gov](https://cloud.gov/docs/getting-started/accounts/)
+  for details.
+
+* **A cloud.gov space for use by runners** - Runners should only be deployed into their
+  own dedicated space(s). Runners can execute arbitrary non-production code pushed to
+  GitLab by anyone with write access to your code repositories.
+
+* **Network access from your runner space to required Internet destinations** -
+  Runners need to reach your GitLab server via HTTPS. They also need to be able
+  to reach package repositories and other resources used by your CI/CD jobs.
+  The specific destinations vary.
+  * For a production deployment we recommend tightly controlled name based egress filtering
+    using a proxy such as the [cg-egress-proxy](https://github.com/GSA-TTS/cg-egress-proxy).
+  * For testing/non-production deployments you may consider opening up full
+    Internet access from the runners.
+    **(⚠️  WARNING ⚠️  - 
+    Open egress Internet access may result in data exfiltration, participation
+    in a botnet, or worse if you allow anonymous or untrusted contributors
+    to submit code that is run by CI/CD.)**
+    To allow open internet access bind the `public_networks_egress` security group
+    to your runner space:
+    ~~~
+    cf bind-security-group public_networks_egress ORG_NAME --space RUNNER_SPACE_NAME
+    ~~~
+
 ## Deploying
 
 1. Log in to cloud.gov
@@ -82,41 +115,41 @@ in [Runner Execution Flow](https://gitlab.com/gitlab-org/gitlab-runner/-/tree/ma
     cf login -a api.fr.cloud.gov --sso
     ```
 
-2. Target the org and space for deployment
+1. Target the org and space for deployment
     ```
-    cf target -o ORGNAME -s SPACENAME
+    cf target -o ORG_NAME -s RUNNER_SPACE_NAME
     ```
     For example:
     ```
-    cf target -o sandbox-gsa -s bret.mogilefsky
+    cf target -o sandbox-gsa -s yer.name
     ```
 
-3. Create a [cloud.gov service account](https://cloud.gov/docs/services/cloud-gov-service-account/), tagged with `gitlab-service-account`
+1. Create a [cloud.gov service account](https://cloud.gov/docs/services/cloud-gov-service-account/), tagged with `gitlab-service-account`
     ```
     cf create-service cloud-gov-service-account space-deployer SERVICE_ACCOUNT_INSTANCE -t "gitlab-service-account"
     ```
 
-4. Create a [cloud.gov brokered S3 bucket](https://cloud.gov/docs/services/s3/) - `basic-sandbox` is suggested.
+1. Create a [cloud.gov brokered S3 bucket](https://cloud.gov/docs/services/s3/) - `basic-sandbox` is suggested.
    Note that `OBJECT_STORE_INSTANCE` only needs to be unique within the specific space as it will have a prefix prepended to create the S3 bucket name.
     ```
     cf create-service s3 basic-sandbox OBJECT_STORE_INSTANCE
     ```
 
-4. Copy `vars.yml-template` to `vars.yml`
+1. Copy `vars.yml-template` to `vars.yml`
     ```
     cp vars.yml-template vars.yml
     ```
 
-5. Edit `vars.yml` and modify the values there as needed. In particular, you must
+1. Edit `vars.yml` and modify the values there as needed. In particular, you must
     * supply the `ci_server_token` provided when you [configure the runner at the target GitLab URL](https://docs.gitlab.com/ee/tutorials/create_register_first_runner/#create-and-register-a-project-runner)
     * supply the `service_account_instance` name that you used when you created the service instance in step 3
     * supply the `object_store_instance` name that you used when you created the brokered S3 bucket in step 4
 
-6. Deploy the GitLab runner
+1. Deploy the GitLab runner
     ```
     cf push --vars-file vars.yml
     ```
-7. Check to see that the runner has registered itself in GitLab under your project
+1. Check to see that the runner has registered itself in GitLab under your project
    repository under Settings -> CI/CD -> Runners (Expand)
 
 At this point the runner should be available to run jobs. See [Use GitLab - Use CI/CD to build your application - Getting started](https://docs.gitlab.com/ee/ci/)
@@ -135,18 +168,8 @@ cf logs --recent RUNNER-NAME
 ### "Request error: Get https://API-URL/v2/info: dial tcp X.X.X.X:443: connect: connection refused"
 
 The GitLab Runner manager needs to contact the CloudFoundry API to schedule
-runner applications. This indicates your CloudFoundry space security group may
-be too restrictive or not set.
-
-For a production deployment you should use tightly controlled egress filtering,
-ideally with a name based proxy.
-
-Test Only - For a basic test environment with no privileged access you can use
-the following to apply a loose egress security group policy on cloud.gov:
-
-~~~
-cf bind-security-group public_networks_egress ORG_NAME --space SPACE_NAME
-~~~
+runner applications. This error indicates your CloudFoundry space security group may
+be too restrictive or not set. See [prerequisites](#prerequisites).
 
 ## TODO
 
