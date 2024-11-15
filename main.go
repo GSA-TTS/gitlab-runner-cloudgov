@@ -4,41 +4,45 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/cloudfoundry/go-cfclient/v3/client"
 	"github.com/cloudfoundry/go-cfclient/v3/config"
 )
 
-var vcap = []byte(`{"cloud-gov-service-account":[{"label":"cloud-gov-service-account","provider":null,"plan":"space-deployer","name":"zjr-gl-runner-svc","tags":["gitlab-service-account"],"instance_guid":"aaaa","instance_name":"zjr-gl-runner-svc","binding_guid":"c55db941-d3eb-482c-af75-62a37503bc88","binding_name":null,"credentials":{"password":"REDACTED","username":"REDACTED"}}]}`)
+type Credentials struct {
+	Username string
+	Password string
+}
 
-type VCapData struct {
+type VcapData struct {
 	CloudGovServiceAccount []struct {
-		Label       string
-		Credentials struct {
-			Username string
-			Password string
-		}
+		Credentials Credentials
 	} `json:"cloud-gov-service-account"`
 }
 
-func main() {
-	var vcapData VCapData
+func GetCredentials() (*Credentials, error) {
+	var data VcapData
+	vcapServices := os.Getenv("VCAP_SERVICES")
 
-	err := json.Unmarshal(vcap, &vcapData)
+	err := json.Unmarshal([]byte(vcapServices), &data)
 	if err != nil {
 		fmt.Println("error:", err)
-		return
+		return nil, err
 	}
 
-	credentials := vcapData.CloudGovServiceAccount[0].Credentials
+	return &data.CloudGovServiceAccount[0].Credentials, nil
+}
+
+func main() {
+	credentials, _ := GetCredentials()
 
 	cfConfig, _ := config.New("https://api.fr.cloud.gov", config.UserPassword(
 		credentials.Username,
 		credentials.Password,
 	))
-	cf, _ := client.New(cfConfig)
 
-	fmt.Printf("%+v", vcapData)
+	cf, _ := client.New(cfConfig)
 
 	apps, _ := cf.Applications.ListAll(context.Background(), nil)
 	for _, app := range apps {
