@@ -17,18 +17,16 @@ func Test_GetCredentials(t *testing.T) {
 
 	t.Setenv("VCAP_SERVICES", json)
 
-	t.Run("Get credentials from VCAP_SERVICES", func(t *testing.T) {
-		credentials, err := GetCredentials()
-		if err != nil {
-			t.Error(err)
-		}
-		if credentials.Username != username {
-			t.Errorf("credentials.Username = %s; want %s", credentials.Username, username)
-		}
-		if credentials.Password != password {
-			t.Errorf("credentials.Password = %s; want %s", credentials.Password, password)
-		}
-	})
+	credentials, err := GetCredentials()
+	if err != nil {
+		t.Error(err)
+	}
+	if credentials.Username != username {
+		t.Errorf("credentials.Username = %s; want %s", credentials.Username, username)
+	}
+	if credentials.Password != password {
+		t.Errorf("credentials.Password = %s; want %s", credentials.Password, password)
+	}
 }
 
 func Test_main(t *testing.T) {
