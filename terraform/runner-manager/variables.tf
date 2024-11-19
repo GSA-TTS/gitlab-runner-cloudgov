@@ -87,10 +87,10 @@ variable "runner_service_bindings" {
   default     = []
 }
 
-variable "runner_app_name" {
+variable "runner_manager_app_name" {
   type        = string
-  default     = "gitlab-runner"
-  description = "Cloud Foundry App Name"
+  default     = "devtools-runner-manager"
+  description = "Cloud Foundry App Name for the Runner Manager"
 }
 
 variable "docker_hub_user" {
