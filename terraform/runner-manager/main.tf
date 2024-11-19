@@ -11,7 +11,7 @@ module "object_store_instance" {
   s3_plan_name  = "basic-sandbox"
 }
 
-resource "cloudfoundry_app" "devtools-runner-manager" {
+resource "cloudfoundry_app" "gitlab-runner-manager" {
   name              = var.runner_manager_app_name
   space             = data.cloudfoundry_space.space.id
   path              = "${path.module}/files/src.zip"

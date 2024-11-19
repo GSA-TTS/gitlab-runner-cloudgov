@@ -1,11 +1,11 @@
 ---
 version: 1
 applications:
-  - name: devtools-cf-worker
+  - name: gitlab-cf-worker
     no-route: true
     health-check-type: process
     env:
-      RUNNER_NAME: devtools-cf-worker
+      RUNNER_NAME: gitlab-cf-worker
       RUNNER_BUILDS_DIR: "/tmp/build"
       RUNNER_CACHE_DIR: "/tmp/cache"
       CACHE_SHARED: "true"

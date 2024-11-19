@@ -1,4 +1,4 @@
-# devtools-runner-cloudgov terraform
+# gitlab-runner-cloudgov terraform
 Terraform for running GitLab CI/CD jobs on cloud.gov or another CloudFoundry based PaaS.
 
 * [Deploying](#deploying)
@@ -21,17 +21,17 @@ Terraform for running GitLab CI/CD jobs on cloud.gov or another CloudFoundry bas
     cf target -o sandbox-gsa -s bret.mogilefsky
     ```
 
-3. Create a [cloud.gov service account](https://cloud.gov/docs/services/cloud-gov-service-account/), tagged with `devtools-service-account`
+3. Create a [cloud.gov service account](https://cloud.gov/docs/services/cloud-gov-service-account/), tagged with `gitlab-service-account`
     ```
-    cf create-service cloud-gov-service-account space-deployer SERVICE_ACCOUNT_INSTANCE -t "devtools-service-account"
+    cf create-service cloud-gov-service-account space-deployer SERVICE_ACCOUNT_INSTANCE -t "gitlab-service-account"
     ```
 
-4. Copy `vars.tfvars` to `vars.auto.tfvars`.
+4. Copy `vars.tfvars` to `vars.auto.tfvars`. 
     ```
     cp vars.tfvars vars.auto.tfvars
     ```
 
-5. Edit `vars.auto.tfvars` and modify the values there as needed. In particular, you must
+5. Edit `vars.auto.tfvars` and modify the values there as needed. In particular, you must 
     * supply the `ci_server_token` provided when you [configure the runner at the target GitLab URL](https://docs.gitlab.com/ee/tutorials/create_register_first_runner/#create-and-register-a-project-runner)
     * supply the `service_account_instance` name that you used when you created the service instance in step 3
     * supply the `object_store_instance` name that you would like to use.
@@ -49,12 +49,12 @@ Terraform for running GitLab CI/CD jobs on cloud.gov or another CloudFoundry bas
 8. In the /terraform/runner directory, run terraform non-destructively
     ```
     terraform plan
-    ```
+    ```   
 
 9. In the /terraform/runner directory, apply your terraform
     ```
     terraform apply
-    ```
+    ```   
 
 7. Check to see that the runner has registered itself in GitLab under your project
    repository under Settings -> CI/CD -> Runners (Expand)
@@ -74,7 +74,7 @@ cf logs --recent RUNNER-NAME
 
 ### "Request error: Get https://API-URL/v2/info: dial tcp X.X.X.X:443: connect: connection refused"
 
-The DevTools Runner manager needs to contact the CloudFoundry API to schedule
+The GitLab Runner manager needs to contact the CloudFoundry API to schedule
 runner applications. This indicates your CloudFoundry space security group may
 be too restrictive or not set.
 

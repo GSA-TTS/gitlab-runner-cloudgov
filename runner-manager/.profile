@@ -71,12 +71,12 @@ fi
 
 # Allow safe re-running... Idempotent-ial.
 if pgrep 'gitlab-runner' > /dev/null ; then
-    echo "DevTools Runner - Manager appears to already be running"
+    echo "GitLab Runner appears to already be running"
 else
-    echo "Registering Devtools Runner - Manager with name $RUNNER_NAME"
+    echo "Registering GitLab Runner with name $RUNNER_NAME"
     if gitlab-runner register; then
-        echo "DevTools Runner - Manager successfully registered"
+        echo "GitLab Runner successfully registered"
     else
-        exit_with_failure "DevTools Runner $RUNNER_NAME not registered"
+        exit_with_failure "GitLab Runner not registered"
     fi
 fi

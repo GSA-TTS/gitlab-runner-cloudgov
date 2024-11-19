@@ -45,8 +45,8 @@ variable "runner_executor" {
 
 variable "runner_name" {
   type        = string
-  default     = "devtools-runner-manager"
-  description = "Name of the runner manager app"
+  default     = "gitlab-runner"
+  description = "Cloud Foundry Organization"
 }
 
 variable "runner_memory" {
@@ -77,13 +77,13 @@ variable "service_account_instance" {
 variable "object_store_instance" {
   type        = string
   default     = ""
-  description = "S3 Bucket for DevTools Runner"
+  description = "S3 Bucket for Gitlab Runner"
 }
 
 #Todo: dynamic service bindings
 variable "runner_service_bindings" {
   type        = list(object({ service_instance = string }))
-  description = "A list of service instances that should be bound to the devtools runner manager app"
+  description = "A list of service instances that should be bound to the gitlab runner app"
   default     = []
 }
 
