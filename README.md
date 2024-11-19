@@ -1,4 +1,4 @@
-# gitlab-runner-cloudgov
+# devtools-runner-cloudgov
 Code for running GitLab CI/CD jobs on cloud.gov or another CloudFoundry based
 PaaS.
 
@@ -56,13 +56,13 @@ specified OCI image.
 __[source](doc/gitlab-runner-cf-driver-components.pu)__
 
 The relevant components of the solution are shown above with two running stages.
-* "GitLab Runner - Manager" - This is the persistent application defined in this
+* "DevTools Runner - Manager" - This is the persistent application defined in this
   very repository. It registers with the GitLab instance and waits for further
   instructions.
-* "GitLab Runner - Worker" - The manager starts worker application instances
+* "DevTools Runner - Worker" - The manager starts worker application instances
   using the container image you specify and runs job steps via CloudFoundry
   `cf ssh` calls into the running containers.
-* "GitLab Runner - Service" - Optional service instances can be started for use
+* "DevTools Runner - Service" - Optional service instances can be started for use
   by the Worker instances. These run as separate apps using the container
   image you specify.
 
@@ -98,7 +98,7 @@ in [Runner Execution Flow](https://gitlab.com/gitlab-org/gitlab-runner/-/tree/ma
     using a proxy such as the [cg-egress-proxy](https://github.com/GSA-TTS/cg-egress-proxy).
   * For testing/non-production deployments you may consider opening up full
     Internet access from the runners.
-    **(⚠️  WARNING ⚠️  - 
+    **(⚠️  WARNING ⚠️  -
     Open egress Internet access may result in data exfiltration, participation
     in a botnet, or worse if you allow anonymous or untrusted contributors
     to submit code that is run by CI/CD.)**
@@ -145,7 +145,7 @@ in [Runner Execution Flow](https://gitlab.com/gitlab-org/gitlab-runner/-/tree/ma
     * supply the `service_account_instance` name that you used when you created the service instance in step 3
     * supply the `object_store_instance` name that you used when you created the brokered S3 bucket in step 4
 
-1. Deploy the GitLab runner
+1. Deploy the DevTools Runner - Manager
     ```
     cf push --vars-file vars.yml
     ```
@@ -167,7 +167,7 @@ cf logs --recent RUNNER-NAME
 
 ### "Request error: Get https://API-URL/v2/info: dial tcp X.X.X.X:443: connect: connection refused"
 
-The GitLab Runner manager needs to contact the CloudFoundry API to schedule
+The DevTools Runner manager needs to contact the CloudFoundry API to schedule
 runner applications. This error indicates your CloudFoundry space security group may
 be too restrictive or not set. See [prerequisites](#prerequisites).
 

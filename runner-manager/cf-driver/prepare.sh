@@ -43,7 +43,7 @@ get_registry_credentials () {
 create_temporary_manifest () {
     # A less leak-prone way to share secrets into the worker which will not
     # be able to parse VCAP_CONFIGURATION
-    TMPMANIFEST=$(mktemp /tmp/gitlab-runner-worker-manifest.XXXXXXXXXX)
+    TMPMANIFEST=$(mktemp /tmp/devtools-runner-worker-manifest.XXXXXXXXXX)
     TMPFILES+=("$TMPMANIFEST")
     chmod 600 "$TMPMANIFEST"
     cat "${currentDir}/worker-manifest.yml" > "$TMPMANIFEST"
@@ -132,7 +132,7 @@ start_service () {
     if [ -n "$job_vars" ] || [ -n "$service_vars" ]; then
         declare -A vars=()
 
-        SVCMANIFEST=$(mktemp /tmp/gitlab-runner-svc-manifest.XXXXXXXXXX)
+        SVCMANIFEST=$(mktemp /tmp/devtools-runner-svc-manifest.XXXXXXXXXX)
         TMPFILES+=("$SVCMANIFEST")
         chmod 600 "$SVCMANIFEST"
 
