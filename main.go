@@ -27,24 +27,58 @@ func GetCredentials() (*Credentials, error) {
 
 	err := json.Unmarshal([]byte(vcapServices), &data)
 	if err != nil {
-		fmt.Println("error:", err)
-		return nil, err
+		return nil, fmt.Errorf("error unmarshaling VCAP_SERVICES: %w", err)
 	}
 
 	return &data.CloudGovServiceAccount[0].Credentials, nil
 }
 
+func GetCfClient() (_ *client.Client, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("error getting cf client: %w", err)
+		}
+	}()
+
+	creds, err := GetCredentials()
+	if err != nil {
+		return nil, err
+	}
+
+	cfConfig, err := config.New(
+		"https://api.fr.cloud.gov",
+		config.UserPassword(creds.Username, creds.Password),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.New(cfConfig)
+}
+
 func main() {
-	credentials, _ := GetCredentials()
+	var err error
 
-	cfConfig, _ := config.New("https://api.fr.cloud.gov", config.UserPassword(
-		credentials.Username,
-		credentials.Password,
-	))
+	defer func() {
+		if err != nil {
+			fmt.Println(fmt.Errorf("in main: %w", err))
+		}
 
-	cf, _ := client.New(cfConfig)
+		if v := recover(); v != nil {
+			fmt.Println(v)
+		}
+	}()
 
-	apps, _ := cf.Applications.ListAll(context.Background(), nil)
+	cf, err := GetCfClient()
+	if err != nil {
+		return
+	}
+
+	apps, err := cf.Applications.ListAll(context.Background(), nil)
+	if err != nil {
+		return
+	}
+
 	for _, app := range apps {
 		fmt.Printf("Application %s is %s\n", app.Name, app.State)
 	}
