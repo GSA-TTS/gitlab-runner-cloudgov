@@ -45,10 +45,9 @@ func GetCfClient() (_ *client.Client, err error) {
 		return nil, err
 	}
 
-	cfConfig, err := config.New(
-		"https://api.fr.cloud.gov",
-		config.UserPassword(creds.Username, creds.Password),
-	)
+	apiRootUrl := "https://api.fr.cloud.gov"
+	configOpts := config.UserPassword(creds.Username, creds.Password)
+	cfConfig, err := config.New(apiRootUrl, configOpts)
 	if err != nil {
 		return nil, err
 	}
