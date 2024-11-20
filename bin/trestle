@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 
-trestle_tag="20240926"
-command="bash"
 branch_name=`git rev-parse --abbrev-ref HEAD`
 
 usage="
@@ -13,13 +11,14 @@ Usage:
 
 Options:
 -h: Show help and exit
--t: Change docker-trestle image tag. Default: $trestle_tag
 -b: Change the branch to use within doc/compliance. Default: $branch_name
-CMD: command to run within docker-trestle image. Default: $command
+-t: Change docker-trestle image tag. Default specified by doc/compliance/scripts/trestle
+CMD: command to run within docker-trestle image. Default: specified by doc/compliance/scripts/trestle
 CMD_OPTIONS: options to pass through to CMD. If given, CMD must also be explicitly given
 "
 
 args_to_shift=0
+declare -a optional_args
 
 while getopts "ht:b:" opt; do
     case "$opt" in
@@ -28,7 +27,7 @@ while getopts "ht:b:" opt; do
             args_to_shift=$((args_to_shift + 2))
             ;;
         t)
-            trestle_tag=${OPTARG}
+            optional_args+=("-t" ${OPTARG})
             args_to_shift=$((args_to_shift + 2))
             ;;
         h)
@@ -39,11 +38,6 @@ while getopts "ht:b:" opt; do
 done
 
 shift $args_to_shift
-
-if [ "$1" != "" ]; then
-    command="$1"
-    shift 1
-fi
 
 oscal_location="$(dirname "$(realpath "$0")")/../doc/compliance"
 
@@ -57,4 +51,4 @@ if [ "$branch_name" != "" ]; then
     (cd "$oscal_location" && (git switch "$branch_name" 2>/dev/null || git switch -c "$branch_name"))
 fi
 
-docker run -it --rm -v "$oscal_location:/app/docs:rw" ghcr.io/gsa-tts/trestle:$trestle_tag "$command" "$@"
+"$oscal_location"/scripts/trestle "${optional_args[@]}" "$@"
