@@ -55,6 +55,11 @@ create_temporary_manifest () {
         echo "${padding}${v}: \"${!v}\"" >> "$TMPMANIFEST"
     done
 
+    # if [ -n "$HTTPS_PROXY" ]; then
+    #     # set proxy var if set in the manager
+    #     echo "${padding}HTTPS_PROXY: \"$HTTPS_PROXY\"" >> "$TMPMANIFEST"
+    # fi
+
     # Add any CI_SERVICE_x variables populated by start_service()
     for v in "${!CI_SERVICE_@}"; do
         echo "${padding}${v}: \"${!v}\"" >> "$TMPMANIFEST"

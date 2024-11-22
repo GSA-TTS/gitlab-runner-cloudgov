@@ -15,6 +15,17 @@ function command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+function setup_proxy_access() {
+    EGRESS_PROXY=$(echo "$VCAP_SERVICES" | jq --raw-output --arg service_name "$PROXY_CREDENTIAL_INSTANCE" ".[][] | select(.name == \$service_name) | .credentials.uri")
+    if [ -n "$EGRESS_PROXY" ]; then
+        echo "Configuring HTTPS_PROXY environment variable"
+        export HTTP_PROXY="$EGRESS_PROXY"
+        export HTTPS_PROXY="$EGRESS_PROXY"
+    else
+        echo "WARNING: Could not configure the egress proxy"
+    fi
+}
+
 function get_cf_configuration() {
     # Authenticate with Cloud Foundry to allow management of executor app instances
     CF_USERNAME=$(echo "$VCAP_SERVICES" | jq --raw-output --arg tag_name "gitlab-service-account" ".[][] | select(.tags[] == \$tag_name) | .credentials.username")
@@ -55,6 +66,9 @@ function get_object_store_configuration() {
     export CACHE_S3_ACCESS_KEY=$(echo "$VCAP_SERVICES" | jq --raw-output --arg service_name "$OBJECT_STORE_INSTANCE" ".[][] | select(.name == \$service_name) | .credentials.access_key_id")
     export CACHE_S3_SECRET_KEY=$(echo "$VCAP_SERVICES" | jq --raw-output --arg service_name "$OBJECT_STORE_INSTANCE" ".[][] | select(.name == \$service_name) | .credentials.secret_access_key")
 }
+
+echo "Setting up https_proxy"
+setup_proxy_access
 
 echo "Getting CloudFoundry configuration"
 get_cf_configuration
