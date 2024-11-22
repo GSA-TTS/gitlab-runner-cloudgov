@@ -2,6 +2,11 @@ variable "cf_password" {
   sensitive = true
 }
 variable "cf_user" {}
+variable "developer_emails" {
+  type        = list(string)
+  description = "cloud.gov accounts to grant SpaceDeveloper access to the runner space and runner egress space"
+  default     = []
+}
 
 variable "cf_org_name" {
   type        = string

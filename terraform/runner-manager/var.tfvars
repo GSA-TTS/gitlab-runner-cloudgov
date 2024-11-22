@@ -8,3 +8,4 @@ worker_memory            = "512M"
 worker_disk_size         = "1G"
 object_store_instance    = "rahearn-glr-cache"
 service_account_instance = "rahearn-glr-bot"
+developer_emails         = ["ryan.ahearn@gsa.gov"]

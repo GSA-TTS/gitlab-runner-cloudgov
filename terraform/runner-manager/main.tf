@@ -8,12 +8,13 @@ module "runner_space" {
   cf_org_name   = var.cf_org_name
   cf_space_name = var.cf_space_name
   allow_ssh     = true
-  deployers     = [var.cf_user, "ryan.ahearn@gsa.gov"]
+  deployers     = [var.cf_user]
+  developers    = var.developer_emails
 }
 
 # temporary method for setting egress rules until terraform provider supports it and cg_space module is updated
 data "external" "set-trusted-egress" {
-  program     = ["/bin/sh", "set_space_egress.sh", "-p", "-t", "-s", module.runner_space.space_name]
+  program     = ["/bin/sh", "set_space_egress.sh", "-t", "-s", module.runner_space.space_name]
   working_dir = path.module
   depends_on  = [module.runner_space]
 }
@@ -83,4 +84,35 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
   service_binding {
     service_instance = cloudfoundry_service_instance.runner_service_account.id
   }
+}
+
+module "egress_space" {
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=migrate-provider"
+
+  cf_org_name   = var.cf_org_name
+  cf_space_name = "${var.cf_space_name}-egress"
+  allow_ssh     = true
+  deployers     = [var.cf_user]
+  developers    = var.developer_emails
+}
+
+# temporary method for setting egress rules until terraform provider supports it and cg_space module is updated
+data "external" "set-public-egress" {
+  program     = ["/bin/sh", "set_space_egress.sh", "-p", "-s", module.egress_space.space_name]
+  working_dir = path.module
+  depends_on  = [module.egress_space]
+}
+
+module "egress_proxy" {
+  source = "github.com/GSA-TTS/terraform-cloudgov//egress_proxy?ref=migrate-provider"
+
+  cf_org_name     = var.cf_org_name
+  cf_egress_space = module.egress_space.space
+  cf_client_space = module.runner_space.space
+  name            = "glr-egress-proxy"
+  allowlist = {
+    (cloudfoundry_app.gitlab-runner-manager.name) = ["api.fr.cloud.gov"]
+  }
+  # see egress_proxy/variables.tf for full list of optional arguments
+  depends_on = [ module.egress_space, module.runner_space, cloudfoundry_app.gitlab-runner-manager ]
 }
