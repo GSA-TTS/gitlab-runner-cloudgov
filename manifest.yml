@@ -1,7 +1,7 @@
 ---
 version: 1
 applications:
-  - name: gitlab-runner-manager
+  - name: ((runner_name))
     path: runner-manager
     buildpacks:
       - https://github.com/cloudfoundry/apt-buildpack

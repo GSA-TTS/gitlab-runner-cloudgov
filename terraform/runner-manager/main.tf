@@ -2,23 +2,49 @@ locals {
 
 }
 
-module "object_store_instance" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//s3?ref=v1.0.0"
+module "runner_space" {
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=migrate-provider"
 
   cf_org_name   = var.cf_org_name
   cf_space_name = var.cf_space_name
-  name          = var.object_store_instance
-  s3_plan_name  = "basic-sandbox"
+  allow_ssh     = true
+  deployers     = [var.cf_user, "ryan.ahearn@gsa.gov"]
+}
+
+# temporary method for setting egress rules until terraform provider supports it and cg_space module is updated
+data "external" "set-trusted-egress" {
+  program     = ["/bin/sh", "set_space_egress.sh", "-p", "-t", "-s", module.runner_space.space_name]
+  working_dir = path.module
+  depends_on  = [module.runner_space]
+}
+
+module "object_store_instance" {
+  source = "github.com/GSA-TTS/terraform-cloudgov//s3?ref=migrate-provider"
+
+  cf_space_id  = module.runner_space.space_id
+  name         = var.object_store_instance
+  s3_plan_name = "basic-sandbox"
+  depends_on   = [module.runner_space]
+}
+
+resource "cloudfoundry_service_instance" "runner_service_account" {
+  name         = var.service_account_instance
+  type         = "managed"
+  space        = module.runner_space.space_id
+  service_plan = data.cloudfoundry_service_plans.cg_service_account.service_plans.0.id
+  tags         = ["gitlab-service-account"]
+  depends_on   = [module.runner_space]
 }
 
 resource "cloudfoundry_app" "gitlab-runner-manager" {
+  provider          = cloudfoundry-community
   name              = var.runner_manager_app_name
-  space             = data.cloudfoundry_space.space.id
+  space             = module.runner_space.space_id
   path              = "${path.module}/files/src.zip"
   buildpacks        = ["https://github.com/cloudfoundry/apt-buildpack", "binary_buildpack"]
   instances         = 1
   command           = "gitlab-runner run"
-  memory            = var.runner_memory
+  memory            = var.manager_memory
   health_check_type = "process"
 
   environment = {
@@ -29,7 +55,7 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     CI_SERVER_TOKEN = var.ci_server_token
     CI_SERVER_URL   = var.ci_server_url
     RUNNER_EXECUTOR = var.runner_executor
-    RUNNER_NAME     = var.runner_name
+    RUNNER_NAME     = var.runner_manager_app_name
     # Following vars are for tuning worker defaults
     WORKER_MEMORY    = var.worker_memory
     WORKER_DISK_SIZE = var.worker_disk_size
@@ -52,13 +78,9 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     DOCKER_HUB_TOKEN      = var.docker_hub_token
   }
   service_binding {
-    service_instance = data.cloudfoundry_service_instance.runner_service_account.id
+    service_instance = module.object_store_instance.bucket_id
   }
   service_binding {
-    service_instance = data.cloudfoundry_service_instance.runner_object_store_instance.id
+    service_instance = cloudfoundry_service_instance.runner_service_account.id
   }
-
-
-
-
 }

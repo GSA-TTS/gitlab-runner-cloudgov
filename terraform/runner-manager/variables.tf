@@ -43,16 +43,10 @@ variable "runner_executor" {
   description = "Runner Executer"
 }
 
-variable "runner_name" {
-  type        = string
-  default     = "gitlab-runner"
-  description = "Cloud Foundry Organization"
-}
-
-variable "runner_memory" {
+variable "manager_memory" {
   type        = number
   default     = 512
-  description = "Manager Runner Memory in MB"
+  description = "Manager Runner Memory - Unit required (e.g. 512M or 2G)"
 }
 
 variable "worker_memory" {
