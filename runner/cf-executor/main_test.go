@@ -19,18 +19,67 @@ func getVcapJson(u string, p string) string {
 func TestGetCredentials(t *testing.T) {
 	tests := []struct {
 		name    string
-		json    string
+		env     map[string]string
 		want    *Credentials
 		wantErr interface{}
 	}{
-		{"fails with no JSON", "", nil, &syntaxError},
-		{"fails with malformed JSON", `{"foo": [{"bar": false}}`, nil, &syntaxError},
-		{"pulls credentials from JSON", getVcapJson("aa", "bb"), &Credentials{"aa", "bb"}, nil},
+		{
+			"fails with no JSON",
+			nil, nil, &syntaxError,
+		},
+		{
+			"fails with malformed JSON",
+			map[string]string{
+				"VCAP_SERVICES": `{"foo": [{"bar": false}}`,
+			},
+			nil, &syntaxError,
+		},
+		{
+			"fails with incorrectly defined VCAP envvar",
+			map[string]string{
+				"VCAP_SURGICES": getVcapJson("aa", "bb"),
+			},
+			nil, &syntaxError,
+		},
+		{
+			"pulls credentials from JSON",
+			map[string]string{
+				"VCAP_SERVICES": getVcapJson("aa", "bb"),
+			},
+			&Credentials{"aa", "bb"}, nil,
+		},
+		{
+			"pulls credentials from JSON when only user available",
+			map[string]string{
+				"CF_USERNAME":   "Klaus",
+				"VCAP_SERVICES": getVcapJson("aa", "bb"),
+			},
+			&Credentials{"aa", "bb"}, nil,
+		},
+		{
+			"pulls credentials from JSON when only pass available",
+			map[string]string{
+				"CF_PASSWORD":   "tulip-cat-cupcake",
+				"VCAP_SERVICES": getVcapJson("aa", "bb"),
+			},
+			&Credentials{"aa", "bb"}, nil,
+		},
+		{
+			"pulls credentials from specifically defined envvars if available",
+			map[string]string{
+				"CF_USERNAME":   "Klaus",
+				"CF_PASSWORD":   "tulip-cat-cupcake",
+				"VCAP_SERVICES": getVcapJson("aa", "bb"),
+			},
+			&Credentials{"Klaus", "tulip-cat-cupcake"}, nil,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv("VCAP_SERVICES", tt.json)
+			for key, val := range tt.env {
+				t.Setenv(key, val)
+			}
 
 			have, err := GetCredentials()
 
