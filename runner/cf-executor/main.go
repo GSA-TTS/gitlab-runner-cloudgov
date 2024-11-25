@@ -22,6 +22,13 @@ type VcapData struct {
 }
 
 func GetCredentials() (*Credentials, error) {
+	cfUser := os.Getenv("CF_USERNAME")
+	cfPass := os.Getenv("CF_PASSWORD")
+
+	if cfUser != "" && cfPass != "" {
+		return &Credentials{cfUser, cfPass}, nil
+	}
+
 	var data VcapData
 	vcapServices := os.Getenv("VCAP_SERVICES")
 
