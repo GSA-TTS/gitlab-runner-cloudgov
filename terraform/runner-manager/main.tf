@@ -36,12 +36,6 @@ module "worker_space" {
   developers    = var.developer_emails
 }
 
-data "external" "set-worker-egress" {
-  program     = ["/bin/sh", "set_space_egress.sh", "-p", "-s", module.worker_space.space_name]
-  working_dir = path.module
-  depends_on  = [module.worker_space]
-}
-
 module "object_store_instance" {
   source = "github.com/GSA-TTS/terraform-cloudgov//s3?ref=migrate-provider"
 
@@ -106,7 +100,7 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     # and ensuring job logs are removed to avoid leaking secrets.
     RUNNER_DEBUG              = "false"
     OBJECT_STORE_INSTANCE     = var.object_store_instance
-    PROXY_CREDENTIAL_INSTANCE = module.egress_proxy.credential_service_name
+    PROXY_CREDENTIAL_INSTANCE = cloudfoundry_service_instance.egress-proxy-credentials.name
     PROXY_APP_NAME            = local.egress_app_name
     PROXY_SPACE               = module.egress_space.space_name
     CF_USERNAME               = cloudfoundry_service_key.runner-service-account-key.credentials.username
@@ -118,7 +112,7 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     service_instance = module.object_store_instance.bucket_id
   }
   service_binding {
-    service_instance = module.egress_proxy.credential_service_ids[module.manager_space.space_name]
+    service_instance = cloudfoundry_service_instance.egress-proxy-credentials.id
   }
 }
 
@@ -129,7 +123,13 @@ module "egress_space" {
   cf_space_name = "${var.cf_space_name}-egress"
   allow_ssh     = local.allow_ssh
   deployers     = [var.cf_user]
-  developers    = concat(var.developer_emails, [nonsensitive(cloudfoundry_service_key.runner-service-account-key.credentials.username)])
+  developers    = var.developer_emails
+}
+
+resource "cloudfoundry_space_role" "service-account-egress-role" {
+  username = cloudfoundry_service_key.runner-service-account-key.credentials.username
+  space    = module.egress_space.space_id
+  type     = "space_developer"
 }
 
 # temporary method for setting egress rules until terraform provider supports it and cg_space module is updated
@@ -144,24 +144,17 @@ module "egress_proxy" {
 
   cf_org_name     = var.cf_org_name
   cf_egress_space = module.egress_space.space
-  cf_client_spaces = {
-    (module.manager_space.space_name) = module.manager_space.space_id
-    (module.worker_space.space_name)  = module.worker_space.space_id
-  }
-  name       = local.egress_app_name
-  allowports = [443, 2222]
-  allowlist = {
-    (var.runner_manager_app_name) = [
-      "*.fr.cloud.gov",
-      "gsa-0.gitlab-dedicated.us"
-    ]
-    "gitlab-runner-worker" = [
-      "gsa-0.gitlab-dedicated.us",
-      "www.google.com"
-    ]
-  }
+  name            = local.egress_app_name
+  allowports      = [80, 443, 2222]
+  allowlist = [
+    "*.fr.cloud.gov",                       # cf-cli calls from manager
+    "gsa-0.gitlab-dedicated.us",            # connections from both manager and runners
+    "deb.debian.org",                       # runner dependencies install
+    "s3.dualstack.us-east-1.amazonaws.com", # gitlab-runner-helper source for runners
+    "index.rubygems.org"                    # gem install
+  ]
   # see egress_proxy/variables.tf for full list of optional arguments
-  depends_on = [module.egress_space, module.manager_space, module.worker_space]
+  depends_on = [module.egress_space]
 }
 
 resource "cloudfoundry_network_policy" "egress_routing" {
@@ -171,4 +164,20 @@ resource "cloudfoundry_network_policy" "egress_routing" {
     destination_app = module.egress_proxy.app_id
     port            = "61443"
   }
+
+  policy {
+    source_app      = cloudfoundry_app.gitlab-runner-manager.id
+    destination_app = module.egress_proxy.app_id
+    port            = "8080"
+  }
+}
+
+resource "cloudfoundry_service_instance" "egress-proxy-credentials" {
+  name  = "${local.egress_app_name}-credentials"
+  space = module.manager_space.space_id
+  type  = "user-provided"
+  credentials = jsonencode({
+    "uri"      = module.egress_proxy.https_proxy
+    "http_uri" = module.egress_proxy.http_proxy
+  })
 }

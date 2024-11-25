@@ -14,7 +14,7 @@ repos:
 - deb https://packages.cloudfoundry.org/debian stable main
 packages:
 - gitlab-runner
-- cf-cli
+- cf8-cli
 
 # Unlikely these are also needed, but gitlab-runner-cf had them.
 # - libwww-perl

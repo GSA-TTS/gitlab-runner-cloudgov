@@ -55,11 +55,6 @@ create_temporary_manifest () {
         echo "${padding}${v}: \"${!v}\"" >> "$TMPMANIFEST"
     done
 
-    if [ -n "$HTTPS_PROXY" ]; then
-        # set proxy var if set in the manager
-        echo "${padding}EGRESS_PROXY: \"$HTTPS_PROXY\"" >> "$TMPMANIFEST"
-    fi
-
     # Add any CI_SERVICE_x variables populated by start_service()
     for v in "${!CI_SERVICE_@}"; do
         echo "${padding}${v}: \"${!v}\"" >> "$TMPMANIFEST"
@@ -110,9 +105,17 @@ setup_proxy_access() {
 
     # setup network policy to egress-proxy
     current_org=$(echo "$VCAP_APPLICATION" | jq --raw-output ".organization_name")
-    cf add-network-policy "$container_id" --destination-app "$PROXY_APP_NAME" \
+    cf add-network-policy "$container_id" "$PROXY_APP_NAME" \
         -o "$current_org" -s "$PROXY_SPACE" \
         --protocol "tcp" --port "61443"
+    cf add-network-policy "$container_id" "$PROXY_APP_NAME" \
+        -o "$current_org" -s "$PROXY_SPACE" \
+        --protocol "tcp" --port "8080"
+
+    # set environment variables and restart container to pick them up
+    cf set-env "$container_id" HTTPS_PROXY "$HTTPS_PROXY"
+    cf set-env "$container_id" HTTP_PROXY "$HTTP_PROXY"
+    cf restart "$container_id"
 
     # update ssl certs
     cf ssh "$container_id" \
@@ -255,8 +258,7 @@ allow_access_to_service () {
     protocol="tcp"
     ports="20-10000"
 
-    cf add-network-policy "$source_app" \
-        --destination-app "$destination_service_app" \
+    cf add-network-policy "$source_app" "$destination_service_app" \
         -o "$current_org" -s "$current_space" \
         --protocol "$protocol" --port "$ports"
 }
@@ -285,10 +287,10 @@ install_dependencies () {
     echo "[cf-driver] Ensuring git, git-lfs, and curl are installed"
     cf ssh "$container_id" \
         --command 'source /etc/profile && (which git && which git-lfs && which curl) || \
-                               (which apk && apk add git git-lfs curl) || \
-                               (which apt-get && apt-get update && apt-get install -y git git-lfs curl) || \
-                               (which yum && yum install git git-lfs curl) || \
-                               (echo "[cf-driver] Required packages missing and install attempt failed" && exit 1)'
+                            (which apk && apk add git git-lfs curl) || \
+                            (which apt-get && echo "Acquire::http::Proxy \"$HTTPS_PROXY\";" > /etc/apt/apt.conf.d/proxy.conf && apt-get update && apt-get install -y git git-lfs curl) || \
+                            (which yum && yum install git git-lfs curl) || \
+                            (echo "[cf-driver] Required packages missing and install attempt failed" && exit 1)'
 
     # gitlab-runner-helper includes a limited subset of gitlab-runner functionality
     # plus Git and Git-LFS. https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/index.html
