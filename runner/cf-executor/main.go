@@ -32,20 +32,16 @@ func GetCredentials() (*Credentials, error) {
 	return &data.CloudGovServiceAccount[0].Credentials, nil
 }
 
-func GetCfClient() (_ *client.Client, err error) {
+func GetCfClient(creds *Credentials) (_ *client.Client, err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("error getting cf client: %w", err)
 		}
 	}()
 
-	creds, err := GetCredentials()
-	if err != nil {
-		return nil, err
-	}
-
 	apiRootUrl := "https://api.fr.cloud.gov"
 	configOpts := config.UserPassword(creds.Username, creds.Password)
+
 	cfConfig, err := config.New(apiRootUrl, configOpts)
 	if err != nil {
 		return nil, err
@@ -67,7 +63,12 @@ func main() {
 		}
 	}()
 
-	cf, err := GetCfClient()
+	creds, err := GetCredentials()
+	if err != nil {
+		return
+	}
+
+	cf, err := GetCfClient(creds)
 	if err != nil {
 		return
 	}
