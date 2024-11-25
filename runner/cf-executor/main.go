@@ -25,8 +25,7 @@ func GetCredentials() (*Credentials, error) {
 	var data VcapData
 	vcapServices := os.Getenv("VCAP_SERVICES")
 
-	err := json.Unmarshal([]byte(vcapServices), &data)
-	if err != nil {
+	if err := json.Unmarshal([]byte(vcapServices), &data); err != nil {
 		return nil, fmt.Errorf("error unmarshaling VCAP_SERVICES: %w", err)
 	}
 
