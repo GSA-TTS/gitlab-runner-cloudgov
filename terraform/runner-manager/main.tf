@@ -1,6 +1,7 @@
 locals {
   # single flag to turn on and off ssh access to the manager and egress spaces
-  allow_ssh = true
+  allow_ssh       = true
+  egress_app_name = "glr-egress-proxy"
 }
 
 # the `depends_on` lines for each resource or module is needed to properly sequence initial creation
@@ -25,6 +26,22 @@ data "external" "set-manager-egress" {
   depends_on  = [module.manager_space]
 }
 
+module "worker_space" {
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=migrate-provider"
+
+  cf_org_name   = var.cf_org_name
+  cf_space_name = "${var.cf_space_name}-workers"
+  allow_ssh     = true # manager must be able to cf ssh into workers
+  deployers     = [var.cf_user]
+  developers    = var.developer_emails
+}
+
+data "external" "set-worker-egress" {
+  program     = ["/bin/sh", "set_space_egress.sh", "-p", "-s", module.worker_space.space_name]
+  working_dir = path.module
+  depends_on  = [module.worker_space]
+}
+
 module "object_store_instance" {
   source = "github.com/GSA-TTS/terraform-cloudgov//s3?ref=migrate-provider"
 
@@ -37,10 +54,16 @@ module "object_store_instance" {
 resource "cloudfoundry_service_instance" "runner_service_account" {
   name         = var.service_account_instance
   type         = "managed"
-  space        = module.manager_space.space_id
+  space        = module.worker_space.space_id
   service_plan = data.cloudfoundry_service_plans.cg_service_account.service_plans.0.id
   tags         = ["gitlab-service-account"]
-  depends_on   = [module.manager_space]
+  depends_on   = [module.worker_space]
+}
+
+resource "cloudfoundry_service_key" "runner-service-account-key" {
+  provider         = cloudfoundry-community
+  name             = "runner-manager-cfapi-key"
+  service_instance = cloudfoundry_service_instance.runner_service_account.id
 }
 
 resource "cloudfoundry_app" "gitlab-runner-manager" {
@@ -67,6 +90,7 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     # Following vars are for tuning worker defaults
     WORKER_MEMORY    = var.worker_memory
     WORKER_DISK_SIZE = var.worker_disk_size
+    WORKER_SPACE     = module.worker_space.space_name
     # Remaining runner configuration is generally static. In order to surface
     # the entire configuration input, we are using envvars for all of it.
     RUNNER_BUILDS_DIR        = "/tmp/build"
@@ -83,14 +107,15 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     RUNNER_DEBUG              = "false"
     OBJECT_STORE_INSTANCE     = var.object_store_instance
     PROXY_CREDENTIAL_INSTANCE = module.egress_proxy.credential_service_name
+    PROXY_APP_NAME            = local.egress_app_name
+    PROXY_SPACE               = module.egress_space.space_name
+    CF_USERNAME               = cloudfoundry_service_key.runner-service-account-key.credentials.username
+    CF_PASSWORD               = cloudfoundry_service_key.runner-service-account-key.credentials.password
     DOCKER_HUB_USER           = var.docker_hub_user
     DOCKER_HUB_TOKEN          = var.docker_hub_token
   }
   service_binding {
     service_instance = module.object_store_instance.bucket_id
-  }
-  service_binding {
-    service_instance = cloudfoundry_service_instance.runner_service_account.id
   }
   service_binding {
     service_instance = module.egress_proxy.credential_service_ids[module.manager_space.space_name]
@@ -104,7 +129,7 @@ module "egress_space" {
   cf_space_name = "${var.cf_space_name}-egress"
   allow_ssh     = local.allow_ssh
   deployers     = [var.cf_user]
-  developers    = var.developer_emails
+  developers    = concat(var.developer_emails, [nonsensitive(cloudfoundry_service_key.runner-service-account-key.credentials.username)])
 }
 
 # temporary method for setting egress rules until terraform provider supports it and cg_space module is updated
@@ -117,19 +142,26 @@ data "external" "set-proxy-egress" {
 module "egress_proxy" {
   source = "github.com/GSA-TTS/terraform-cloudgov//egress_proxy?ref=migrate-provider"
 
-  cf_org_name      = var.cf_org_name
-  cf_egress_space  = module.egress_space.space
-  cf_client_spaces = { (module.manager_space.space_name) = module.manager_space.space_id }
-  name             = "glr-egress-proxy"
-  allowports       = [443, 2222]
+  cf_org_name     = var.cf_org_name
+  cf_egress_space = module.egress_space.space
+  cf_client_spaces = {
+    (module.manager_space.space_name) = module.manager_space.space_id
+    (module.worker_space.space_name)  = module.worker_space.space_id
+  }
+  name       = local.egress_app_name
+  allowports = [443, 2222]
   allowlist = {
     (var.runner_manager_app_name) = [
       "*.fr.cloud.gov",
       "gsa-0.gitlab-dedicated.us"
     ]
+    "gitlab-runner-worker" = [
+      "gsa-0.gitlab-dedicated.us",
+      "www.google.com"
+    ]
   }
   # see egress_proxy/variables.tf for full list of optional arguments
-  depends_on = [module.egress_space, module.manager_space]
+  depends_on = [module.egress_space, module.manager_space, module.worker_space]
 }
 
 resource "cloudfoundry_network_policy" "egress_routing" {

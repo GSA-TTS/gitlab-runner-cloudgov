@@ -28,8 +28,12 @@ function setup_proxy_access() {
 
 function get_cf_configuration() {
     # Authenticate with Cloud Foundry to allow management of executor app instances
-    CF_USERNAME=$(echo "$VCAP_SERVICES" | jq --raw-output --arg tag_name "gitlab-service-account" ".[][] | select(.tags[] == \$tag_name) | .credentials.username")
-    CF_PASSWORD=$(echo "$VCAP_SERVICES" | jq --raw-output --arg tag_name "gitlab-service-account" ".[][] | select(.tags[] == \$tag_name) | .credentials.password")
+    if [ -z "$CF_USERNAME" ]; then
+        CF_USERNAME=$(echo "$VCAP_SERVICES" | jq --raw-output --arg tag_name "gitlab-service-account" ".[][] | select(.tags[] == \$tag_name) | .credentials.username")
+    fi
+    if [ -z "$CF_PASSWORD" ]; then
+        CF_PASSWORD=$(echo "$VCAP_SERVICES" | jq --raw-output --arg tag_name "gitlab-service-account" ".[][] | select(.tags[] == \$tag_name) | .credentials.password")
+    fi
     CF_API=$(echo "$VCAP_APPLICATION" | jq --raw-output ".cf_api")
 
     if [ -z "$WORKER_ORG" ]; then

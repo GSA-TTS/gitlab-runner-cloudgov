@@ -55,10 +55,10 @@ create_temporary_manifest () {
         echo "${padding}${v}: \"${!v}\"" >> "$TMPMANIFEST"
     done
 
-    # if [ -n "$HTTPS_PROXY" ]; then
-    #     # set proxy var if set in the manager
-    #     echo "${padding}HTTPS_PROXY: \"$HTTPS_PROXY\"" >> "$TMPMANIFEST"
-    # fi
+    if [ -n "$HTTPS_PROXY" ]; then
+        # set proxy var if set in the manager
+        echo "${padding}EGRESS_PROXY: \"$HTTPS_PROXY\"" >> "$TMPMANIFEST"
+    fi
 
     # Add any CI_SERVICE_x variables populated by start_service()
     for v in "${!CI_SERVICE_@}"; do
@@ -103,6 +103,22 @@ start_container () {
     fi
 
     cf push "${push_args[@]}"
+}
+
+setup_proxy_access() {
+    container_id="$1"
+
+    # setup network policy to egress-proxy
+    current_org=$(echo "$VCAP_APPLICATION" | jq --raw-output ".organization_name")
+    cf add-network-policy "$container_id" --destination-app "$PROXY_APP_NAME" \
+        -o "$current_org" -s "$PROXY_SPACE" \
+        --protocol "tcp" --port "61443"
+
+    # update ssl certs
+    cf ssh "$container_id" \
+        --command 'source /etc/profile && \
+            (cat /etc/cf-system-certificates/* > /usr/local/share/ca-certificates/cf-system-certificates.crt && /usr/sbin/update-ca-certificates) || \
+            (echo "[cf-driver] Error updating system ca certificates" && exit 1)'
 }
 
 start_service () {
@@ -230,6 +246,9 @@ allow_access_to_service () {
     destination_service_app="$2"
     current_org=$(echo "$VCAP_APPLICATION" | jq --raw-output ".organization_name")
     current_space=$(echo "$VCAP_APPLICATION" | jq --raw-output ".space_name")
+    if [ -n "$WORKER_SPACE" ]; then
+        current_space="$WORKER_SPACE"
+    fi
 
     # TODO NOTE: This is foolish and allows all TCP ports for now.
     # This is limiting and sloppy.
@@ -299,6 +318,11 @@ create_temporary_manifest
 
 echo "[cf-driver] Starting $CONTAINER_ID with image $CUSTOM_ENV_CI_JOB_IMAGE"
 start_container "$CONTAINER_ID"
+
+if [ -n "$PROXY_APP_NAME" ]; then
+    echo "[cf-driver] Setting up egress proxy access for $CONTAINER_ID"
+    setup_proxy_access "$CONTAINER_ID"
+fi
 
 echo "[cf-driver] Installing dependencies into $CONTAINER_ID"
 install_dependencies "$CONTAINER_ID"

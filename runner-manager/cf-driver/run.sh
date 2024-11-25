@@ -13,7 +13,10 @@ sed -e '1a\
 source /etc/profile\
 source /etc/environment\
 PATH="$HOME/bin:$PATH"\
-' "$1" >"$1.tmp"
+if [ -n "$EGRESS_PROXY" ]; then\
+    export HTTPS_PROXY="$EGRESS_PROXY"\
+fi\
+' "$1" > "$1.tmp"
 mv -- "$1.tmp" "$1"
 
 if [ -n "${RUNNER_DEBUG-}" ] && [ "$RUNNER_DEBUG" == "true" ]; then
