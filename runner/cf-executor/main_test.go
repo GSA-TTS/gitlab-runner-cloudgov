@@ -16,11 +16,11 @@ func getVcapJson(u string, p string) string {
 	return fmt.Sprintf(`{"cloud-gov-service-account":[{"credentials":{"username":"%s","password":"%s"}}]}`, u, p)
 }
 
-func TestGetCredentials(t *testing.T) {
+func TestGetCfCredentials(t *testing.T) {
 	tests := []struct {
 		name    string
 		env     map[string]string
-		want    *Credentials
+		want    *CfCredentials
 		wantErr interface{}
 	}{
 		{
@@ -46,7 +46,7 @@ func TestGetCredentials(t *testing.T) {
 			map[string]string{
 				"VCAP_SERVICES": getVcapJson("aa", "bb"),
 			},
-			&Credentials{"aa", "bb"}, nil,
+			&CfCredentials{"aa", "bb"}, nil,
 		},
 		{
 			"pulls credentials from JSON when only user available",
@@ -54,7 +54,7 @@ func TestGetCredentials(t *testing.T) {
 				"CF_USERNAME":   "Klaus",
 				"VCAP_SERVICES": getVcapJson("aa", "bb"),
 			},
-			&Credentials{"aa", "bb"}, nil,
+			&CfCredentials{"aa", "bb"}, nil,
 		},
 		{
 			"pulls credentials from JSON when only pass available",
@@ -62,7 +62,7 @@ func TestGetCredentials(t *testing.T) {
 				"CF_PASSWORD":   "tulip-cat-cupcake",
 				"VCAP_SERVICES": getVcapJson("aa", "bb"),
 			},
-			&Credentials{"aa", "bb"}, nil,
+			&CfCredentials{"aa", "bb"}, nil,
 		},
 		{
 			"pulls credentials from specifically defined envvars if available",
@@ -71,7 +71,7 @@ func TestGetCredentials(t *testing.T) {
 				"CF_PASSWORD":   "tulip-cat-cupcake",
 				"VCAP_SERVICES": getVcapJson("aa", "bb"),
 			},
-			&Credentials{"Klaus", "tulip-cat-cupcake"}, nil,
+			&CfCredentials{"Klaus", "tulip-cat-cupcake"}, nil,
 		},
 	}
 
@@ -81,7 +81,7 @@ func TestGetCredentials(t *testing.T) {
 				t.Setenv(key, val)
 			}
 
-			have, err := GetCredentials()
+			have, err := GetCfCredentials()
 
 			if (err == nil) != (tt.wantErr == nil) {
 				t.Errorf("GetCfClient() error = %v, wantErr %v", err, tt.wantErr)
