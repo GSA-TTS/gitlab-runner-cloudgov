@@ -10,23 +10,23 @@ import (
 	"github.com/cloudfoundry/go-cfclient/v3/config"
 )
 
-type Credentials struct {
+type CfCredentials struct {
 	Username string
 	Password string
 }
 
 type VcapData struct {
 	CloudGovServiceAccount []struct {
-		Credentials Credentials
+		Credentials CfCredentials
 	} `json:"cloud-gov-service-account"`
 }
 
-func GetCredentials() (*Credentials, error) {
+func GetCfCredentials() (*CfCredentials, error) {
 	cfUser := os.Getenv("CF_USERNAME")
 	cfPass := os.Getenv("CF_PASSWORD")
 
 	if cfUser != "" && cfPass != "" {
-		return &Credentials{cfUser, cfPass}, nil
+		return &CfCredentials{cfUser, cfPass}, nil
 	}
 
 	var data VcapData
@@ -39,7 +39,7 @@ func GetCredentials() (*Credentials, error) {
 	return &data.CloudGovServiceAccount[0].Credentials, nil
 }
 
-func GetCfClient(creds *Credentials) (_ *client.Client, err error) {
+func GetCfClient(creds *CfCredentials) (_ *client.Client, err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("error getting cf client: %w", err)
@@ -70,7 +70,7 @@ func main() {
 		}
 	}()
 
-	creds, err := GetCredentials()
+	creds, err := GetCfCredentials()
 	if err != nil {
 		return
 	}
