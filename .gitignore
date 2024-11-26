@@ -1,4 +1,5 @@
-﻿vars.yml
+﻿var.tfvars
+vars.yml
 
 #zip files
 *.zip
