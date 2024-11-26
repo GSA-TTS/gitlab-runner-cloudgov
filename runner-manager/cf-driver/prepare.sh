@@ -253,11 +253,6 @@ start_services () {
 allow_access_to_service () {
     source_app="$1"
     destination_service_app="$2"
-    current_org=$(echo "$VCAP_APPLICATION" | jq --raw-output ".organization_name")
-    current_space=$(echo "$VCAP_APPLICATION" | jq --raw-output ".space_name")
-    if [ -n "$WORKER_SPACE" ]; then
-        current_space="$WORKER_SPACE"
-    fi
 
     # TODO NOTE: This is foolish and allows all TCP ports for now.
     # This is limiting and sloppy.
@@ -265,7 +260,6 @@ allow_access_to_service () {
     ports="20-10000"
 
     cf add-network-policy "$source_app" "$destination_service_app" \
-        -o "$current_org" -s "$current_space" \
         --protocol "$protocol" --port "$ports"
 }
 
