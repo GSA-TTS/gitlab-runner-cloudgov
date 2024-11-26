@@ -16,6 +16,7 @@ locals {
 # but should be put back in place before attempting `terraform destroy` to ensure the destroy
 # happens in the proper order as well
 
+# manager_space: cloud.gov space for running the manager app
 module "manager_space" {
   source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=migrate-provider"
 
@@ -26,6 +27,7 @@ module "manager_space" {
   developers    = var.developer_emails
 }
 
+# worker_space: cloud.gov space for running runner workers and runner services
 module "worker_space" {
   source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=migrate-provider"
 
@@ -36,6 +38,7 @@ module "worker_space" {
   developers    = var.developer_emails
 }
 
+# object_store_instance: s3 bucket for caching build dependencies
 module "object_store_instance" {
   source = "github.com/GSA-TTS/terraform-cloudgov//s3?ref=migrate-provider"
 
@@ -45,6 +48,7 @@ module "object_store_instance" {
   depends_on   = [module.manager_space]
 }
 
+# runner_service_account: service account with permissions for provisioning runner workers and services
 resource "cloudfoundry_service_instance" "runner_service_account" {
   name         = var.service_account_instance
   type         = "managed"
@@ -54,12 +58,15 @@ resource "cloudfoundry_service_instance" "runner_service_account" {
   depends_on   = [module.worker_space]
 }
 
+# runner-service-account-key: the actual username & password for the service account user
+# needed to pass into the manager and to assign space_developer in the egress space
 resource "cloudfoundry_service_key" "runner-service-account-key" {
   provider         = cloudfoundry-community
   name             = "runner-manager-cfapi-key"
   service_instance = cloudfoundry_service_instance.runner_service_account.id
 }
 
+# gitlab-runner-manager: the actual runner manager app
 resource "cloudfoundry_app" "gitlab-runner-manager" {
   provider          = cloudfoundry-community
   name              = var.runner_manager_app_name
@@ -116,6 +123,7 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
   }
 }
 
+# egress_space: cloud.gov space for running the egress proxy
 module "egress_space" {
   source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=migrate-provider"
 
@@ -126,6 +134,8 @@ module "egress_space" {
   developers    = var.developer_emails
 }
 
+# service-account-egress-role: grant the service account user space_developer in the egress space to
+# allow it to set up network policies between runner workers and the egress proxy
 resource "cloudfoundry_space_role" "service-account-egress-role" {
   username = cloudfoundry_service_key.runner-service-account-key.credentials.username
   space    = module.egress_space.space_id
@@ -139,6 +149,7 @@ data "external" "set-proxy-egress" {
   depends_on  = [module.egress_space]
 }
 
+# egress_proxy: set up the egress proxy app
 module "egress_proxy" {
   source = "github.com/GSA-TTS/terraform-cloudgov//egress_proxy?ref=migrate-provider"
 
@@ -151,6 +162,7 @@ module "egress_proxy" {
   depends_on = [module.egress_space]
 }
 
+# egress_routing: open up access to the egress proxy from the runner-manager
 resource "cloudfoundry_network_policy" "egress_routing" {
   provider = cloudfoundry-community
   policy {
@@ -166,6 +178,8 @@ resource "cloudfoundry_network_policy" "egress_routing" {
   }
 }
 
+# egress-proxy-credentials: store the egress proxy credentials in a UPSI for the manager
+# to retrieve, use, and pass on to runner workers
 resource "cloudfoundry_service_instance" "egress-proxy-credentials" {
   name  = "${local.egress_app_name}-credentials"
   space = module.manager_space.space_id
