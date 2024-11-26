@@ -51,7 +51,7 @@ variable "runner_executor" {
 variable "manager_memory" {
   type        = number
   default     = 512
-  description = "Manager Runner Memory - Unit required (e.g. 512M or 2G)"
+  description = "Manager Runner Memory, given as number of megabytes"
 }
 
 variable "worker_memory" {
@@ -63,9 +63,8 @@ variable "worker_memory" {
 variable "worker_disk_size" {
   type        = string
   default     = "1G"
-  description = "Worker Disk Size"
+  description = "Worker Disk Size - Unit required (e.g. 512M or 2G)"
 }
-
 
 variable "service_account_instance" {
   type        = string
@@ -102,4 +101,10 @@ variable "docker_hub_token" {
   type        = string
   default     = ""
   description = "Docker Hub Token"
+}
+
+variable "worker_egress_allowlist" {
+  type        = set(string)
+  default     = []
+  description = "A list of external domain names that runner workers must be able to connect to"
 }

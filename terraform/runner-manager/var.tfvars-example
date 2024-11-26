@@ -11,3 +11,4 @@ service_account_instance = ""
 docker_hub_user          = ""
 docker_hub_token         = ""
 developer_emails         = []
+worker_egress_allowlist  = ["index.rubygems.org"]

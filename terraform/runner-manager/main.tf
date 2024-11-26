@@ -2,6 +2,13 @@ locals {
   # single flag to turn on and off ssh access to the manager and egress spaces
   allow_ssh       = true
   egress_app_name = "glr-egress-proxy"
+  # the list of egress hosts to allow for runner-manager and always needed by runner workers
+  devtools_egress_allowlist = [
+    "*.fr.cloud.gov",                      # cf-cli calls from manager
+    "gsa-0.gitlab-dedicated.us",           # connections from both manager and runners
+    "deb.debian.org",                      # runner dependencies install
+    "s3.dualstack.us-east-1.amazonaws.com" # gitlab-runner-helper source for runners
+  ]
 }
 
 # the `depends_on` lines for each resource or module is needed to properly sequence initial creation
@@ -146,13 +153,7 @@ module "egress_proxy" {
   cf_egress_space = module.egress_space.space
   name            = local.egress_app_name
   allowports      = [80, 443, 2222]
-  allowlist = [
-    "*.fr.cloud.gov",                       # cf-cli calls from manager
-    "gsa-0.gitlab-dedicated.us",            # connections from both manager and runners
-    "deb.debian.org",                       # runner dependencies install
-    "s3.dualstack.us-east-1.amazonaws.com", # gitlab-runner-helper source for runners
-    "index.rubygems.org"                    # gem install
-  ]
+  allowlist       = setunion(local.devtools_egress_allowlist, var.worker_egress_allowlist)
   # see egress_proxy/variables.tf for full list of optional arguments
   depends_on = [module.egress_space]
 }
