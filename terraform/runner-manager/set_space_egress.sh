@@ -15,9 +15,6 @@ Options:
 -o <ORG NAME>: configure the organization to act on. Default: $org
 -p: Add the public egress rules
 -t: Add the trusted egress rules
-
-Notes:
-* If -p or -t are not passed, the related security groups will be removed, if they were present
 "
 
 set -e

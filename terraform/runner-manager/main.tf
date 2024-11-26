@@ -12,9 +12,9 @@ locals {
 }
 
 # the `depends_on` lines for each resource or module is needed to properly sequence initial creation
-# they can be safely removed after initial creation to avoid too many cascading changes, but should be
-# put back in place before attempting `terraform destroy` to ensure the destroy happens in the proper order
-# as well
+# they can be safely removed after initial creation if needed to avoid too many cascading changes,
+# but should be put back in place before attempting `terraform destroy` to ensure the destroy
+# happens in the proper order as well
 
 module "manager_space" {
   source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=migrate-provider"
