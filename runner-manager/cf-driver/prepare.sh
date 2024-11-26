@@ -81,10 +81,10 @@ setup_proxy_access() {
     cf restart "$container_id"
 
     # update ssl certs
-    cf ssh "$container_id" \
-        --command 'source /etc/profile && \
-            (cat /etc/cf-system-certificates/* > /usr/local/share/ca-certificates/cf-system-certificates.crt && /usr/sbin/update-ca-certificates) || \
-            (echo "[cf-driver] Error updating system ca certificates" && exit 1)'
+    cf_ssh "$container_id" \
+        'source /etc/profile && \
+        (cat /etc/cf-system-certificates/* > /usr/local/share/ca-certificates/cf-system-certificates.crt && /usr/sbin/update-ca-certificates) || \
+        (echo "[cf-driver] Error updating system ca certificates" && exit 1)'
 }
 
 start_container () {
@@ -123,7 +123,7 @@ start_container () {
 
     cf push "${push_args[@]}"
     # this must be the very first step after `cf push` as it performs a
-    # container restart which will wipe out any other changes made via `cf ssh`
+    # container restart which will wipe out any other changes made via `cf_ssh`
     if [ -n "$PROXY_APP_NAME" ]; then
         echo "[cf-driver] Setting up egress proxy access for $CONTAINER_ID"
         setup_proxy_access "$CONTAINER_ID"
@@ -291,12 +291,12 @@ install_dependencies () {
     # Of course, RedHat/UBI will need more help to add RPM repos with the correct
     # version. TODO - RedHat support
     echo "[cf-driver] Ensuring git, git-lfs, and curl are installed"
-    cf ssh "$container_id" \
-        --command 'source /etc/profile && (which git && which git-lfs && which curl) || \
-                            (which apk && apk add git git-lfs curl) || \
-                            (which apt-get && echo "Acquire::http::Proxy \"$HTTPS_PROXY\";" > /etc/apt/apt.conf.d/proxy.conf && apt-get update && apt-get install -y git git-lfs curl) || \
-                            (which yum && yum install git git-lfs curl) || \
-                            (echo "[cf-driver] Required packages missing and install attempt failed" && exit 1)'
+    cf_ssh "$container_id" \
+        'source /etc/profile && (which git && which git-lfs && which curl) || \
+        (which apk && apk add git git-lfs curl) || \
+        (which apt-get && echo "Acquire::http::Proxy \"$HTTPS_PROXY\";" > /etc/apt/apt.conf.d/proxy.conf && apt-get update && apt-get install -y git git-lfs curl) || \
+        (which yum && yum install git git-lfs curl) || \
+        (echo "[cf-driver] Required packages missing and install attempt failed" && exit 1)'
 
     # gitlab-runner-helper includes a limited subset of gitlab-runner functionality
     # plus Git and Git-LFS. https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/index.html
@@ -309,11 +309,11 @@ install_dependencies () {
     helper_dir='bin'
     helper_path="$helper_dir/gitlab-runner-helper" # PATH'ed in run.sh
 
-    cf ssh "$container_id" -c "mkdir -p ${helper_dir}; \
-                               curl -L --output ${helper_path} \
-                               'https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/binaries/gitlab-runner-helper/gitlab-runner-helper.x86_64'; \
-                               chmod +x ${helper_path}; \
-                               ln -s 'gitlab-runner-helper' ${helper_dir}/gitlab-runner"
+    cf_ssh "$container_id" "mkdir -p ${helper_dir}; \
+                            curl -L --output ${helper_path} \
+                            'https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/binaries/gitlab-runner-helper/gitlab-runner-helper.x86_64'; \
+                            chmod +x ${helper_path}; \
+                            ln -s 'gitlab-runner-helper' ${helper_dir}/gitlab-runner"
 }
 
 if [ -n "$CUSTOM_ENV_CI_JOB_SERVICES" ]; then

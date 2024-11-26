@@ -26,13 +26,6 @@ module "manager_space" {
   developers    = var.developer_emails
 }
 
-# temporary method for setting egress rules until terraform provider supports it and cg_space module is updated
-data "external" "set-manager-egress" {
-  program     = ["/bin/sh", "set_space_egress.sh", "-p", "-t", "-s", module.manager_space.space_name]
-  working_dir = path.module
-  depends_on  = [module.manager_space]
-}
-
 module "worker_space" {
   source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=migrate-provider"
 
@@ -178,7 +171,10 @@ resource "cloudfoundry_service_instance" "egress-proxy-credentials" {
   space = module.manager_space.space_id
   type  = "user-provided"
   credentials = jsonencode({
-    "uri"      = module.egress_proxy.https_proxy
-    "http_uri" = module.egress_proxy.http_proxy
+    "uri"         = module.egress_proxy.https_proxy
+    "http_uri"    = module.egress_proxy.http_proxy
+    "cred_string" = "${module.egress_proxy.username}:${module.egress_proxy.password}"
+    "domain"      = module.egress_proxy.domain
+    "http_port"   = module.egress_proxy.http_port
   })
 }

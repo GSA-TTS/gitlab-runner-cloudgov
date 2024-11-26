@@ -1,6 +1,5 @@
 ---
-# Keep it tidy for better security and not running out of space on the build instance
-truncatesources: true
+# Keep it tidy for not running out of space on the build instance
 cleancache: true
 # Information for the gitlab runner repository came from here...
 #   https://packages.gitlab.com/install/repositories/runner/gitlab-runner/config_file.list?os=ubuntu&dist=xenial&source=script
@@ -15,9 +14,5 @@ repos:
 packages:
 - gitlab-runner
 - cf8-cli
-
-# Unlikely these are also needed, but gitlab-runner-cf had them.
-# - libwww-perl
-# - libjson-perl
-# - libterm-readkey-perl
-# - gnupg2
+- corkscrew
+- sshpass
