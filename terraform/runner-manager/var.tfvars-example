@@ -1,5 +1,5 @@
 cf_org_name              = "gsa-tts-devtools-prototyping"
-cf_space_name            = ""
+cf_space_prefix          = ""
 ci_server_token          = ""
 ci_server_url            = "https://gsa-0.gitlab-dedicated.us"
 default_job_image        = "ubuntu:24.04"

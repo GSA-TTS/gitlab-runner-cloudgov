@@ -67,12 +67,9 @@ setup_proxy_access() {
     container_id="$1"
 
     # setup network policy to egress-proxy
-    current_org=$(echo "$VCAP_APPLICATION" | jq --raw-output ".organization_name")
-    cf add-network-policy "$container_id" "$PROXY_APP_NAME" \
-        -o "$current_org" -s "$PROXY_SPACE" \
+    cf add-network-policy "$container_id" "$PROXY_APP_NAME" -s "$PROXY_SPACE" \
         --protocol "tcp" --port "61443"
-    cf add-network-policy "$container_id" "$PROXY_APP_NAME" \
-        -o "$current_org" -s "$PROXY_SPACE" \
+    cf add-network-policy "$container_id" "$PROXY_APP_NAME" -s "$PROXY_SPACE" \
         --protocol "tcp" --port "8080"
 
     # set environment variables and restart container to pick them up

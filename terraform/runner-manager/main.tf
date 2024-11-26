@@ -20,7 +20,7 @@ module "manager_space" {
   source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=migrate-provider"
 
   cf_org_name   = var.cf_org_name
-  cf_space_name = var.cf_space_name
+  cf_space_name = "${var.cf_space_prefix}-manager"
   allow_ssh     = local.allow_ssh
   deployers     = [var.cf_user]
   developers    = var.developer_emails
@@ -30,7 +30,7 @@ module "worker_space" {
   source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=migrate-provider"
 
   cf_org_name   = var.cf_org_name
-  cf_space_name = "${var.cf_space_name}-workers"
+  cf_space_name = "${var.cf_space_prefix}-workers"
   allow_ssh     = true # manager must be able to cf ssh into workers
   deployers     = [var.cf_user]
   developers    = var.developer_emails
@@ -120,7 +120,7 @@ module "egress_space" {
   source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=migrate-provider"
 
   cf_org_name   = var.cf_org_name
-  cf_space_name = "${var.cf_space_name}-egress"
+  cf_space_name = "${var.cf_space_prefix}-egress"
   allow_ssh     = local.allow_ssh
   deployers     = [var.cf_user]
   developers    = var.developer_emails

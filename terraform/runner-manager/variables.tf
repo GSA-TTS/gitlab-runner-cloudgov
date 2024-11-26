@@ -14,10 +14,10 @@ variable "cf_org_name" {
   description = "Cloud Foundry Organization"
 }
 
-variable "cf_space_name" {
+variable "cf_space_prefix" {
   type        = string
   default     = ""
-  description = "Cloud Foundry Space"
+  description = "Prefix name for the 3 created spaces"
 }
 
 variable "ci_server_token" {
