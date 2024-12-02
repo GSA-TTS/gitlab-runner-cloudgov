@@ -38,6 +38,13 @@ module "worker_space" {
   developers    = var.developer_emails
 }
 
+# temporary method for setting egress rules until terraform provider supports it and cg_space module is updated
+data "external" "set-worker-egress" {
+  program     = ["/bin/sh", "set_space_egress.sh", "-t", "-s", module.worker_space.space_name]
+  working_dir = path.module
+  depends_on  = [module.worker_space]
+}
+
 # object_store_instance: s3 bucket for caching build dependencies
 module "object_store_instance" {
   source = "github.com/GSA-TTS/terraform-cloudgov//s3?ref=migrate-provider"

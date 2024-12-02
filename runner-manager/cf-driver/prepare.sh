@@ -73,8 +73,9 @@ setup_proxy_access() {
         --protocol "tcp" --port "8080"
 
     # set environment variables and restart container to pick them up
-    cf set-env "$container_id" HTTPS_PROXY "$HTTPS_PROXY"
-    cf set-env "$container_id" HTTP_PROXY "$HTTP_PROXY"
+    cf set-env "$container_id" https_proxy "$https_proxy"
+    cf set-env "$container_id" http_proxy "$http_proxy"
+    cf set-env "$container_id" no_proxy "apps.internal,s3-fips.us-gov-west-1.amazonaws.com"
     cf restart "$container_id"
 
     # update ssl certs

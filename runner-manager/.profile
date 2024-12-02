@@ -19,8 +19,8 @@ function setup_proxy_access() {
     EGRESS_CREDENTIALS=$(echo "$VCAP_SERVICES" | jq --arg service_name "$PROXY_CREDENTIAL_INSTANCE" ".[][] | select(.name == \$service_name) | .credentials")
     if [ -n "$EGRESS_CREDENTIALS" ]; then
         echo "Configuring HTTPS_PROXY environment variable"
-        export HTTPS_PROXY=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".uri")
-        export HTTP_PROXY=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".http_uri")
+        export https_proxy=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".uri")
+        export http_proxy=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".http_uri")
         export SSH_PROXY_HOST=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".domain")
         export SSH_PROXY_PORT=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".http_port")
         echo "$EGRESS_CREDENTIALS" | jq --raw-output ".cred_string" > /home/vcap/app/ssh_proxy.auth
