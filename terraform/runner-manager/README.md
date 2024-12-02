@@ -29,9 +29,9 @@ Terraform for running GitLab CI/CD jobs on cloud.gov or another CloudFoundry bas
     ```
 
 1. Edit `vars.auto.tfvars` and modify the values there as needed. In particular, you must:
+    * for sandbox/developer deployments, set `cf_space_prefix` to the same as `SPACEPREFIX` used for the management space
     * supply the `ci_server_token` provided when you [configure the runner at the target GitLab URL](https://docs.gitlab.com/ee/tutorials/create_register_first_runner/#create-and-register-a-project-runner)
     * supply a docker hub username and personal access token to avoid rate limiting
-    * for sandbox/developer deployments, set `cf_space_prefix` to the same as `SPACEPREFIX` used for the management space
     * set `developer_emails` to whoever might need to debug this deployment
     * set `worker_egress_allowlist` to the package hosts needed for your supported programming languages
 

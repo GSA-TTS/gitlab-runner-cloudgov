@@ -1,7 +1,4 @@
 locals {
-  # single flag to turn on and off ssh access to the manager and egress spaces
-  allow_ssh       = true
-  egress_app_name = "glr-egress-proxy"
   # the list of egress hosts to allow for runner-manager and always needed by runner workers
   devtools_egress_allowlist = [
     "*.fr.cloud.gov",                      # cf-cli calls from manager
@@ -22,7 +19,7 @@ module "manager_space" {
 
   cf_org_name   = var.cf_org_name
   cf_space_name = "${var.cf_space_prefix}-manager"
-  allow_ssh     = local.allow_ssh
+  allow_ssh     = var.allow_ssh
   deployers     = [var.cf_user]
   developers    = var.developer_emails
 }
@@ -115,7 +112,7 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     RUNNER_DEBUG              = "false"
     OBJECT_STORE_INSTANCE     = var.object_store_instance
     PROXY_CREDENTIAL_INSTANCE = cloudfoundry_service_instance.egress-proxy-credentials.name
-    PROXY_APP_NAME            = local.egress_app_name
+    PROXY_APP_NAME            = var.egress_app_name
     PROXY_SPACE               = module.egress_space.space_name
     CF_USERNAME               = cloudfoundry_service_key.runner-service-account-key.credentials.username
     CF_PASSWORD               = cloudfoundry_service_key.runner-service-account-key.credentials.password
@@ -136,7 +133,7 @@ module "egress_space" {
 
   cf_org_name   = var.cf_org_name
   cf_space_name = "${var.cf_space_prefix}-egress"
-  allow_ssh     = local.allow_ssh
+  allow_ssh     = var.allow_ssh
   deployers     = [var.cf_user]
   developers    = var.developer_emails
 }
@@ -162,7 +159,7 @@ module "egress_proxy" {
 
   cf_org_name     = var.cf_org_name
   cf_egress_space = module.egress_space.space
-  name            = local.egress_app_name
+  name            = var.egress_app_name
   allowports      = [80, 443, 2222]
   allowlist       = setunion(local.devtools_egress_allowlist, var.worker_egress_allowlist)
   # see egress_proxy/variables.tf for full list of optional arguments
@@ -188,7 +185,7 @@ resource "cloudfoundry_network_policy" "egress_routing" {
 # egress-proxy-credentials: store the egress proxy credentials in a UPSI for the manager
 # to retrieve, use, and pass on to runner workers
 resource "cloudfoundry_service_instance" "egress-proxy-credentials" {
-  name  = "${local.egress_app_name}-credentials"
+  name  = "${var.egress_app_name}-credentials"
   space = module.manager_space.space_id
   type  = "user-provided"
   credentials = jsonencode({

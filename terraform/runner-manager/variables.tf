@@ -29,8 +29,8 @@ variable "ci_server_token" {
 
 variable "ci_server_url" {
   type        = string
-  default     = "https://gitlab.com/"
-  description = "Gitlab URL"
+  default     = "https://gsa-0.gitlab-dedicated.us"
+  description = "Gitlab Dedicated for Government URL"
 }
 
 variable "default_job_image" {
@@ -62,33 +62,32 @@ variable "worker_memory" {
 
 variable "worker_disk_size" {
   type        = string
-  default     = "1G"
+  default     = "2G"
   description = "Worker Disk Size - Unit required (e.g. 512M or 2G)"
 }
 
 variable "service_account_instance" {
   type        = string
-  default     = ""
+  default     = "glr-orchestration-bot"
   description = "Service Account Instance"
 }
 
 variable "object_store_instance" {
   type        = string
-  default     = ""
+  default     = "glr-dependency-cache"
   description = "S3 Bucket for Gitlab Runner"
-}
-
-#Todo: dynamic service bindings
-variable "runner_service_bindings" {
-  type        = list(object({ service_instance = string }))
-  description = "A list of service instances that should be bound to the gitlab runner app"
-  default     = []
 }
 
 variable "runner_manager_app_name" {
   type        = string
   default     = "devtools-runner-manager"
   description = "Cloud Foundry App Name for the Runner Manager"
+}
+
+variable "egress_app_name" {
+  type        = string
+  default     = "glr-egress-proxy"
+  description = "Cloud Foundry App Name for the Egress Proxy"
 }
 
 variable "docker_hub_user" {
@@ -107,4 +106,10 @@ variable "worker_egress_allowlist" {
   type        = set(string)
   default     = []
   description = "A list of external domain names that runner workers must be able to connect to"
+}
+
+variable "allow_ssh" {
+  type        = bool
+  default     = true
+  description = "Flag for whether ssh access should be allowed to the manager and egress spaces. Should be false for production"
 }
