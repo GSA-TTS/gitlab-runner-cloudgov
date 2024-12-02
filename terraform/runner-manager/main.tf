@@ -58,7 +58,6 @@ resource "cloudfoundry_service_instance" "runner_service_account" {
   type         = "managed"
   space        = module.worker_space.space_id
   service_plan = data.cloudfoundry_service_plans.cg_service_account.service_plans.0.id
-  tags         = ["gitlab-service-account"]
   depends_on   = [module.worker_space]
 }
 

@@ -122,10 +122,8 @@ start_container () {
     cf push "${push_args[@]}"
     # this must be the very first step after `cf push` as it performs a
     # container restart which will wipe out any other changes made via `cf_ssh`
-    if [ -n "$PROXY_APP_NAME" ]; then
-        echo "[cf-driver] Setting up egress proxy access for $CONTAINER_ID"
-        setup_proxy_access "$CONTAINER_ID"
-    fi
+    echo "[cf-driver] Setting up egress proxy access for $CONTAINER_ID"
+    setup_proxy_access "$CONTAINER_ID"
 }
 
 start_service () {

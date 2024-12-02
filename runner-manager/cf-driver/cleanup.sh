@@ -18,23 +18,6 @@ cleanup_service () {
     cf delete -r -f "$container_id"
 }
 
-remove_access_to_service () {
-    source_app="$1"
-    destination_service_app="$2"
-    current_org=$(echo "$VCAP_APPLICATION" | jq --raw-output ".organization_name")
-    current_space=$(echo "$VCAP_APPLICATION" | jq --raw-output ".space_name")
-
-    # TODO NOTE: This is foolish and allows all TCP ports for now.
-    # This is limiting and sloppy.
-    protocol="tcp"
-    ports="20-10000"
-
-    cf remove-network-policy "$source_app" \
-        --destination-app "$destination_service_app" \
-        -o "$current_org" -s "$current_space" \
-        --protocol "$protocol" --port "$ports"
-}
-
 cleanup_services () {
     container_id_base="$1"
     ci_job_services="$2"
@@ -48,9 +31,6 @@ cleanup_services () {
         # Using jq -er to fail of alias or name are not found
         alias_name=$(echo "$l" | jq -er '.alias | select(.)')
         container_id="${container_id_base}-svc-${alias_name}"
-
-        echo "[cf-driver] Removing network policy from $container_id_base to $container_id"
-        remove_access_to_service "$container_id_base" "$container_id"
 
         echo "[cf-driver] Deleting service $alias_name"
         cleanup_service "$alias_name" "$container_id"

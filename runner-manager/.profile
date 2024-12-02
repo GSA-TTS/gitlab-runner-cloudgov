@@ -32,26 +32,11 @@ function setup_proxy_access() {
 
 function get_cf_configuration() {
     # Authenticate with Cloud Foundry to allow management of executor app instances
-    if [ -z "$CF_USERNAME" ]; then
-        CF_USERNAME=$(echo "$VCAP_SERVICES" | jq --raw-output --arg tag_name "gitlab-service-account" ".[][] | select(.tags[] == \$tag_name) | .credentials.username")
-    fi
-    if [ -z "$CF_PASSWORD" ]; then
-        CF_PASSWORD=$(echo "$VCAP_SERVICES" | jq --raw-output --arg tag_name "gitlab-service-account" ".[][] | select(.tags[] == \$tag_name) | .credentials.password")
-    fi
     CF_API=$(echo "$VCAP_APPLICATION" | jq --raw-output ".cf_api")
 
     if [ -z "$WORKER_ORG" ]; then
         # Use the current CloudFoundry org for workers
         WORKER_ORG=$(echo "$VCAP_APPLICATION" | jq --raw-output ".organization_name")
-    fi
-
-    CURRENT_SPACE=$(echo "$VCAP_APPLICATION" | jq --raw-output ".space_name")
-    if [ -z "$WORKER_SPACE" ]; then
-        WORKER_SPACE="$CURRENT_SPACE"
-    fi
-
-    if [ "$WORKER_SPACE" = "$CURRENT_SPACE" ]; then
-        echo "WARNING: Use the same space for the runner manager and workers is not recommended: Configure WORKER_SPACE (worker-space) to use a different space"
     fi
 }
 
