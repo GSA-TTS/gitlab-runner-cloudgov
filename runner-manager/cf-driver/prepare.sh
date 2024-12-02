@@ -286,7 +286,7 @@ install_dependencies () {
     cf_ssh "$container_id" \
         'source /etc/profile && (which git && which git-lfs && which curl) || \
         (which apk && apk add git git-lfs curl) || \
-        (which apt-get && echo "Acquire::http::Proxy \"$HTTPS_PROXY\";" > /etc/apt/apt.conf.d/proxy.conf && apt-get update && apt-get install -y git git-lfs curl) || \
+        (which apt-get && echo "Acquire::http::Proxy \"$https_proxy\";" > /etc/apt/apt.conf.d/proxy.conf && apt-get update && apt-get install -y git git-lfs curl) || \
         (which yum && yum install git git-lfs curl) || \
         (echo "[cf-driver] Required packages missing and install attempt failed" && exit 1)'
 
