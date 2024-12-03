@@ -188,7 +188,7 @@ resource "cloudfoundry_service_instance" "egress-proxy-credentials" {
   space = module.manager_space.space_id
   type  = "user-provided"
   credentials = jsonencode({
-    "uri"         = module.egress_proxy.https_proxy
+    "https_uri"   = module.egress_proxy.https_proxy
     "http_uri"    = module.egress_proxy.http_proxy
     "cred_string" = "${module.egress_proxy.username}:${module.egress_proxy.password}"
     "domain"      = module.egress_proxy.domain
