@@ -41,7 +41,44 @@ func GetCfCredentials() (*CfCredentials, error) {
 	return &data.CloudGovServiceAccount[0].Credentials, nil
 }
 
-func GetCfClient(creds *CfCredentials) (_ *client.Client, err error) {
+type CfInter interface {
+	GetClient(config *cfConfig) (*cfClient, error)
+	GetConfig(apiRootURL string, options ...config.Option) (*cfConfig, error)
+	UserPassword(username string, password string) config.Option
+}
+
+type (
+	cfClient client.Client
+	cfConfig config.Config
+)
+
+func (c cfClient) GetClient(cfg *cfConfig) (*cfClient, error) {
+	extCfg := config.Config(*cfg)
+
+	extCli, err := client.New(&extCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	cli := cfClient(*extCli)
+	return &cli, nil
+}
+
+func (c cfClient) GetConfig(apiRootURL string, options ...config.Option) (*cfConfig, error) {
+	extCfg, err := config.New(apiRootURL, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := cfConfig(*extCfg)
+	return &cfg, nil
+}
+
+func (c cfClient) UserPassword(username string, password string) config.Option {
+	return config.UserPassword(username, password)
+}
+
+func GetCfClient(cf CfInter, creds *CfCredentials) (_ *cfClient, err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("error getting cf client: %w", err)
@@ -49,14 +86,14 @@ func GetCfClient(creds *CfCredentials) (_ *client.Client, err error) {
 	}()
 
 	apiRootUrl := "https://api.fr.cloud.gov"
-	configOpts := config.UserPassword(creds.Username, creds.Password)
+	configOpts := cf.UserPassword(creds.Username, creds.Password)
 
-	cfConfig, err := config.New(apiRootUrl, configOpts)
+	cfg, err := cf.GetConfig(apiRootUrl, configOpts)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.New(cfConfig)
+	return cf.GetClient((*cfConfig)(cfg))
 }
 
 func main() {
@@ -81,7 +118,7 @@ func main() {
 		return
 	}
 
-	cf, err := GetCfClient(creds)
+	cf, err := GetCfClient(cfClient{}, creds)
 	if err != nil {
 		return
 	}
