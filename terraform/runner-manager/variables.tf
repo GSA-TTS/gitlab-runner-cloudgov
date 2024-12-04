@@ -56,7 +56,7 @@ variable "manager_memory" {
 
 variable "worker_memory" {
   type        = string
-  default     = "512M"
+  default     = "768M"
   description = "Worker Memory - Unit required (e.g. 512M or 2G)"
 }
 

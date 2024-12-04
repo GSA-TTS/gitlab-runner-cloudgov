@@ -81,8 +81,9 @@ setup_proxy_access() {
     # update ssl certs
     cf_ssh "$container_id" \
         'source /etc/profile && \
+        (mkdir -p /usr/local/share/ca-certificates) && \
         (cat /etc/cf-system-certificates/* > /usr/local/share/ca-certificates/cf-system-certificates.crt && /usr/sbin/update-ca-certificates) || \
-        (echo "[cf-driver] Error updating system ca certificates" && exit 1)'
+        (echo "[cf-driver] Error updating system ca certificates. This may or may not be a problem depending on your base image." && exit 0)'
 }
 
 start_container () {
@@ -282,10 +283,10 @@ install_dependencies () {
     # version. TODO - RedHat support
     echo "[cf-driver] Ensuring git, git-lfs, and curl are installed"
     cf_ssh "$container_id" \
-        'source /etc/profile && (which git && which git-lfs && which curl) || \
-        (which apk && apk add git git-lfs curl) || \
-        (which apt-get && echo "Acquire::http::Proxy \"$https_proxy\";" > /etc/apt/apt.conf.d/proxy.conf && apt-get update && apt-get install -y git git-lfs curl) || \
-        (which yum && yum install git git-lfs curl) || \
+        'source /etc/profile && (command -v git && command -v git-lfs && command -v curl) || \
+        (command -v apk && https_proxy=$http_proxy apk add git git-lfs curl) || \
+        (command -v apt-get && echo "Acquire::http::Proxy \"$https_proxy\";" > /etc/apt/apt.conf.d/proxy.conf && apt-get update && apt-get install -y git git-lfs curl) || \
+        (command -v dnf && dnf install git git-lfs curl) || \
         (echo "[cf-driver] Required packages missing and install attempt failed" && exit 1)'
 
     # gitlab-runner-helper includes a limited subset of gitlab-runner functionality

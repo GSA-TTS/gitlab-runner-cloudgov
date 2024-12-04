@@ -11,6 +11,7 @@ printf "[cf-driver] Using SSH to connect to %s and run '%s' step\n" "$CONTAINER_
 # /etc/profile, etc/environment & the $HOME/bin
 sed -e '1a\
 source /etc/profile\
+touch /etc/environment\
 source /etc/environment\
 PATH="$HOME/bin:$PATH"\
 ' "$1" > "$1.tmp"
