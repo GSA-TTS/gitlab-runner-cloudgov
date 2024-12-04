@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/cloudfoundry/go-cfclient/v3/client"
 	"github.com/cloudfoundry/go-cfclient/v3/config"
+	"github.com/joho/godotenv"
 )
 
 type CfCredentials struct {
@@ -69,6 +71,10 @@ func main() {
 			fmt.Println(v)
 		}
 	}()
+
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("error loading .env file")
+	}
 
 	creds, err := GetCfCredentials()
 	if err != nil {
