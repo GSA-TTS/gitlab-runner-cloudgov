@@ -21,3 +21,10 @@ fi
 
 # Use a custom image if provided, else fallback to configured default
 CUSTOM_ENV_CI_JOB_IMAGE="${CUSTOM_ENV_CI_JOB_IMAGE:=$DEFAULT_JOB_IMAGE}"
+
+cf_ssh() {
+    container_id="$1"
+    command="$2"
+    app_guid=$(cf app "$container_id" --guid)
+    SSHPASS=$(cf ssh-code) sshpass -e ssh -p 2222 -T -o "StrictHostKeyChecking=no" -o "ProxyCommand corkscrew $SSH_PROXY_HOST $SSH_PROXY_PORT %h %p /home/vcap/app/ssh_proxy.auth" cf:$app_guid/0@ssh.fr.cloud.gov "$command"
+}

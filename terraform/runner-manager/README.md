@@ -1,4 +1,5 @@
 # gitlab-runner-cloudgov terraform
+
 Terraform for running GitLab CI/CD jobs on cloud.gov or another CloudFoundry based PaaS.
 
 * [Deploying](#deploying)
@@ -7,57 +8,42 @@ Terraform for running GitLab CI/CD jobs on cloud.gov or another CloudFoundry bas
 
 ## Deploying
 
-1. Log in to cloud.gov
+1. Log in to cloud.gov and select your ORGNAME when prompted
     ```
     cf login -a api.fr.cloud.gov --sso
     ```
 
-2. Target the org and space for deployment
+1. Create a management space, if it does not already exist.
     ```
-    cf target -o ORGNAME -s SPACENAME
-    ```
-    For example:
-    ```
-    cf target -o sandbox-gsa -s bret.mogilefsky
+    cf create-space SPACEPREFIX-mgmt
     ```
 
-3. Create a [cloud.gov service account](https://cloud.gov/docs/services/cloud-gov-service-account/), tagged with `gitlab-service-account`
+1. Create a [cloud.gov service account](https://cloud.gov/docs/services/cloud-gov-service-account/) with the `OrgManager` permission
     ```
-    cf create-service cloud-gov-service-account space-deployer SERVICE_ACCOUNT_INSTANCE -t "gitlab-service-account"
-    ```
-
-4. Copy `vars.tfvars` to `vars.auto.tfvars`. 
-    ```
-    cp vars.tfvars vars.auto.tfvars
+    ../create_service_account -s SPACEPREFIX-mgmt -u glr-local-deploy -m > secrets.auto.tfvars
     ```
 
-5. Edit `vars.auto.tfvars` and modify the values there as needed. In particular, you must 
+1. Copy `vars.tfvars-example` to `vars.auto.tfvars`.
+    ```
+    cp vars.tfvars-example vars.auto.tfvars
+    ```
+
+1. Edit `vars.auto.tfvars` and modify the values there as needed. In particular, you must:
+    * for sandbox/developer deployments, set `cf_space_prefix` to the same as `SPACEPREFIX` used for the management space
     * supply the `ci_server_token` provided when you [configure the runner at the target GitLab URL](https://docs.gitlab.com/ee/tutorials/create_register_first_runner/#create-and-register-a-project-runner)
-    * supply the `service_account_instance` name that you used when you created the service instance in step 3
-    * supply the `object_store_instance` name that you would like to use.
+    * supply a docker hub username and personal access token to avoid rate limiting
+    * set `developer_emails` to whoever might need to debug this deployment
+    * set `worker_egress_allowlist` to the package hosts needed for your supported programming languages
 
-6. In the /terraform/runner directory run terraform init
-    ```
-    terraform init
-    ```
+1. Run `terraform init`
 
-7. In the /terraform/runner directory, validate your terraform
-    ```
-    terraform validate
-    ```
+1. Run `terraform validate`
 
-8. In the /terraform/runner directory, run terraform non-destructively
-    ```
-    terraform plan
-    ```   
+1. Run `terraform plan` and double check that the changes are what is expected.
 
-9. In the /terraform/runner directory, apply your terraform
-    ```
-    terraform apply
-    ```   
+1. Apply your changes with `terraform apply`
 
-7. Check to see that the runner has registered itself in GitLab under your project
-   repository under Settings -> CI/CD -> Runners (Expand)
+1. Check to see that the runner has registered itself in GitLab under your project repository under Settings -> CI/CD -> Runners (Expand)
 
 At this point the runner should be available to run jobs. See [Use GitLab - Use CI/CD to build your application - Getting started](https://docs.gitlab.com/ee/ci/)
 for much more on GitLab CI/CD and runners.
@@ -72,21 +58,14 @@ Problems with runner registration often requiring viewing it's logs.
 cf logs --recent RUNNER-NAME
 ~~~
 
-### "Request error: Get https://API-URL/v2/info: dial tcp X.X.X.X:443: connect: connection refused"
+### Dependency installs are not working, dependencies cannot be downloaded.
 
-The GitLab Runner manager needs to contact the CloudFoundry API to schedule
-runner applications. This indicates your CloudFoundry space security group may
-be too restrictive or not set.
+The manager and workers run in [restricted-egress](https://cloud.gov/docs/management/space-egress/) spaces. There are two places to edit in order to allow traffic.
 
-For a production deployment you should use tightly controlled egress filtering,
-ideally with a name based proxy.
+1. If the runner-manager cannot download something, or the runner-workers are failing during the `prepare.sh` steps then the `local.devtools_egress_allowlist` in `main.tf` should be updated
+1. If the runner-workers cannot download a dependency required because of the programming language in use by the project, then it should likely be added to the `var.worker_egress_allowlist` in `vars.auto.tfvars`
 
-Test Only - For a basic test environment with no privileged access you can use
-the following to apply a loose egress security group policy on cloud.gov:
-
-~~~
-cf bind-security-group public_networks_egress ORG_NAME --space SPACE_NAME
-~~~
+It is also possible that additional configuration is required for the package manager in question to direct traffic over the proxy.
 
 ## TODO
 
