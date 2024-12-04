@@ -4,7 +4,9 @@ locals {
     "*.fr.cloud.gov",                      # cf-cli calls from manager
     "gsa-0.gitlab-dedicated.us",           # connections from both manager and runners
     "deb.debian.org",                      # debian runner dependencies install
+    "*.ubuntu.com",                        # ubuntu runner dependencies install
     "dl-cdn.alpinelinux.org",              # alpine runner dependencies install
+    "*.fedoraproject.org",                 # fedora runner dependencies install
     "s3.dualstack.us-east-1.amazonaws.com" # gitlab-runner-helper source for runners
   ]
 }
