@@ -309,6 +309,10 @@ install_dependencies () {
                             ln -s 'gitlab-runner-helper' ${helper_dir}/gitlab-runner"
 }
 
+echo "[cf-driver] re-auth to cloud.gov"
+cf auth
+cf target -o "$WORKER_ORG" -s "$WORKER_SPACE"
+
 if [ -n "$CUSTOM_ENV_CI_JOB_SERVICES" ]; then
     echo "[cf-driver] Starting services"
     start_services "$CONTAINER_ID" "$CUSTOM_ENV_CI_JOB_SERVICES"

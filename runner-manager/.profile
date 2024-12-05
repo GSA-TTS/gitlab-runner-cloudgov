@@ -32,17 +32,16 @@ function setup_proxy_access() {
 
 function get_cf_configuration() {
     # Authenticate with Cloud Foundry to allow management of executor app instances
-    CF_API=$(echo "$VCAP_APPLICATION" | jq --raw-output ".cf_api")
+    cf api $(echo "$VCAP_APPLICATION" | jq --raw-output ".cf_api")
 
     if [ -z "$WORKER_ORG" ]; then
         # Use the current CloudFoundry org for workers
-        WORKER_ORG=$(echo "$VCAP_APPLICATION" | jq --raw-output ".organization_name")
+        export WORKER_ORG=$(echo "$VCAP_APPLICATION" | jq --raw-output ".organization_name")
     fi
 }
 
 function auth_cf() {
-    cf api "$CF_API"
-    cf auth "$CF_USERNAME" "$CF_PASSWORD"
+    cf auth
     cf target -o "$WORKER_ORG" -s "$WORKER_SPACE"
 }
 
