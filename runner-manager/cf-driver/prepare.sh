@@ -63,6 +63,31 @@ create_temporary_manifest () {
     echo "[cf-driver] [DEBUG] $(wc -l < "$TMPMANIFEST") lines in $TMPMANIFEST"
 }
 
+setup_proxy_access() {
+    container_id="$1"
+
+    # setup network policy to egress-proxy
+    cf add-network-policy "$container_id" "$PROXY_APP_NAME" -s "$PROXY_SPACE" \
+        --protocol "tcp" --port "61443"
+    cf add-network-policy "$container_id" "$PROXY_APP_NAME" -s "$PROXY_SPACE" \
+        --protocol "tcp" --port "8080"
+
+    # set environment variables and restart container to pick them up
+    cf set-env "$container_id" https_proxy "$https_proxy"
+    cf set-env "$container_id" http_proxy "$http_proxy"
+    cf set-env "$container_id" no_proxy "apps.internal,s3-fips.us-gov-west-1.amazonaws.com"
+    cf restart "$container_id"
+
+    # update ssl certs
+    cf_ssh "$container_id" \
+        'source /etc/profile && \
+        mkdir -p /usr/local/share/ca-certificates && \
+        cat /etc/cf-system-certificates/* > /usr/local/share/ca-certificates/cf-system-certificates.crt && \
+        (command -v update-ca-certificates && update-ca-certificates) || \
+        ([ -f /etc/ssl/certs/ca-certificates.crt ] && cat /etc/cf-system-certificates/* >> /etc/ssl/certs/ca-certificates.crt) || \
+        (echo "[cf-driver] Could not update system ca certificates. This may or may not be a problem depending on your base image." && exit 0)'
+}
+
 start_container () {
     container_id="$1"
     image_name="$CUSTOM_ENV_CI_JOB_IMAGE"
@@ -98,6 +123,10 @@ start_container () {
     fi
 
     cf push "${push_args[@]}"
+    # this must be the very first step after `cf push` as it performs a
+    # container restart which will wipe out any other changes made via `cf_ssh`
+    echo "[cf-driver] Setting up egress proxy access for $CONTAINER_ID"
+    setup_proxy_access "$CONTAINER_ID"
 }
 
 start_service () {
@@ -223,17 +252,13 @@ start_services () {
 allow_access_to_service () {
     source_app="$1"
     destination_service_app="$2"
-    current_org=$(echo "$VCAP_APPLICATION" | jq --raw-output ".organization_name")
-    current_space=$(echo "$VCAP_APPLICATION" | jq --raw-output ".space_name")
 
     # TODO NOTE: This is foolish and allows all TCP ports for now.
     # This is limiting and sloppy.
     protocol="tcp"
     ports="20-10000"
 
-    cf add-network-policy "$source_app" \
-        --destination-app "$destination_service_app" \
-        -o "$current_org" -s "$current_space" \
+    cf add-network-policy "$source_app" "$destination_service_app" \
         --protocol "$protocol" --port "$ports"
 }
 
@@ -259,12 +284,12 @@ install_dependencies () {
     # Of course, RedHat/UBI will need more help to add RPM repos with the correct
     # version. TODO - RedHat support
     echo "[cf-driver] Ensuring git, git-lfs, and curl are installed"
-    cf ssh "$container_id" \
-        --command 'source /etc/profile && (which git && which git-lfs && which curl) || \
-                               (which apk && apk add git git-lfs curl) || \
-                               (which apt-get && apt-get update && apt-get install -y git git-lfs curl) || \
-                               (which yum && yum install git git-lfs curl) || \
-                               (echo "[cf-driver] Required packages missing and install attempt failed" && exit 1)'
+    cf_ssh "$container_id" \
+        'source /etc/profile && (command -v git && command -v git-lfs && command -v curl) || \
+        (command -v apk && https_proxy=$http_proxy apk add git git-lfs curl) || \
+        (command -v apt-get && echo "Acquire::http::Proxy \"$http_proxy\";" > /etc/apt/apt.conf.d/proxy.conf && apt-get update && apt-get install -y git git-lfs curl) || \
+        (command -v dnf && dnf -y install git git-lfs curl) || \
+        (echo "[cf-driver] Required packages missing and install attempt failed" && exit 1)'
 
     # gitlab-runner-helper includes a limited subset of gitlab-runner functionality
     # plus Git and Git-LFS. https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/index.html
@@ -277,12 +302,16 @@ install_dependencies () {
     helper_dir='bin'
     helper_path="$helper_dir/gitlab-runner-helper" # PATH'ed in run.sh
 
-    cf ssh "$container_id" -c "mkdir -p ${helper_dir}; \
-                               curl -L --output ${helper_path} \
-                               'https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/binaries/gitlab-runner-helper/gitlab-runner-helper.x86_64'; \
-                               chmod +x ${helper_path}; \
-                               ln -s 'gitlab-runner-helper' ${helper_dir}/gitlab-runner"
+    cf_ssh "$container_id" "mkdir -p ${helper_dir}; \
+                            curl -L --output ${helper_path} \
+                            'https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/binaries/gitlab-runner-helper/gitlab-runner-helper.x86_64'; \
+                            chmod +x ${helper_path}; \
+                            ln -s 'gitlab-runner-helper' ${helper_dir}/gitlab-runner"
 }
+
+echo "[cf-driver] re-auth to cloud.gov"
+cf auth
+cf target -o "$WORKER_ORG" -s "$WORKER_SPACE"
 
 if [ -n "$CUSTOM_ENV_CI_JOB_SERVICES" ]; then
     echo "[cf-driver] Starting services"

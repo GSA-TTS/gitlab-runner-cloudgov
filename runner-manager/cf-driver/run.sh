@@ -11,9 +11,10 @@ printf "[cf-driver] Using SSH to connect to %s and run '%s' step\n" "$CONTAINER_
 # /etc/profile, etc/environment & the $HOME/bin
 sed -e '1a\
 source /etc/profile\
+touch /etc/environment\
 source /etc/environment\
 PATH="$HOME/bin:$PATH"\
-' "$1" >"$1.tmp"
+' "$1" > "$1.tmp"
 mv -- "$1.tmp" "$1"
 
 if [ -n "${RUNNER_DEBUG-}" ] && [ "$RUNNER_DEBUG" == "true" ]; then
@@ -24,7 +25,7 @@ if [ -n "${RUNNER_DEBUG-}" ] && [ "$RUNNER_DEBUG" == "true" ]; then
     printf "\n=========\n[cf-driver] RUNNER_DEBUG: End command display\n"
 fi
 
-if ! cf ssh "$CONTAINER_ID" < "${1}"; then
+if ! cf_ssh "$CONTAINER_ID" < "${1}"; then
     # Exit using the variable, to make the build as failure in GitLab
     # CI.
     exit "$BUILD_FAILURE_EXIT_CODE"

@@ -15,30 +15,33 @@ function command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+function setup_proxy_access() {
+    EGRESS_CREDENTIALS=$(echo "$VCAP_SERVICES" | jq --arg service_name "$PROXY_CREDENTIAL_INSTANCE" ".[][] | select(.name == \$service_name) | .credentials")
+    if [ -n "$EGRESS_CREDENTIALS" ]; then
+        echo "Configuring HTTPS_PROXY environment variable"
+        export https_proxy=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".https_uri")
+        export http_proxy=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".http_uri")
+        export SSH_PROXY_HOST=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".domain")
+        export SSH_PROXY_PORT=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".http_port")
+        echo "$EGRESS_CREDENTIALS" | jq --raw-output ".cred_string" > /home/vcap/app/ssh_proxy.auth
+        chmod 0600 /home/vcap/app/ssh_proxy.auth
+    else
+        echo "WARNING: Could not configure the egress proxy"
+    fi
+}
+
 function get_cf_configuration() {
     # Authenticate with Cloud Foundry to allow management of executor app instances
-    CF_USERNAME=$(echo "$VCAP_SERVICES" | jq --raw-output --arg tag_name "gitlab-service-account" ".[][] | select(.tags[] == \$tag_name) | .credentials.username")
-    CF_PASSWORD=$(echo "$VCAP_SERVICES" | jq --raw-output --arg tag_name "gitlab-service-account" ".[][] | select(.tags[] == \$tag_name) | .credentials.password")
-    CF_API=$(echo "$VCAP_APPLICATION" | jq --raw-output ".cf_api")
+    cf api $(echo "$VCAP_APPLICATION" | jq --raw-output ".cf_api")
 
     if [ -z "$WORKER_ORG" ]; then
         # Use the current CloudFoundry org for workers
-        WORKER_ORG=$(echo "$VCAP_APPLICATION" | jq --raw-output ".organization_name")
-    fi
-
-    CURRENT_SPACE=$(echo "$VCAP_APPLICATION" | jq --raw-output ".space_name")
-    if [ -z "$WORKER_SPACE" ]; then
-        WORKER_SPACE="$CURRENT_SPACE"
-    fi
-
-    if [ "$WORKER_SPACE" = "$CURRENT_SPACE" ]; then
-        echo "WARNING: Use the same space for the runner manager and workers is not recommended: Configure WORKER_SPACE (worker-space) to use a different space"
+        export WORKER_ORG=$(echo "$VCAP_APPLICATION" | jq --raw-output ".organization_name")
     fi
 }
 
 function auth_cf() {
-    cf api "$CF_API"
-    cf auth "$CF_USERNAME" "$CF_PASSWORD"
+    cf auth
     cf target -o "$WORKER_ORG" -s "$WORKER_SPACE"
 }
 
@@ -55,6 +58,9 @@ function get_object_store_configuration() {
     export CACHE_S3_ACCESS_KEY=$(echo "$VCAP_SERVICES" | jq --raw-output --arg service_name "$OBJECT_STORE_INSTANCE" ".[][] | select(.name == \$service_name) | .credentials.access_key_id")
     export CACHE_S3_SECRET_KEY=$(echo "$VCAP_SERVICES" | jq --raw-output --arg service_name "$OBJECT_STORE_INSTANCE" ".[][] | select(.name == \$service_name) | .credentials.secret_access_key")
 }
+
+echo "Setting up https_proxy"
+setup_proxy_access
 
 echo "Getting CloudFoundry configuration"
 get_cf_configuration

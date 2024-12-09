@@ -2,6 +2,11 @@ variable "cf_password" {
   sensitive = true
 }
 variable "cf_user" {}
+variable "developer_emails" {
+  type        = list(string)
+  description = "cloud.gov accounts to grant SpaceDeveloper access to the runner space and runner egress space"
+  default     = []
+}
 
 variable "cf_org_name" {
   type        = string
@@ -9,10 +14,10 @@ variable "cf_org_name" {
   description = "Cloud Foundry Organization"
 }
 
-variable "cf_space_name" {
+variable "cf_space_prefix" {
   type        = string
   default     = ""
-  description = "Cloud Foundry Space"
+  description = "Prefix name for the 3 created spaces"
 }
 
 variable "ci_server_token" {
@@ -24,8 +29,8 @@ variable "ci_server_token" {
 
 variable "ci_server_url" {
   type        = string
-  default     = "https://gitlab.com/"
-  description = "Gitlab URL"
+  default     = "https://gsa-0.gitlab-dedicated.us"
+  description = "Gitlab Dedicated for Government URL"
 }
 
 variable "default_job_image" {
@@ -43,54 +48,46 @@ variable "runner_executor" {
   description = "Runner Executer"
 }
 
-variable "runner_name" {
-  type        = string
-  default     = "gitlab-runner"
-  description = "Cloud Foundry Organization"
-}
-
-variable "runner_memory" {
+variable "manager_memory" {
   type        = number
   default     = 512
-  description = "Manager Runner Memory in MB"
+  description = "Manager Runner Memory, given as number of megabytes"
 }
 
 variable "worker_memory" {
   type        = string
-  default     = "512M"
+  default     = "768M"
   description = "Worker Memory - Unit required (e.g. 512M or 2G)"
 }
 
 variable "worker_disk_size" {
   type        = string
-  default     = "1G"
-  description = "Worker Disk Size"
+  default     = "2G"
+  description = "Worker Disk Size - Unit required (e.g. 512M or 2G)"
 }
-
 
 variable "service_account_instance" {
   type        = string
-  default     = ""
+  default     = "glr-orchestration-bot"
   description = "Service Account Instance"
 }
 
 variable "object_store_instance" {
   type        = string
-  default     = ""
+  default     = "glr-dependency-cache"
   description = "S3 Bucket for Gitlab Runner"
-}
-
-#Todo: dynamic service bindings
-variable "runner_service_bindings" {
-  type        = list(object({ service_instance = string }))
-  description = "A list of service instances that should be bound to the gitlab runner app"
-  default     = []
 }
 
 variable "runner_manager_app_name" {
   type        = string
   default     = "devtools-runner-manager"
   description = "Cloud Foundry App Name for the Runner Manager"
+}
+
+variable "egress_app_name" {
+  type        = string
+  default     = "glr-egress-proxy"
+  description = "Cloud Foundry App Name for the Egress Proxy"
 }
 
 variable "docker_hub_user" {
@@ -103,4 +100,16 @@ variable "docker_hub_token" {
   type        = string
   default     = ""
   description = "Docker Hub Token"
+}
+
+variable "worker_egress_allowlist" {
+  type        = set(string)
+  default     = []
+  description = "A list of external domain names that runner workers must be able to connect to"
+}
+
+variable "allow_ssh" {
+  type        = bool
+  default     = true
+  description = "Flag for whether ssh access should be allowed to the manager and egress spaces. Should be false for production"
 }
