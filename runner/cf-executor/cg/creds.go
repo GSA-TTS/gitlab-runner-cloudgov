@@ -12,12 +12,14 @@ type Creds struct {
 	Password string
 }
 
-func (cr *Creds) isEmpty() bool {
-	return cr.Username == "" && cr.Password == ""
+type vcapData struct {
+	CGSrvAct []struct {
+		Creds `json:"credentials"`
+	} `json:"cloud-gov-service-account"`
 }
 
-type vcapData struct {
-	CGSrvAct []struct{ Creds Creds } `json:"cloud-gov-service-account"`
+func (cr *Creds) isEmpty() bool {
+	return cr.Username == "" || cr.Password == ""
 }
 
 func getCreds() (*Creds, error) {
