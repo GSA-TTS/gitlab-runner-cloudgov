@@ -18,7 +18,7 @@ locals {
 
 # manager_space: cloud.gov space for running the manager app
 module "manager_space" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=migrate-provider"
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=v2.0.0"
 
   cf_org_name   = var.cf_org_name
   cf_space_name = "${var.cf_space_prefix}-manager"
@@ -29,7 +29,7 @@ module "manager_space" {
 
 # worker_space: cloud.gov space for running runner workers and runner services
 module "worker_space" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=migrate-provider"
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=v2.0.0"
 
   cf_org_name   = var.cf_org_name
   cf_space_name = "${var.cf_space_prefix}-workers"
@@ -47,7 +47,7 @@ data "external" "set-worker-egress" {
 
 # object_store_instance: s3 bucket for caching build dependencies
 module "object_store_instance" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//s3?ref=migrate-provider"
+  source = "github.com/GSA-TTS/terraform-cloudgov//s3?ref=v2.0.0"
 
   cf_space_id  = module.manager_space.space_id
   name         = var.object_store_instance
@@ -131,7 +131,7 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
 
 # egress_space: cloud.gov space for running the egress proxy
 module "egress_space" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=migrate-provider"
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=v2.0.0"
 
   cf_org_name   = var.cf_org_name
   cf_space_name = "${var.cf_space_prefix}-egress"
@@ -157,7 +157,7 @@ data "external" "set-proxy-egress" {
 
 # egress_proxy: set up the egress proxy app
 module "egress_proxy" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//egress_proxy?ref=migrate-provider"
+  source = "github.com/GSA-TTS/terraform-cloudgov//egress_proxy?ref=v2.0.0"
 
   cf_org_name     = var.cf_org_name
   cf_egress_space = module.egress_space.space
