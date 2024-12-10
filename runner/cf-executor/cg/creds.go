@@ -22,7 +22,9 @@ func (cr *Creds) isEmpty() bool {
 	return cr.Username == "" || cr.Password == ""
 }
 
-func getCreds() (*Creds, error) {
+type EnvCredsGetter struct{}
+
+func (e EnvCredsGetter) getCreds() (*Creds, error) {
 	creds := &Creds{}
 
 	// Check if credentials are supplied through environment

@@ -80,7 +80,7 @@ func Test_getCreds(t *testing.T) {
 				t.Setenv(key, val)
 			}
 
-			have, err := getCreds()
+			have, err := EnvCredsGetter{}.getCreds()
 
 			if (err == nil) != (tt.wantErr == nil) {
 				t.Errorf("GetCfClient() error = %v, wantErr %v", err, tt.wantErr)

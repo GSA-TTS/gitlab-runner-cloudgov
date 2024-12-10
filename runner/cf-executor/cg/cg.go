@@ -22,23 +22,29 @@ type Adapter interface {
 	connect(url string, creds *Creds) error
 }
 
-type CG struct {
-	Adapter
-	Opts
+type CredI interface {
+	getCreds() (*Creds, error)
 }
 
 type Opts struct {
-	Creds      Creds
+	CredI
+	Creds Creds
+
 	APIRootURL string
+}
+
+type CG struct {
+	Adapter
+	*Opts
 }
 
 var apiRootURLDefault = "https://api.fr.cloud.gov"
 
 func New(a Adapter, o *Opts) (*CG, error) {
 	if o == nil {
-		o = &Opts{}
+		o = &Opts{CredI: EnvCredsGetter{}}
 	}
-	cg := &CG{a, *o}
+	cg := &CG{a, o}
 	return cg.Connect()
 }
 
@@ -51,7 +57,7 @@ func (c *CG) apiRootURL() string {
 
 func (c *CG) creds() (*Creds, error) {
 	if c.Creds.isEmpty() {
-		return getCreds()
+		return c.getCreds()
 	}
 	return &c.Creds, nil
 }
