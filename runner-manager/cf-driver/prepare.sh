@@ -51,10 +51,6 @@ create_temporary_manifest () {
     # Align additional environment variables with YAML at end of source manifest
     local padding="      "
 
-    for v in RUNNER_NAME CACHE_TYPE CACHE_S3_SERVER_ADDRESS CACHE_S3_BUCKET_LOCATION CACHE_S3_BUCKET_NAME CACHE_S3_ACCESS_KEY CACHE_S3_SECRET_KEY; do
-        echo "${padding}${v}: \"${!v}\"" >> "$TMPMANIFEST"
-    done
-
     # Add any CI_SERVICE_x variables populated by start_service()
     for v in "${!CI_SERVICE_@}"; do
         echo "${padding}${v}: \"${!v}\"" >> "$TMPMANIFEST"
@@ -116,6 +112,10 @@ start_container () {
 
     local docker_user docker_pass
     read -r docker_user docker_pass <<< "$(get_registry_credentials "$image_name")"
+
+    if [ -z "${RUNNER_DEBUG-}" ] || [ "$RUNNER_DEBUG" != "true" ]; then
+        push_args+=('--redact-env')
+    fi
 
     if [ -n "$docker_user" ] && [ -n "$docker_pass" ]; then
         push_args+=('--docker-username' "${docker_user}")
@@ -193,6 +193,9 @@ start_service () {
         done
 
         push_args+=('-f' "$SVCMANIFEST")
+        if [ -z "${RUNNER_DEBUG-}" ] || [ "$RUNNER_DEBUG" != "true" ]; then
+            push_args+=('--redact-env')
+        fi
     fi
 
     if [ -n "$service_entrypoint" ] || [ -n "$service_command" ]; then
