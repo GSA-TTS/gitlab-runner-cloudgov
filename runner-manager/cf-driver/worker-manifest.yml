@@ -5,10 +5,6 @@ applications:
     no-route: true
     health-check-type: process
     env:
-      RUNNER_NAME: gitlab-cf-worker
-      RUNNER_BUILDS_DIR: "/tmp/build"
-      RUNNER_CACHE_DIR: "/tmp/cache"
-      CACHE_SHARED: "true"
       NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-certificates.crt
       SSL_CERT_FILE: /etc/ssl/certs/ca-certificates.crt
 # Additional items may be added below this point in prepare.sh
