@@ -17,60 +17,60 @@ func getVcapJson(u string, p string) string {
 
 func Test_getCreds(t *testing.T) {
 	tests := []struct {
-		name    string
-		env     map[string]string
 		want    *Creds
 		wantErr interface{}
+		env     map[string]string
+		name    string
 	}{
 		{
-			"fails with no JSON",
-			nil, nil, &syntaxError,
+			name:    "fails with no JSON",
+			wantErr: &syntaxError,
 		},
 		{
-			"fails with malformed JSON",
-			map[string]string{
+			name:    "fails with malformed JSON",
+			wantErr: &syntaxError,
+			env: map[string]string{
 				"VCAP_SERVICES": `{"foo": [{"bar": false}}`,
 			},
-			nil, &syntaxError,
 		},
 		{
-			"fails with incorrectly defined VCAP envvar",
-			map[string]string{
+			name:    "fails with incorrectly defined VCAP envvar",
+			wantErr: &syntaxError,
+			env: map[string]string{
 				"VCAP_SURGICES": getVcapJson("aa", "bb"),
 			},
-			nil, &syntaxError,
 		},
 		{
-			"pulls credentials from JSON",
-			map[string]string{
+			name: "pulls credentials from JSON",
+			want: &Creds{Username: "aa", Password: "bb"},
+			env: map[string]string{
 				"VCAP_SERVICES": getVcapJson("aa", "bb"),
 			},
-			&Creds{Username: "aa", Password: "bb"}, nil,
 		},
 		{
-			"pulls credentials from JSON when only user available",
-			map[string]string{
+			name: "pulls credentials from JSON when only user available",
+			want: &Creds{Username: "aa", Password: "bb"},
+			env: map[string]string{
 				"CF_USERNAME":   "Klaus",
 				"VCAP_SERVICES": getVcapJson("aa", "bb"),
 			},
-			&Creds{Username: "aa", Password: "bb"}, nil,
 		},
 		{
-			"pulls credentials from JSON when only pass available",
-			map[string]string{
+			name: "pulls credentials from JSON when only pass available",
+			want: &Creds{Username: "aa", Password: "bb"},
+			env: map[string]string{
 				"CF_PASSWORD":   "tulip-cat-cupcake",
 				"VCAP_SERVICES": getVcapJson("aa", "bb"),
 			},
-			&Creds{Username: "aa", Password: "bb"}, nil,
 		},
 		{
-			"pulls credentials from specifically defined envvars if available",
-			map[string]string{
+			name: "pulls credentials from specifically defined envvars if available",
+			want: &Creds{Username: "Klaus", Password: "tulip-cat-cupcake"},
+			env: map[string]string{
 				"CF_USERNAME":   "Klaus",
 				"CF_PASSWORD":   "tulip-cat-cupcake",
 				"VCAP_SERVICES": getVcapJson("aa", "bb"),
 			},
-			&Creds{Username: "Klaus", Password: "tulip-cat-cupcake"}, nil,
 		},
 	}
 
