@@ -83,8 +83,8 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
   provider          = cloudfoundry-community
   name              = var.runner_manager_app_name
   space             = module.manager_space.space_id
-  path              = "${path.module}/files/src.zip"
-  source_code_hash  = filesha256("${path.module}/files/src.zip")
+  path              = data.archive_file.src.output_path
+  source_code_hash  = data.archive_file.src.output_base64sha256
   buildpacks        = ["https://github.com/cloudfoundry/apt-buildpack", "binary_buildpack"]
   instances         = 1
   command           = "gitlab-runner run"
