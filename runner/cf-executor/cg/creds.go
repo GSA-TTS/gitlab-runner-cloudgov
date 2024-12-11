@@ -19,7 +19,7 @@ type vcapData struct {
 }
 
 func (cr *Creds) isEmpty() bool {
-	return cr.Username == "" || cr.Password == ""
+	return cr == nil || cr.Username == "" || cr.Password == ""
 }
 
 type EnvCredsGetter struct{}
