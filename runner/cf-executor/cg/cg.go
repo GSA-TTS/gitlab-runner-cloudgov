@@ -28,7 +28,7 @@ type CredI interface {
 
 type Opts struct {
 	CredI
-	Creds Creds
+	Creds *Creds
 
 	APIRootURL string
 }
@@ -59,7 +59,7 @@ func (c *CG) creds() (*Creds, error) {
 	if c.Creds.isEmpty() {
 		return c.getCreds()
 	}
-	return &c.Creds, nil
+	return c.Creds, nil
 }
 
 func (c *CG) Connect() (*CG, error) {
