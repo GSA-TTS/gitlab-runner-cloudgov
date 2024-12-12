@@ -8,7 +8,7 @@ import (
 )
 
 type adapterStub struct {
-	Adapter
+	CloudI
 
 	StCreds *Creds
 	StURL   string
@@ -84,9 +84,10 @@ func TestNew(t *testing.T) {
 
 func TestCG_apiRootURL(t *testing.T) {
 	type fields struct {
-		Adapter Adapter
-		Opts    *Opts
+		CloudI
+		Opts *Opts
 	}
+
 	tests := []struct {
 		name   string
 		fields fields
@@ -96,24 +97,24 @@ func TestCG_apiRootURL(t *testing.T) {
 			name: "gets default root API URL",
 			want: apiRootURLDefault,
 			fields: fields{
-				Adapter: &adapterStub{},
-				Opts:    &Opts{CredI: credIStub{}},
+				CloudI: &adapterStub{},
+				Opts:   &Opts{CredI: credIStub{}},
 			},
 		},
 		{
 			name: "updates root API URL",
 			want: "foo",
 			fields: fields{
-				Adapter: &adapterStub{},
-				Opts:    &Opts{CredI: credIStub{}, APIRootURL: "foo"},
+				CloudI: &adapterStub{},
+				Opts:   &Opts{CredI: credIStub{}, APIRootURL: "foo"},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &CG{
-				Adapter: tt.fields.Adapter,
-				Opts:    tt.fields.Opts,
+				CloudI: tt.fields.CloudI,
+				Opts:   tt.fields.Opts,
 			}
 			got := c.apiRootURL()
 			if diff := cmp.Diff(got, tt.want); diff != "" {
@@ -125,8 +126,8 @@ func TestCG_apiRootURL(t *testing.T) {
 
 func TestCG_creds(t *testing.T) {
 	type fields struct {
-		Adapter Adapter
-		Opts    *Opts
+		CloudI
+		Opts *Opts
 	}
 
 	tests := []struct {
@@ -139,16 +140,16 @@ func TestCG_creds(t *testing.T) {
 			name: "returns creds when they already exist",
 			want: &Creds{"a", "b"},
 			fields: fields{
-				Adapter: &adapterStub{},
-				Opts:    &Opts{Creds: &Creds{"a", "b"}},
+				CloudI: &adapterStub{},
+				Opts:   &Opts{Creds: &Creds{"a", "b"}},
 			},
 		},
 		{
 			name: "returns creds from getter when not supplied",
 			want: &Creds{"foo", "bar"},
 			fields: fields{
-				Adapter: &adapterStub{},
-				Opts:    &Opts{CredI: credIStub{U: "foo", P: "bar"}},
+				CloudI: &adapterStub{},
+				Opts:   &Opts{CredI: credIStub{U: "foo", P: "bar"}},
 			},
 		},
 	}
@@ -156,8 +157,8 @@ func TestCG_creds(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &CG{
-				Adapter: tt.fields.Adapter,
-				Opts:    tt.fields.Opts,
+				CloudI: tt.fields.CloudI,
+				Opts:   tt.fields.Opts,
 			}
 			got, err := c.creds()
 			if (err != nil) != tt.wantErr {
@@ -173,8 +174,8 @@ func TestCG_creds(t *testing.T) {
 
 func TestCG_Connect(t *testing.T) {
 	type fields struct {
-		Adapter Adapter
-		Opts    *Opts
+		CloudI
+		Opts *Opts
 	}
 
 	tests := []struct {
@@ -189,27 +190,27 @@ func TestCG_Connect(t *testing.T) {
 			name:    "fails with creds() err",
 			wantErr: true,
 			fields: fields{
-				Adapter: &adapterStub{},
-				Opts:    &Opts{CredI: &credIStub{Fail: true}},
+				CloudI: &adapterStub{},
+				Opts:   &Opts{CredI: &credIStub{Fail: true}},
 			},
 		},
 		{
 			name: "connect sets URL & creds",
 			want: &CG{
-				Adapter: &adapterStub{
+				CloudI: &adapterStub{
 					StURL:   "butter",
 					StCreds: &Creds{Username: "corn", Password: "cob"},
 				},
 			},
 			fields: fields{
-				Adapter: &adapterStub{},
+				CloudI: &adapterStub{},
 				Opts: &Opts{
 					APIRootURL: "butter",
 					Creds:      &Creds{Username: "corn", Password: "cob"},
 				},
 			},
 			cmpGet: func(c *CG) any {
-				return c.Adapter
+				return c.CloudI
 			},
 		},
 	}
@@ -217,8 +218,8 @@ func TestCG_Connect(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &CG{
-				Adapter: tt.fields.Adapter,
-				Opts:    tt.fields.Opts,
+				CloudI: tt.fields.CloudI,
+				Opts:   tt.fields.Opts,
 			}
 
 			got, err := c.Connect()
@@ -245,8 +246,8 @@ func TestCG_GetApps(t *testing.T) {
 	testApps := []*App{{Id: "1", Name: "foo"}}
 
 	type fields struct {
-		Adapter Adapter
-		Opts    *Opts
+		CloudI
+		Opts *Opts
 	}
 
 	tests := []struct {
@@ -259,16 +260,16 @@ func TestCG_GetApps(t *testing.T) {
 			name:    "reports errors",
 			wantErr: true,
 			fields: fields{
-				Adapter: &adapterStub{StApps: testApps, FailGetApps: true},
-				Opts:    &Opts{CredI: &credIStub{}},
+				CloudI: &adapterStub{StApps: testApps, FailGetApps: true},
+				Opts:   &Opts{CredI: &credIStub{}},
 			},
 		},
 		{
 			name: "returns available apps list",
 			want: testApps,
 			fields: fields{
-				Adapter: &adapterStub{StApps: testApps},
-				Opts:    &Opts{CredI: &credIStub{}},
+				CloudI: &adapterStub{StApps: testApps},
+				Opts:   &Opts{CredI: &credIStub{}},
 			},
 		},
 	}
@@ -276,8 +277,8 @@ func TestCG_GetApps(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &CG{
-				Adapter: tt.fields.Adapter,
-				Opts:    tt.fields.Opts,
+				CloudI: tt.fields.CloudI,
+				Opts:   tt.fields.Opts,
 			}
 			got, err := c.GetApps()
 			if (err != nil) != tt.wantErr {
