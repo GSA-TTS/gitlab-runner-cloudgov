@@ -38,7 +38,7 @@ type CG struct {
 	*Opts
 }
 
-var apiRootURLDefault = "https://api.fr.cloud.gov"
+const apiRootURLDefault = "https://api.fr.cloud.gov"
 
 func New(a CloudI, o *Opts) (*CG, error) {
 	if o == nil {
