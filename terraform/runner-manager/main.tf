@@ -66,16 +66,15 @@ resource "cloudfoundry_service_instance" "runner_service_account" {
 
 # runner-service-account-key: the actual username & password for the service account user
 # needed to pass into the manager and to assign space_developer in the egress space
+resource "cloudfoundry_service_credential_binding" "runner-service-account-key" {
+  name             = var.runner_service_account_key_name
+  service_instance = cloudfoundry_service_instance.runner_service_account.id
+  type             = "key"
+}
 locals {
-  runner_sa_key_name = "runner-manager-cfapi-access-key"
   sa_bot_credentials = jsondecode(data.cloudfoundry_service_credential_binding.runner-service-account-key.credential_bindings.0.credential_binding).credentials
   sa_cf_username     = nonsensitive(local.sa_bot_credentials.username)
   sa_cf_password     = local.sa_bot_credentials.password
-}
-resource "cloudfoundry_service_credential_binding" "runner-service-account-key" {
-  name             = local.runner_sa_key_name
-  service_instance = cloudfoundry_service_instance.runner_service_account.id
-  type             = "key"
 }
 
 # gitlab-runner-manager: the actual runner manager app

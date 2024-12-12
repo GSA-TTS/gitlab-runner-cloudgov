@@ -10,19 +10,17 @@ variable "developer_emails" {
 
 variable "cf_org_name" {
   type        = string
-  default     = ""
+  default     = "gsa-tts-devtools-prototyping"
   description = "Cloud Foundry Organization"
 }
 
 variable "cf_space_prefix" {
   type        = string
-  default     = ""
   description = "Prefix name for the 3 created spaces"
 }
 
 variable "ci_server_token" {
   type        = string
-  default     = ""
   sensitive   = true
   description = "Gitlab CI Server Token"
 }
@@ -78,6 +76,12 @@ variable "object_store_instance" {
   description = "S3 Bucket for Gitlab Runner"
 }
 
+variable "runner_service_account_key_name" {
+  type        = string
+  default     = "runner-manager-cfapi-access-key"
+  description = "Name of the service account credentials"
+}
+
 variable "runner_manager_app_name" {
   type        = string
   default     = "devtools-runner-manager"
@@ -110,6 +114,6 @@ variable "worker_egress_allowlist" {
 
 variable "allow_ssh" {
   type        = bool
-  default     = true
+  default     = false
   description = "Flag for whether ssh access should be allowed to the manager and egress spaces. Should be false for production"
 }
