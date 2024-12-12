@@ -17,7 +17,7 @@ type App struct {
 // appCmd()
 // appPush()
 // appDelete()
-type Adapter interface {
+type CloudI interface {
 	getApps() (apps []*App, err error)
 	connect(url string, creds *Creds) error
 }
@@ -34,13 +34,13 @@ type Opts struct {
 }
 
 type CG struct {
-	Adapter
+	CloudI
 	*Opts
 }
 
 var apiRootURLDefault = "https://api.fr.cloud.gov"
 
-func New(a Adapter, o *Opts) (*CG, error) {
+func New(a CloudI, o *Opts) (*CG, error) {
 	if o == nil {
 		o = &Opts{CredI: EnvCredsGetter{}}
 	}
