@@ -5,6 +5,7 @@ import (
 
 	"github.com/cloudfoundry/go-cfclient/v3/client"
 	"github.com/cloudfoundry/go-cfclient/v3/config"
+	"github.com/cloudfoundry/go-cfclient/v3/resource"
 )
 
 type GoCFClientAdapter struct {
@@ -23,7 +24,6 @@ func (cf *GoCFClientAdapter) connect(url string, creds *Creds) error {
 	}
 
 	cf._con = con
-
 	return nil
 }
 
@@ -34,16 +34,18 @@ func (cf *GoCFClientAdapter) conn() *client.Client {
 	panic("go-cfclient adapter is not connected")
 }
 
+func castApps(apps []*resource.App) []*App {
+	Apps := make([]*App, len(apps))
+	for idx, app := range apps {
+		Apps[idx] = &(App{app.GUID, app.Name, app.State})
+	}
+	return Apps
+}
+
 func (cf *GoCFClientAdapter) getApps() ([]*App, error) {
 	apps, err := cf.conn().Applications.ListAll(context.Background(), nil)
 	if err != nil {
 		return nil, err
 	}
-
-	Apps := make([]*App, len(apps))
-	for idx, app := range apps {
-		Apps[idx] = &(App{app.GUID, app.Name, app.State})
-	}
-
-	return Apps, nil
+	return castApps(apps), nil
 }
