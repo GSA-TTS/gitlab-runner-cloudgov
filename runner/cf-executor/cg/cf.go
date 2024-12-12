@@ -31,7 +31,7 @@ func (cf *GoCFClientAdapter) conn() *client.Client {
 	if cf._con != nil {
 		return cf._con
 	}
-	panic("not connected")
+	panic("go-cfclient adapter is not connected")
 }
 
 func (cf *GoCFClientAdapter) getApps() ([]*App, error) {
