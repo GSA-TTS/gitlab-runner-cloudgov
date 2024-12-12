@@ -40,11 +40,11 @@ type CG struct {
 
 const apiRootURLDefault = "https://api.fr.cloud.gov"
 
-func New(a CloudI, o *Opts) (*CG, error) {
+func New(i CloudI, o *Opts) (*CG, error) {
 	if o == nil {
 		o = &Opts{CredI: EnvCredsGetter{}}
 	}
-	cg := &CG{a, o}
+	cg := &CG{i, o}
 	return cg.Connect()
 }
 
