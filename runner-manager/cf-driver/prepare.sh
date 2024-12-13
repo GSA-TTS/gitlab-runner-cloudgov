@@ -107,7 +107,13 @@ start_container () {
     container_command=$(echo "$img_data" | jq -r '.command | select(.)')
 
     if [ -n "$container_entrypoint" ] || [ -n "$container_command" ]; then
-        push_args+=('-c' "${container_entrypoint[@]}" "${container_command[@]}")
+        push_args+=('-c')
+        if [ -n "$container_entrypoint" ]; then
+            push_args+=("${container_entrypoint[@]}")
+        fi
+        if [ -n "$container_command" ]; then
+            push_args+=("${container_command[@]}")
+        fi
     fi
 
     local docker_user docker_pass
