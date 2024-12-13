@@ -74,6 +74,15 @@ func Test_getCreds(t *testing.T) {
 		},
 	}
 
+	// Todo (zjrgov): it could also make sense to get ENV vars outside this
+	// code, but I'm not exactly sure what the end implementation will look
+	// like and don't want to get ahead of myself.
+	//
+	// See https://github.com/GSA-TTS/gitlab-runner-cloudgov/issues/67
+	for _, k := range []string{"CF_USERNAME", "CF_PASSWORD", "VCAP_SERVICES"} {
+		t.Setenv(k, "")
+	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for key, val := range tt.env {
