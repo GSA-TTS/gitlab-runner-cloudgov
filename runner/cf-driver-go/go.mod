@@ -1,4 +1,4 @@
-module github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cf-executor
+module github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cf-driver
 
 go 1.23.3
 

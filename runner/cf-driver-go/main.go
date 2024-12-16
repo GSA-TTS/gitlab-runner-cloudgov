@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cf-executor/cg"
+	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cf-driver/cg"
 	"github.com/joho/godotenv"
 )
 
