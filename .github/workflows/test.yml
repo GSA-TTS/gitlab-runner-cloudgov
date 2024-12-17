@@ -24,6 +24,9 @@ jobs:
           CF_USER: ${{ secrets.CF_USER }}
           CF_PASSWORD: ${{ secrets.CF_PASSWORD }}
           TF_VAR_cf_user: ${{ secrets.CF_USER }}
+          TERRAFORM_PRE_RUN: |
+            apt-get update
+            apt-get install -y zip
 
 
   lint-sandbox:
