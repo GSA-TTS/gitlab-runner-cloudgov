@@ -71,7 +71,6 @@ setup_proxy_access() {
     # set environment variables and restart container to pick them up
     cf set-env "$container_id" https_proxy "$https_proxy"
     cf set-env "$container_id" http_proxy "$http_proxy"
-    cf set-env "$container_id" no_proxy "apps.internal,s3-fips.us-gov-west-1.amazonaws.com"
     cf restart "$container_id"
 
     # update ssl certs
@@ -107,7 +106,13 @@ start_container () {
     container_command=$(echo "$img_data" | jq -r '.command | select(.)')
 
     if [ -n "$container_entrypoint" ] || [ -n "$container_command" ]; then
-        push_args+=('-c' "${container_entrypoint[@]}" "${container_command[@]}")
+        push_args+=('-c')
+        if [ -n "$container_entrypoint" ]; then
+            push_args+=("${container_entrypoint[@]}")
+        fi
+        if [ -n "$container_command" ]; then
+            push_args+=("${container_command[@]}")
+        fi
     fi
 
     local docker_user docker_pass
@@ -305,11 +310,13 @@ install_dependencies () {
     helper_dir='bin'
     helper_path="$helper_dir/gitlab-runner-helper" # PATH'ed in run.sh
 
-    cf_ssh "$container_id" "mkdir -p ${helper_dir}; \
-                            curl -L --output ${helper_path} \
-                            'https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/binaries/gitlab-runner-helper/gitlab-runner-helper.x86_64'; \
-                            chmod +x ${helper_path}; \
-                            ln -s 'gitlab-runner-helper' ${helper_dir}/gitlab-runner"
+    cf_ssh "$container_id" \
+        "source /etc/profile && (command -v gitlab-runner) ||
+        (mkdir -p ${helper_dir} && \
+        curl -L --output ${helper_path} \
+        'https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/binaries/gitlab-runner-helper/gitlab-runner-helper.x86_64' && \
+        chmod +x ${helper_path} && \
+        ln -s 'gitlab-runner-helper' ${helper_dir}/gitlab-runner)"
 }
 
 echo "[cf-driver] re-auth to cloud.gov"

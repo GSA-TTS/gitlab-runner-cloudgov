@@ -66,10 +66,15 @@ resource "cloudfoundry_service_instance" "runner_service_account" {
 
 # runner-service-account-key: the actual username & password for the service account user
 # needed to pass into the manager and to assign space_developer in the egress space
-resource "cloudfoundry_service_key" "runner-service-account-key" {
-  provider         = cloudfoundry-community
-  name             = "runner-manager-cfapi-key"
+resource "cloudfoundry_service_credential_binding" "runner-service-account-key" {
+  name             = var.runner_service_account_key_name
   service_instance = cloudfoundry_service_instance.runner_service_account.id
+  type             = "key"
+}
+locals {
+  sa_bot_credentials = jsondecode(data.cloudfoundry_service_credential_binding.runner-service-account-key.credential_bindings.0.credential_binding).credentials
+  sa_cf_username     = nonsensitive(local.sa_bot_credentials.username)
+  sa_cf_password     = local.sa_bot_credentials.password
 }
 
 # gitlab-runner-manager: the actual runner manager app
@@ -77,8 +82,8 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
   provider          = cloudfoundry-community
   name              = var.runner_manager_app_name
   space             = module.manager_space.space_id
-  path              = "${path.module}/files/src.zip"
-  source_code_hash  = filesha256("${path.module}/files/src.zip")
+  path              = data.archive_file.src.output_path
+  source_code_hash  = data.archive_file.src.output_base64sha256
   buildpacks        = ["https://github.com/cloudfoundry/apt-buildpack", "binary_buildpack"]
   instances         = 1
   command           = "gitlab-runner run"
@@ -116,8 +121,8 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     PROXY_CREDENTIAL_INSTANCE = cloudfoundry_service_instance.egress-proxy-credentials.name
     PROXY_APP_NAME            = var.egress_app_name
     PROXY_SPACE               = module.egress_space.space_name
-    CF_USERNAME               = cloudfoundry_service_key.runner-service-account-key.credentials.username
-    CF_PASSWORD               = cloudfoundry_service_key.runner-service-account-key.credentials.password
+    CF_USERNAME               = local.sa_cf_username
+    CF_PASSWORD               = local.sa_cf_password
     DOCKER_HUB_USER           = var.docker_hub_user
     DOCKER_HUB_TOKEN          = var.docker_hub_token
   }
@@ -143,7 +148,7 @@ module "egress_space" {
 # service-account-egress-role: grant the service account user space_developer in the egress space to
 # allow it to set up network policies between runner workers and the egress proxy
 resource "cloudfoundry_space_role" "service-account-egress-role" {
-  username = cloudfoundry_service_key.runner-service-account-key.credentials.username
+  username = local.sa_cf_username
   space    = module.egress_space.space_id
   type     = "space_developer"
 }
