@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-org="gsa-tts-benefits-studio"
+org="gsa-tts-devtools-prototyping"
 
 usage="
 $0: Destroy a Service User Account in a given space
@@ -45,9 +45,6 @@ if [[ $space = "" || $service = "" ]]; then
 fi
 
 cf target -o $org -s $space
-
-# destroy service key
-cf delete-service-key $service service-account-key -f
 
 # destroy service
 cf delete-service $service -f
