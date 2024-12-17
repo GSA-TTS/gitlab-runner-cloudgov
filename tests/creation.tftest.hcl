@@ -6,8 +6,9 @@ provider "cloudfoundry-community" {
 }
 
 variables {
-  cf_space_prefix = "glr-cg-ci-tests"
-  ci_server_token = "fake-gdg-server-token"
+  cf_space_prefix         = "glr-cg-ci-tests"
+  ci_server_token         = "fake-gdg-server-token"
+  worker_egress_allowlist = ["*.rubygems.org", "gsa-0.gitlab-dedicated.us"]
 }
 
 run "test-system-creation" {
@@ -93,5 +94,19 @@ run "test-system-creation" {
       cloudfoundry_space_role.service-account-egress-role.space == output.egress_space_id
     ])
     error_message = "Service account is granted space_developer on the egress space"
+  }
+
+  assert {
+    condition = local.proxy_allowlist == toset([
+      "*.fr.cloud.gov",
+      "gsa-0.gitlab-dedicated.us",
+      "deb.debian.org",
+      "*.ubuntu.com",
+      "dl-cdn.alpinelinux.org",
+      "*.fedoraproject.org",
+      "s3.dualstack.us-east-1.amazonaws.com",
+      "*.rubygems.org"
+    ])
+    error_message = "The egress allowlist contains manager and worker entries"
   }
 }
