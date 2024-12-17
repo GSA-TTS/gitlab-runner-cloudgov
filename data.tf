@@ -12,6 +12,6 @@ data "cloudfoundry_service_credential_binding" "runner-service-account-key" {
 # Archive a single file.
 data "archive_file" "src" {
   type        = "zip"
-  source_dir  = "${path.module}/../../runner-manager"
+  source_dir  = "${path.module}/runner-manager"
   output_path = "${path.module}/files/src.zip"
 }
