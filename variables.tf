@@ -1,5 +1,5 @@
 variable "cf_user" {
-  type = string
+  type        = string
   description = "The cloud.gov username that is running the root terraform module"
 }
 

@@ -5,6 +5,7 @@ Terraform for running GitLab CI/CD jobs on cloud.gov or another CloudFoundry bas
 * [Deploying](#deploying)
 * [Troubleshooting](#troubleshooting)
 * [Design Decisions](#design-decisions)
+* [Testing](#testing)
 
 ## Deploying
 
@@ -94,8 +95,6 @@ The manager and workers run in [restricted-egress](https://cloud.gov/docs/manage
 
 It is also possible that additional configuration is required for the package manager in question to direct traffic over the proxy.
 
-## TODO
-
 ## Design Decisions
 
 ### Use environment variables to register gitlab-runner
@@ -104,3 +103,11 @@ Recent versions of `gitlab-runner` expose almost all initial configuration
 variables for the `register` subcommand as environment variables. This allows
 us to do almost all configuration in `manifest.yml` and skip modifying
 command line options in `runner/.profile` or having a .toml add on.
+
+## Testing
+
+To run the terraform tests:
+
+1. create a service account user with OrgManager permissions and set the `CF_USER` and `CF_PASSWORD` environment variables with that accounts details
+1. From the root directory, run `terraform init`
+1. Run `./bin/run_tests.sh`
