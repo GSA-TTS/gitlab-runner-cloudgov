@@ -86,7 +86,7 @@ in [Runner Execution Flow](https://gitlab.com/gitlab-org/gitlab-runner/-/tree/ma
   for details.
 
 * **A cloud.gov space to host the deployment service account** - Runners should only be deployed
-  into their own dedicated spaces. The terraform in terraform/runner-manager takes care of this.
+  into their own dedicated spaces. The terraform deployment care of this.
 
 * **Network access from your runner space to required Internet destinations** -
   Runners need to reach your GitLab server via HTTPS. They also need to be able
@@ -95,7 +95,7 @@ in [Runner Execution Flow](https://gitlab.com/gitlab-org/gitlab-runner/-/tree/ma
 
 ## Deploying and Troubleshooting
 
-See [the terraform README](terraform/runner-manager/README.md) for deployment instructions and troubleshooting tips.
+See [the terraform README](README.terraform.md) for deployment instructions and troubleshooting tips.
 
 ## TODO
 
