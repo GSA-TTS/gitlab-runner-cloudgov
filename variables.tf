@@ -1,7 +1,8 @@
-variable "cf_password" {
-  sensitive = true
+variable "cf_user" {
+  type = string
+  description = "The cloud.gov username that is running the root terraform module"
 }
-variable "cf_user" {}
+
 variable "developer_emails" {
   type        = list(string)
   description = "cloud.gov accounts to grant SpaceDeveloper access to the runner space and runner egress space"
@@ -103,6 +104,7 @@ variable "docker_hub_user" {
 variable "docker_hub_token" {
   type        = string
   default     = ""
+  sensitive   = true
   description = "Docker Hub Token"
 }
 

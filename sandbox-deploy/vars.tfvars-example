@@ -1,0 +1,9 @@
+allow_ssh        = true
+cf_space_prefix  = ""
+ci_server_token  = ""
+docker_hub_user  = ""
+docker_hub_token = ""
+developer_emails = []
+worker_egress_allowlist = [
+  "*.rubygems.org" # comment explaining why this is allowed
+]
