@@ -1,0 +1,43 @@
+name: Terraform Test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Integration test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: terraform validate
+        uses: dflook/terraform-validate@v1
+
+      - name: terraform fmt
+        uses: dflook/terraform-fmt-check@v1
+
+      - name: terraform test
+        uses: dflook/terraform-test@v1
+        env:
+          CF_USER: ${{ secrets.CF_USER }}
+          CF_PASSWORD: ${{ secrets.CF_PASSWORD }}
+          TF_VAR_cf_user: ${{ secrets.CF_USER }}
+
+
+  lint-sandbox:
+    runs-on: ubuntu-latest
+    name: Lint sandbox
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: terraform validate
+        uses: dflook/terraform-validate@v1
+        with:
+          path: sandbox-deploy
+
+      - name: terraform fmt
+        uses: dflook/terraform-fmt-check@v1
+        with:
+          path: sandbox-deploy
