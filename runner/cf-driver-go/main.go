@@ -22,7 +22,7 @@ func main() {
 	}()
 
 	if err := godotenv.Load(); err != nil {
-		panic("error loading .env file")
+                    panic("error loading .env file")
 	}
 
 	cgClient, err := cg.New(&cg.GoCFClientAdapter{}, nil)
