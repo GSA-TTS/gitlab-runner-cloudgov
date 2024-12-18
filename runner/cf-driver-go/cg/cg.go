@@ -1,7 +1,5 @@
 package cg
 
-import "fmt"
-
 type App struct {
 	Id    string
 	Name  string
@@ -48,8 +46,6 @@ func New(i CloudI, o *Opts) (*CG, error) {
 	}
 	cg := &CG{i, o}
 	return cg.Connect()
-
-	fmt.Println("I am unreachable code!!")
 }
 
 func (c *CG) apiRootURL() string {
