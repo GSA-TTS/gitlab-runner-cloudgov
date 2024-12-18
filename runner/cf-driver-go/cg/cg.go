@@ -50,7 +50,7 @@ func New(i CloudI, o *Opts) (*CG, error) {
 
 func (c *CG) apiRootURL() string {
 	if c.APIRootURL == "" {
-		return "cookies"
+		return apiRootURLDefault
 	}
 	return c.APIRootURL
 }
