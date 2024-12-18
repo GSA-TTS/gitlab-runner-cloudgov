@@ -36,6 +36,7 @@ space=""
 service=""
 role="space-deployer"
 org_manager="false"
+org_manager_output=""
 
 while getopts ":hms:u:r:o:" opt; do
   case "$opt" in
@@ -52,6 +53,7 @@ while getopts ":hms:u:r:o:" opt; do
       org=${OPTARG}
       ;;
     m)
+      org_manager_output="-m"
       org_manager="true"
       ;;
     h)
@@ -84,7 +86,7 @@ if [[ $org_manager = "true" ]]; then
 fi
 
 cat << EOF
-# generated with $0 -s $space -u $service -r $role -o $org
+# generated with $0 -s $space -u $service -r $role -o $org $org_manager_output
 # revoke with $(dirname $0)/destroy_service_account.sh -s $space -u $service -o $org
 
 cf_user = "$username"

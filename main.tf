@@ -9,6 +9,7 @@ locals {
     "*.fedoraproject.org",                 # fedora runner dependencies install
     "s3.dualstack.us-east-1.amazonaws.com" # gitlab-runner-helper source for runners
   ]
+  proxy_allowlist = setunion(local.devtools_egress_allowlist, var.worker_egress_allowlist)
 }
 
 # the `depends_on` lines for each resource or module is needed to properly sequence initial creation
@@ -168,7 +169,7 @@ module "egress_proxy" {
   cf_egress_space = module.egress_space.space
   name            = var.egress_app_name
   allowports      = [80, 443, 2222]
-  allowlist       = setunion(local.devtools_egress_allowlist, var.worker_egress_allowlist)
+  allowlist       = local.proxy_allowlist
   # see egress_proxy/variables.tf for full list of optional arguments
   depends_on = [module.egress_space]
 }

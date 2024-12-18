@@ -5,8 +5,30 @@ Terraform for running GitLab CI/CD jobs on cloud.gov or another CloudFoundry bas
 * [Deploying](#deploying)
 * [Troubleshooting](#troubleshooting)
 * [Design Decisions](#design-decisions)
+* [Testing](#testing)
 
 ## Deploying
+
+Include this repository as a module in your terraform setup to deploy a gitlab-runner-cloudgov system.
+
+```terraform
+module "gitlab-runner" {
+    source = "github.com/gsa-tts/gitlab-runner-cloudgov?ref=main" # TODO: releases via tags
+
+    cf_space_prefix  = "SPACEPREFIX"
+    ci_server_token  = "TOKEN"
+    docker_hub_user  = "docker-username"
+    docker_hub_token = "docker-personal-access-token"
+    worker_egress_allowlist = [
+        "hostname.to.allow", # explanation of why it's allowed
+        "other.hostname.to.allow" # explanation of why it's allowed
+    ]
+}
+```
+
+### Local terraform use / sandbox deploy
+
+For local development, there is a `sandbox-deploy` module set up to deploy the root module that will use local state storage.
 
 1. Log in to cloud.gov and select your ORGNAME when prompted
     ```
@@ -18,9 +40,14 @@ Terraform for running GitLab CI/CD jobs on cloud.gov or another CloudFoundry bas
     cf create-space SPACEPREFIX-mgmt
     ```
 
+1. Switch working directory
+    ```
+    cd sandbox-deploy
+    ```
+
 1. Create a [cloud.gov service account](https://cloud.gov/docs/services/cloud-gov-service-account/) with the `OrgManager` permission
     ```
-    ../create_service_account -s SPACEPREFIX-mgmt -u glr-local-deploy -m > secrets.auto.tfvars
+    ./create_service_account -s SPACEPREFIX-mgmt -u glr-local-deploy -m > secrets.auto.tfvars
     ```
 
 1. Copy `vars.tfvars-example` to `vars.auto.tfvars`.
@@ -52,10 +79,11 @@ for much more on GitLab CI/CD and runners.
 
 ### Viewing manager instance logs
 
-Problems with runner registration often requiring viewing it's logs.
+Problems with runner registration often requiring viewing its logs.
 
 ~~~
-cf logs --recent RUNNER-NAME
+cf target -s SPACEPREFIX-manager
+cf logs --recent devtools-runner-manager
 ~~~
 
 ### Dependency installs are not working, dependencies cannot be downloaded.
@@ -63,11 +91,9 @@ cf logs --recent RUNNER-NAME
 The manager and workers run in [restricted-egress](https://cloud.gov/docs/management/space-egress/) spaces. There are two places to edit in order to allow traffic.
 
 1. If the runner-manager cannot download something, or the runner-workers are failing during the `prepare.sh` steps then the `local.devtools_egress_allowlist` in `main.tf` should be updated
-1. If the runner-workers cannot download a dependency required because of the programming language in use by the project, then it should likely be added to the `var.worker_egress_allowlist` in `vars.auto.tfvars`
+1. If the runner-workers cannot download a dependency required because of the programming language in use by the project, then it should likely be added to the `var.worker_egress_allowlist` in `vars.auto.tfvars` or your module include.
 
 It is also possible that additional configuration is required for the package manager in question to direct traffic over the proxy.
-
-## TODO
 
 ## Design Decisions
 
@@ -77,3 +103,11 @@ Recent versions of `gitlab-runner` expose almost all initial configuration
 variables for the `register` subcommand as environment variables. This allows
 us to do almost all configuration in `manifest.yml` and skip modifying
 command line options in `runner/.profile` or having a .toml add on.
+
+## Testing
+
+To run the terraform tests:
+
+1. create a service account user with OrgManager permissions and set the `CF_USER` and `CF_PASSWORD` environment variables with that accounts details
+1. From the root directory, run `terraform init`
+1. Run `./bin/run_tests.sh`
