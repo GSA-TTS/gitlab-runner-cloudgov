@@ -2,7 +2,7 @@ package cg
 
 type App struct {
 	Id    string
-	Name  string
+                  	Name  string
 	State string
 }
 
