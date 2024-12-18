@@ -1,0 +1,7 @@
+# For simple integration test with cg_integration_test.go
+# 1. copy this file to `.cg_creds`
+# 2. replace with real credentials
+# 3. replace with real output
+username-1234-asdf
+password-asdf-1234
+I am the expected output!
