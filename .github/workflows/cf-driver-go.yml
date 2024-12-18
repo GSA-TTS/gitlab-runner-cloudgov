@@ -5,6 +5,10 @@ name: "CF Driver: Go Build & Test"
 
 on: [pull_request]
 
+defaults:
+  run:
+    working-directory: runner/cf-driver-go
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,13 +21,13 @@ jobs:
           go-version-file: "./runner/cf-driver-go/go.mod"
 
       - name: Format
-        run: go fmt ./runner/cf-driver-go/...
+        run: go fmt ./...
 
       - name: Vet
-        run: go vet ./runner/cf-driver-go/...
+        run: go vet ./...
 
       - name: Build
-        run: go build -v ./runner/cf-driver-go/...
+        run: go build -v ./...
 
       - name: Test
-        run: go test -v ./runner/cf-driver-go/...
+        run: go test -v ./...
