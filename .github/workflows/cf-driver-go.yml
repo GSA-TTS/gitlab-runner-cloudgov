@@ -20,6 +20,9 @@ jobs:
         with:
           go-version: "1.23.x"
 
+      - name: Install dependencies
+        run: go get .
+
       - name: Check formatting
         run: test -z $(gofmt -l ./...)
 
