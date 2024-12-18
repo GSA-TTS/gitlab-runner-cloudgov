@@ -1,6 +1,6 @@
 module github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cf-driver
 
-go 1.23.3
+go 1.23
 
 require (
 	github.com/cloudfoundry/go-cfclient/v3 v3.0.0-alpha.9
