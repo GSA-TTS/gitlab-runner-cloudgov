@@ -20,8 +20,8 @@ jobs:
         with:
           go-version-file: "./runner/cf-driver-go/go.mod"
 
-      - name: Format
-        run: go fmt ./...
+      - name: Check formatting
+        run: test -z $(gofmt -l ./...)
 
       - name: Vet
         run: go vet ./...
