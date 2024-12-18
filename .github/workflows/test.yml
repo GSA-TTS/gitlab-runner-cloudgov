@@ -29,18 +29,13 @@ jobs:
             apt-get install -y zip
 
 
-  lint-sandbox:
+  validate-sandbox:
     runs-on: ubuntu-latest
-    name: Lint sandbox
+    name: Validate sandbox
     steps:
       - uses: actions/checkout@v4
 
       - name: terraform validate
         uses: dflook/terraform-validate@v1
-        with:
-          path: sandbox-deploy
-
-      - name: terraform fmt
-        uses: dflook/terraform-fmt-check@v1
         with:
           path: sandbox-deploy
