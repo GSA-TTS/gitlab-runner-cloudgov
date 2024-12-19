@@ -1,6 +1,6 @@
 //go:build integration
 
-package cg_integration
+package cg_test
 
 import (
 	"bufio"
