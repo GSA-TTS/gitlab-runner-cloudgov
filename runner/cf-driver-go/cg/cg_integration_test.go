@@ -47,10 +47,12 @@ scanning:
 
 	if err := scanner.Err(); err != nil {
 		t.Errorf("Error scanning testdata file = %v", err)
+		return
 	}
 
 	if u == "" || p == "" || want == "" {
 		t.Error("Could not load variables from testdata")
+		return
 	}
 
 	cgClient, err := cg.New(&cg.GoCFClientAdapter{}, &cg.Opts{
@@ -58,19 +60,23 @@ scanning:
 	})
 	if err != nil {
 		t.Errorf("Error getting cgClient = %v", err)
+		return
 	}
 
 	apps, err := cgClient.GetApps()
 	if err != nil {
 		t.Errorf("Error running GetApps() = %v", err)
+		return
 	}
 
 	got, err := json.Marshal(apps)
 	if err != nil {
 		t.Errorf("Error marshalling apps to json = %v", err)
+		return
 	}
 
 	if diff := cmp.Diff(string(got), want); diff != "" {
 		t.Errorf("mismatch (-got +want):\n%s", diff)
+		return
 	}
 }
