@@ -16,9 +16,14 @@ func Test_CFAdapter_GetApps(t *testing.T) {
 	var u, p, want string
 	var l int
 
-	f, err := os.Open("./testdata/.cg_creds")
+	path := "./testdata/.cg_creds"
+	f, err := os.Open(path)
 	if err != nil {
-		t.Errorf("Error opening testdata file = %v", err)
+		t.Errorf(
+			"Error opening testdata file = %v\n\033[1;33mDid you forget to create `%v`?\033[0m",
+			err, path,
+		)
+		return
 	}
 	defer f.Close()
 
