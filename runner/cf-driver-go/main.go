@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cf-driver/cg"
+	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cf-driver/cmd"
 	"github.com/joho/godotenv"
 )
 
@@ -25,17 +25,5 @@ func main() {
 		panic("error loading .env file")
 	}
 
-	cgClient, err := cg.New(&cg.GoCFClientAdapter{}, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	apps, err := cgClient.GetApps()
-	if err != nil {
-		panic(err)
-	}
-
-	for _, app := range apps {
-		log.Printf("Application %s is %s\n", app.Name, app.State)
-	}
+	cmd.Execute()
 }
