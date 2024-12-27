@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cf-driver/cmd/drive"
+	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cfd/cmd/drive"
 
 	"github.com/spf13/cobra"
 )
