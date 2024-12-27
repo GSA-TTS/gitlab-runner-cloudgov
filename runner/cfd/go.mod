@@ -1,4 +1,4 @@
-module github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cf-driver
+module github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cfd
 
 go 1.23
 
