@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cf-driver/cg"
+	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cfd/cg"
 	"github.com/google/go-cmp/cmp"
 )
 
