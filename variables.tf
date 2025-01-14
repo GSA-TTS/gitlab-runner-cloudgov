@@ -47,6 +47,12 @@ variable "runner_executor" {
   description = "Runner Executer"
 }
 
+variable "manager_instances" {
+  type        = number
+  default     = 2
+  description = "Number of manager instances to run"
+}
+
 variable "manager_memory" {
   type        = number
   default     = 512
