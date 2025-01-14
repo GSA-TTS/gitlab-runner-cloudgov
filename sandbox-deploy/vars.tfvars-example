@@ -4,6 +4,7 @@ ci_server_token  = ""
 docker_hub_user  = ""
 docker_hub_token = ""
 developer_emails = []
+worker_disk_size = "2G"
 worker_egress_allowlist = [
   "*.rubygems.org" # comment explaining why this is allowed
 ]
