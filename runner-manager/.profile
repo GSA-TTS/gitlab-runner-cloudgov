@@ -81,6 +81,7 @@ if pgrep 'gitlab-runner' > /dev/null ; then
 else
     echo "Registering GitLab Runner with name $RUNNER_NAME"
     if gitlab-runner register; then
+        sed -e 's/concurrent = 1/concurrent = 10/' -i.bak .gitlab-runner/config.toml
         echo "GitLab Runner successfully registered"
     else
         exit_with_failure "GitLab Runner not registered"
