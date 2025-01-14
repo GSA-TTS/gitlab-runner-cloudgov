@@ -31,6 +31,7 @@ module "sandbox-runner" {
   docker_hub_user         = var.docker_hub_user
   docker_hub_token        = var.docker_hub_token
   developer_emails        = var.developer_emails
+  worker_disk_size        = var.worker_disk_size
   worker_egress_allowlist = var.worker_egress_allowlist
   allow_ssh               = var.allow_ssh
 }

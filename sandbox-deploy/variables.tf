@@ -22,6 +22,9 @@ variable "docker_hub_token" {
 variable "developer_emails" {
   type = list(string)
 }
+variable "worker_disk_size" {
+  type = string
+}
 variable "worker_egress_allowlist" {
   type = set(string)
 }
