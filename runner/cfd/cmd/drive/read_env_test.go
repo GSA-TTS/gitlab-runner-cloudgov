@@ -64,20 +64,20 @@ func Test_parseJobResFile(t *testing.T) {
 	t.Setenv("JOB_RESPONSE_FILE", "./testdata/sample_job_response.json")
 
 	wanted := &JobResData{
-		Image: JobResImg{
+		Image: &JobResImg{
 			Command:    []string{"a", "b", "c"},
 			Entrypoint: []string{"d", "e", "f"},
 		},
-		Services: []JobResSvcs{{
-			JobResImg: JobResImg{
+		Services: []*JobResSvcs{{
+			JobResImg: &JobResImg{
 				Name:       "postgres:wormy",
 				Alias:      "my-pg-service",
 				Command:    []string{"g", "h", "i"},
 				Entrypoint: []string{"j", "k", "l"},
 			},
-			Variables: JobResVars{{Key: "bazz", Value: "buzz"}},
+			Variables: &JobResVars{{Key: "bazz", Value: "buzz"}},
 		}},
-		Variables: JobResVars{{Key: "foo", Value: "bar"}},
+		Variables: &JobResVars{{Key: "foo", Value: "bar"}},
 	}
 
 	cfg := getEnvCfg()

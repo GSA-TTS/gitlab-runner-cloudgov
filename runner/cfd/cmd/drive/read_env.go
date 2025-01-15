@@ -31,9 +31,9 @@ type EnvCfg struct {
 }
 
 type JobResData struct {
-	Image     JobResImg
-	Variables JobResVars
-	Services  []JobResSvcs
+	Image     *JobResImg
+	Variables *JobResVars
+	Services  []*JobResSvcs
 }
 type JobResImg struct {
 	Name       string
@@ -46,8 +46,8 @@ type JobResVars []struct {
 	Value string
 }
 type JobResSvcs struct {
-	JobResImg
-	Variables JobResVars
+	*JobResImg
+	Variables *JobResVars
 }
 
 type VcapAppData struct {
