@@ -74,14 +74,16 @@ locals {
 
 # gitlab-runner-manager: the actual runner manager app
 resource "cloudfoundry_app" "gitlab-runner-manager" {
-  provider          = cloudfoundry-community
   name              = var.runner_manager_app_name
-  space             = module.manager_space.space_id
+  space_name        = module.manager_space.space_name
+  org_name          = var.cf_org_name
   path              = data.archive_file.src.output_path
   source_code_hash  = data.archive_file.src.output_base64sha256
   buildpacks        = ["https://github.com/cloudfoundry/apt-buildpack", "binary_buildpack"]
   instances         = var.manager_instances
+  strategy          = "rolling"
   command           = "gitlab-runner run"
+  no_route          = true
   memory            = var.manager_memory
   health_check_type = "process"
 
@@ -122,12 +124,14 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     DOCKER_HUB_USER           = var.docker_hub_user
     DOCKER_HUB_TOKEN          = var.docker_hub_token
   }
-  service_binding {
-    service_instance = module.object_store_instance.bucket_id
-  }
-  service_binding {
-    service_instance = cloudfoundry_service_instance.egress-proxy-credentials.id
-  }
+  service_bindings = [
+    { service_instance = var.object_store_instance },
+    { service_instance = cloudfoundry_service_instance.egress-proxy-credentials.name }
+  ]
+  depends_on = [
+    module.object_store_instance,
+    cloudfoundry_service_instance.egress-proxy-credentials
+  ]
 }
 
 # egress_space: cloud.gov space for running the egress proxy

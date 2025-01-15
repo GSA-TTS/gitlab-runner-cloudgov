@@ -47,7 +47,7 @@ For local development, there is a `sandbox-deploy` module set up to deploy the r
 
 1. Create a [cloud.gov service account](https://cloud.gov/docs/services/cloud-gov-service-account/) with the `OrgManager` permission
     ```
-    ./create_service_account -s SPACEPREFIX-mgmt -u glr-local-deploy -m > secrets.auto.tfvars
+    ./create_service_account -s SPACEPREFIX-mgmt -u glr-local-deploy > secrets.auto.tfvars
     ```
 
 1. Copy `vars.tfvars-example` to `vars.auto.tfvars`.
