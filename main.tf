@@ -118,6 +118,7 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     # https://docs.gitlab.com/runner/faq/#enable-debug-logging-mode
     # and ensuring job logs are removed to avoid leaking secrets.
     RUNNER_DEBUG              = "false"
+    RUNNER_CONCURRENCY        = var.runner_concurrency
     OBJECT_STORE_INSTANCE     = var.object_store_instance
     PROXY_CREDENTIAL_INSTANCE = cloudfoundry_service_instance.egress-proxy-credentials.name
     PROXY_APP_NAME            = var.egress_app_name
