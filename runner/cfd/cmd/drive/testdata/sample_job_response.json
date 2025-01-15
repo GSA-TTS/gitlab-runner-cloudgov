@@ -1,0 +1,26 @@
+{
+  "image": {
+    "command": ["a", "b", "c"],
+    "entrypoint": ["d", "e", "f"]
+  },
+  "services": [
+    {
+      "alias": "my-pg-service",
+      "name": "postgres:wormy",
+      "command": ["g", "h", "i"],
+      "entrypoint": ["j", "k", "l"],
+      "variables": [
+        {
+          "key": "bazz",
+          "value": "buzz"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "key": "foo",
+      "value": "bar"
+    }
+  ]
+}
