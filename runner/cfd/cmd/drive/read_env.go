@@ -7,7 +7,7 @@ import (
 	"reflect"
 )
 
-type EnvCfg struct {
+type EnvConfig struct {
 	*JobResData
 	*VcapAppData
 	*ServicesData
@@ -18,22 +18,22 @@ type EnvCfg struct {
 
 	ContainerId string `env:"CONTAINER_ID"`
 
-	RegUser string `env:"CUSTOM_ENV_CI_REGISTRY_USER"`
-	RegPass string `env:"CUSTOM_ENV_CI_REGISTRY_PASSWORD"`
-	JobImg  string `env:"CUSTOM_ENV_CI_JOB_IMAGE"`
+	JobImg         string `env:"CUSTOM_ENV_CI_JOB_IMAGE"`
+	DockerPass     string `env:"CF_DOCKER_PASSWORD"`
+	CIRegistryUser string `env:"CUSTOM_ENV_CI_REGISTRY_USER"`
+	CIRegistryPass string `env:"CUSTOM_ENV_CI_REGISTRY_PASSWORD"`
 
-	DockerToken string `env:"DOCKER_HUB_TOKEN"`
-	DockerUser  string `env:"DOCKER_HUB_USER"`
-	DockerPass  string `env:"CF_DOCKER_PASSWORD"`
+	DockerHubUser  string `env:"DOCKER_HUB_USER"`
+	DockerHubToken string `env:"DOCKER_HUB_TOKEN"`
 
-	WorkerMem  string `env:"WORKER_MEMORY"`
-	WorkerDisk string `env:"WORKER_DISK_SIZE"`
+	WorkerMemory   string `env:"WORKER_MEMORY"`
+	WorkerDiskSize string `env:"WORKER_DISK_SIZE"`
 }
 
 type JobResData struct {
 	Image     *JobResImg
 	Variables *JobResVars
-	Services  []*JobResSvcs
+	Services  []*JobResServices
 }
 type JobResImg struct {
 	Name       string
@@ -45,7 +45,7 @@ type JobResVars []struct {
 	Key   string
 	Value string
 }
-type JobResSvcs struct {
+type JobResServices struct {
 	*JobResImg
 	Variables *JobResVars
 }
@@ -72,7 +72,7 @@ func parseCfgJSON[R any](j []byte, r *R) (*R, error) {
 	return r, nil
 }
 
-func (c *EnvCfg) parseJobResFile() (err error) {
+func (c *EnvConfig) parseJobResFile() (err error) {
 	if c.JobResFile == "" {
 		return nil
 	}
@@ -86,12 +86,12 @@ func (c *EnvCfg) parseJobResFile() (err error) {
 	return err
 }
 
-func (c *EnvCfg) parseVcapAppJSON() (err error) {
+func (c *EnvConfig) parseVcapAppJSON() (err error) {
 	c.VcapAppData, err = parseCfgJSON([]byte(c.VcapAppJSON), &VcapAppData{})
 	return err
 }
 
-func (c *EnvCfg) parseServicesJSON() (err error) {
+func (c *EnvConfig) parseServicesJSON() (err error) {
 	c.ServicesData, err = parseCfgJSON([]byte(c.ServicesJSON), &ServicesData{})
 	return err
 }
@@ -99,7 +99,7 @@ func (c *EnvCfg) parseServicesJSON() (err error) {
 // This is a pretty simple implementation, if our needs get more
 // complex we should use one of several existing packages to do this.
 // e.g., https://pkg.go.dev/github.com/caarlos0/env/v11
-func (c *EnvCfg) parseEnv() *EnvCfg {
+func (c *EnvConfig) parseEnv() *EnvConfig {
 	ct := reflect.TypeOf(*c)
 	ce := reflect.ValueOf(c).Elem()
 
@@ -115,8 +115,8 @@ func (c *EnvCfg) parseEnv() *EnvCfg {
 	return c
 }
 
-func getEnvCfg() *EnvCfg {
-	cfg := (&EnvCfg{}).parseEnv()
+func getEnvCfg() *EnvConfig {
+	cfg := (&EnvConfig{}).parseEnv()
 	if err := cfg.parseJobResFile(); err != nil {
 		panic(err)
 	}

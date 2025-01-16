@@ -10,32 +10,32 @@ import (
 // but I think it'll be easier to manage if parsing a file and want to
 // think about that later.
 func Test_getEnvCfg(t *testing.T) {
-	cfgWant := &EnvCfg{
-		ContainerId:  "1234",
-		RegUser:      "foo",
-		RegPass:      "bar",
-		JobImg:       "bookworm",
-		DockerToken:  "1234",
-		DockerUser:   "foo",
-		DockerPass:   "bar",
-		WorkerMem:    "1024M",
-		WorkerDisk:   "1024M",
-		JobResFile:   "",
-		VcapAppJSON:  "",
-		ServicesJSON: "",
+	cfgWant := &EnvConfig{
+		ContainerId:    "1234",
+		CIRegistryUser: "foo",
+		CIRegistryPass: "bar",
+		JobImg:         "bookworm",
+		DockerPass:     "bar",
+		DockerHubUser:  "foo",
+		DockerHubToken: "1234",
+		WorkerMemory:   "1024M",
+		WorkerDiskSize: "1024M",
+		JobResFile:     "",
+		VcapAppJSON:    "",
+		ServicesJSON:   "",
 	}
 
 	envWant := map[string]string{
 		"CONTAINER_ID":                    cfgWant.ContainerId,
 		"JOB_RESPONSE_FILE":               cfgWant.JobResFile,
-		"CUSTOM_ENV_CI_REGISTRY_USER":     cfgWant.RegUser,
-		"CUSTOM_ENV_CI_REGISTRY_PASSWORD": cfgWant.RegPass,
+		"CUSTOM_ENV_CI_REGISTRY_USER":     cfgWant.CIRegistryUser,
+		"CUSTOM_ENV_CI_REGISTRY_PASSWORD": cfgWant.CIRegistryPass,
 		"CUSTOM_ENV_CI_JOB_IMAGE":         cfgWant.JobImg,
-		"DOCKER_HUB_TOKEN":                cfgWant.DockerToken,
-		"DOCKER_HUB_USER":                 cfgWant.DockerUser,
+		"DOCKER_HUB_TOKEN":                cfgWant.DockerHubToken,
+		"DOCKER_HUB_USER":                 cfgWant.DockerHubUser,
 		"CF_DOCKER_PASSWORD":              cfgWant.DockerPass,
-		"WORKER_MEMORY":                   cfgWant.WorkerMem,
-		"WORKER_DISK_SIZE":                cfgWant.WorkerDisk,
+		"WORKER_MEMORY":                   cfgWant.WorkerMemory,
+		"WORKER_DISK_SIZE":                cfgWant.WorkerDiskSize,
 		"VCAP_APPLICATION":                cfgWant.VcapAppJSON,
 		"CUSTOM_ENV_CI_JOB_SERVICES":      cfgWant.ServicesJSON,
 	}
@@ -68,7 +68,7 @@ func Test_parseJobResFile(t *testing.T) {
 			Command:    []string{"a", "b", "c"},
 			Entrypoint: []string{"d", "e", "f"},
 		},
-		Services: []*JobResSvcs{{
+		Services: []*JobResServices{{
 			JobResImg: &JobResImg{
 				Name:       "postgres:wormy",
 				Alias:      "my-pg-service",
