@@ -19,7 +19,6 @@ type EnvConfig struct {
 	ContainerId string `env:"CONTAINER_ID"`
 
 	JobImg         string `env:"CUSTOM_ENV_CI_JOB_IMAGE"`
-	DockerPass     string `env:"CF_DOCKER_PASSWORD"`
 	CIRegistryUser string `env:"CUSTOM_ENV_CI_REGISTRY_USER"`
 	CIRegistryPass string `env:"CUSTOM_ENV_CI_REGISTRY_PASSWORD"`
 
