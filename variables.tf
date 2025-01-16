@@ -60,9 +60,9 @@ variable "runner_concurrency" {
 }
 
 variable "manager_memory" {
-  type        = number
-  default     = 512
-  description = "Manager Runner Memory, given as number of megabytes"
+  type        = string
+  default     = "256M"
+  description = "Manager Runner Memory - Unit required (e.g. 512M or 2G)"
 }
 
 variable "worker_memory" {

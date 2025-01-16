@@ -19,7 +19,7 @@ locals {
 
 # manager_space: cloud.gov space for running the manager app
 module "manager_space" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=v2.0.0"
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=v2.1.0"
 
   cf_org_name   = var.cf_org_name
   cf_space_name = "${var.cf_space_prefix}-manager"
@@ -30,25 +30,19 @@ module "manager_space" {
 
 # worker_space: cloud.gov space for running runner workers and runner services
 module "worker_space" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=v2.0.0"
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=v2.1.0"
 
-  cf_org_name   = var.cf_org_name
-  cf_space_name = "${var.cf_space_prefix}-workers"
-  allow_ssh     = true # manager must be able to cf ssh into workers
-  deployers     = [var.cf_user]
-  developers    = var.developer_emails
-}
-
-# temporary method for setting egress rules until terraform provider supports it and cg_space module is updated
-data "external" "set-worker-egress" {
-  program     = ["/bin/sh", "set_space_egress.sh", "-t", "-s", module.worker_space.space_name]
-  working_dir = path.module
-  depends_on  = [module.worker_space]
+  cf_org_name          = var.cf_org_name
+  cf_space_name        = "${var.cf_space_prefix}-workers"
+  allow_ssh            = true # manager must be able to cf ssh into workers
+  deployers            = [var.cf_user]
+  developers           = var.developer_emails
+  security_group_names = ["trusted_local_networks_egress"]
 }
 
 # object_store_instance: s3 bucket for caching build dependencies
 module "object_store_instance" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//s3?ref=v2.0.0"
+  source = "github.com/GSA-TTS/terraform-cloudgov//s3?ref=v2.1.0"
 
   cf_space_id  = module.manager_space.space_id
   name         = var.object_store_instance
@@ -80,14 +74,16 @@ locals {
 
 # gitlab-runner-manager: the actual runner manager app
 resource "cloudfoundry_app" "gitlab-runner-manager" {
-  provider          = cloudfoundry-community
   name              = var.runner_manager_app_name
-  space             = module.manager_space.space_id
+  space_name        = module.manager_space.space_name
+  org_name          = var.cf_org_name
   path              = data.archive_file.src.output_path
   source_code_hash  = data.archive_file.src.output_base64sha256
   buildpacks        = ["https://github.com/cloudfoundry/apt-buildpack", "binary_buildpack"]
   instances         = var.manager_instances
+  strategy          = "rolling"
   command           = "gitlab-runner run"
+  no_route          = true
   memory            = var.manager_memory
   health_check_type = "process"
 
@@ -128,23 +124,26 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     DOCKER_HUB_USER           = var.docker_hub_user
     DOCKER_HUB_TOKEN          = var.docker_hub_token
   }
-  service_binding {
-    service_instance = module.object_store_instance.bucket_id
-  }
-  service_binding {
-    service_instance = cloudfoundry_service_instance.egress-proxy-credentials.id
-  }
+  service_bindings = [
+    { service_instance = var.object_store_instance },
+    { service_instance = cloudfoundry_service_instance.egress-proxy-credentials.name }
+  ]
+  depends_on = [
+    module.object_store_instance,
+    cloudfoundry_service_instance.egress-proxy-credentials
+  ]
 }
 
 # egress_space: cloud.gov space for running the egress proxy
 module "egress_space" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=v2.0.0"
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=v2.1.0"
 
-  cf_org_name   = var.cf_org_name
-  cf_space_name = "${var.cf_space_prefix}-egress"
-  allow_ssh     = var.allow_ssh
-  deployers     = [var.cf_user]
-  developers    = var.developer_emails
+  cf_org_name          = var.cf_org_name
+  cf_space_name        = "${var.cf_space_prefix}-egress"
+  allow_ssh            = var.allow_ssh
+  deployers            = [var.cf_user]
+  developers           = var.developer_emails
+  security_group_names = ["public_networks_egress"]
 }
 
 # service-account-egress-role: grant the service account user space_developer in the egress space to
@@ -155,16 +154,9 @@ resource "cloudfoundry_space_role" "service-account-egress-role" {
   type     = "space_developer"
 }
 
-# temporary method for setting egress rules until terraform provider supports it and cg_space module is updated
-data "external" "set-proxy-egress" {
-  program     = ["/bin/sh", "set_space_egress.sh", "-p", "-s", module.egress_space.space_name]
-  working_dir = path.module
-  depends_on  = [module.egress_space]
-}
-
 # egress_proxy: set up the egress proxy app
 module "egress_proxy" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//egress_proxy?ref=v2.0.0"
+  source = "github.com/GSA-TTS/terraform-cloudgov//egress_proxy?ref=v2.1.0"
 
   cf_org_name     = var.cf_org_name
   cf_egress_space = module.egress_space.space
