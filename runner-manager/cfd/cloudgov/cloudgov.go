@@ -1,10 +1,4 @@
-package cg
-
-type App struct {
-	Id    string
-	Name  string
-	State string
-}
+package cloudgov
 
 // Stuff we'll need to implement, for ref
 //
@@ -17,52 +11,53 @@ type App struct {
 // appCmd()
 // appPush()
 // appDelete()
-type CloudI interface {
-	getApps() (apps []*App, err error)
+type ClientAPI interface {
 	connect(url string, creds *Creds) error
+
+	appsGet() (apps []*App, err error)
 }
 
-type CredI interface {
+type CredsGetter interface {
 	getCreds() (*Creds, error)
 }
 
 type Opts struct {
-	CredI
+	CredsGetter
 	Creds *Creds
 
 	APIRootURL string
 }
 
-type CG struct {
-	CloudI
+type Client struct {
+	ClientAPI
 	*Opts
 }
 
 const apiRootURLDefault = "https://api.fr.cloud.gov"
 
-func New(i CloudI, o *Opts) (*CG, error) {
+func New(i ClientAPI, o *Opts) (*Client, error) {
 	if o == nil {
-		o = &Opts{CredI: EnvCredsGetter{}}
+		o = &Opts{CredsGetter: EnvCredsGetter{}}
 	}
-	cg := &CG{i, o}
+	cg := &Client{i, o}
 	return cg.Connect()
 }
 
-func (c *CG) apiRootURL() string {
+func (c *Client) apiRootURL() string {
 	if c.APIRootURL == "" {
 		return apiRootURLDefault
 	}
 	return c.APIRootURL
 }
 
-func (c *CG) creds() (*Creds, error) {
+func (c *Client) creds() (*Creds, error) {
 	if c.Creds.isEmpty() {
 		return c.getCreds()
 	}
 	return c.Creds, nil
 }
 
-func (c *CG) Connect() (*CG, error) {
+func (c *Client) Connect() (*Client, error) {
 	creds, err := c.creds()
 	if err != nil {
 		return nil, err
@@ -73,6 +68,12 @@ func (c *CG) Connect() (*CG, error) {
 	return c, nil
 }
 
-func (c *CG) GetApps() ([]*App, error) {
-	return c.getApps()
+type App struct {
+	Id    string
+	Name  string
+	State string
+}
+
+func (c *Client) AppsGet() ([]*App, error) {
+	return c.appsGet()
 }

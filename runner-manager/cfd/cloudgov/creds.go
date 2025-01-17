@@ -1,4 +1,4 @@
-package cg
+package cloudgov
 
 import (
 	"encoding/json"

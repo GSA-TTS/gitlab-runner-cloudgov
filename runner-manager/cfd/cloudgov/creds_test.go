@@ -1,6 +1,4 @@
-//go:build !integration
-
-package cg
+package cloudgov
 
 import (
 	"encoding/json"

@@ -1,6 +1,6 @@
 //go:build integration
 
-package cg_test
+package cloudgov_test
 
 import (
 	"bufio"
@@ -8,15 +8,15 @@ import (
 	"os"
 	"testing"
 
-	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cfd/cg"
+	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cfd/cloudgov"
 	"github.com/google/go-cmp/cmp"
 )
 
-func Test_CFAdapter_GetApps(t *testing.T) {
+func Test_CFAdapter_AppsGet(t *testing.T) {
 	var u, p, want string
 	var l int
 
-	path := "./testdata/.cg_creds"
+	path := "./testdata/.cloudgov_creds"
 	f, err := os.Open(path)
 	if err != nil {
 		t.Errorf(
@@ -60,17 +60,17 @@ scanning:
 		return
 	}
 
-	cgClient, err := cg.New(&cg.GoCFClientAdapter{}, &cg.Opts{
-		Creds: &cg.Creds{Username: u, Password: p},
+	cgClient, err := cloudgov.New(&cloudgov.CFClientAPI{}, &cloudgov.Opts{
+		Creds: &cloudgov.Creds{Username: u, Password: p},
 	})
 	if err != nil {
-		t.Errorf("Error getting cgClient = %v", err)
+		t.Errorf("Error getting cloudgovClient = %v", err)
 		return
 	}
 
-	apps, err := cgClient.GetApps()
+	apps, err := cgClient.AppsGet()
 	if err != nil {
-		t.Errorf("Error running GetApps() = %v", err)
+		t.Errorf("Error running AppsGet() = %v", err)
 		return
 	}
 
