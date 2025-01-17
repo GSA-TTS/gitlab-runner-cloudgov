@@ -18,7 +18,7 @@ type stubClientAPI struct {
 	FailConnect bool
 }
 
-func (a *stubClientAPI) getApps() (apps []*App, err error) {
+func (a *stubClientAPI) appsGet() (apps []*App, err error) {
 	if a.FailAppsGet {
 		return nil, errors.New("fail")
 	}
