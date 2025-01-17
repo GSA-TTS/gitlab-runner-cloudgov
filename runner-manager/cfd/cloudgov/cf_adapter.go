@@ -1,4 +1,4 @@
-package cg
+package cloudgov
 
 import (
 	"context"
@@ -8,11 +8,11 @@ import (
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
 )
 
-type GoCFClientAdapter struct {
+type CFClientAPI struct {
 	_con *client.Client
 }
 
-func (cf *GoCFClientAdapter) connect(url string, creds *Creds) error {
+func (cf *CFClientAPI) connect(url string, creds *Creds) error {
 	cfg, err := config.New(url, config.UserPassword(creds.Username, creds.Password))
 	if err != nil {
 		return err
@@ -27,7 +27,7 @@ func (cf *GoCFClientAdapter) connect(url string, creds *Creds) error {
 	return nil
 }
 
-func (cf *GoCFClientAdapter) conn() *client.Client {
+func (cf *CFClientAPI) conn() *client.Client {
 	if cf._con != nil {
 		return cf._con
 	}
@@ -42,7 +42,7 @@ func castApps(apps []*resource.App) []*App {
 	return Apps
 }
 
-func (cf *GoCFClientAdapter) getApps() ([]*App, error) {
+func (cf *CFClientAPI) appsGet() ([]*App, error) {
 	apps, err := cf.conn().Applications.ListAll(context.Background(), nil)
 	if err != nil {
 		return nil, err

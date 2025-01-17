@@ -1,6 +1,4 @@
-//go:build !integration
-
-package cg
+package cloudgov
 
 import (
 	"errors"
@@ -9,25 +7,25 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-type adapterStub struct {
-	CloudI
+type stubClientAPI struct {
+	ClientAPI
 
-	StCreds *Creds
 	StURL   string
+	StCreds *Creds
 	StApps  []*App
 
-	FailGetApps bool
+	FailAppsGet bool
 	FailConnect bool
 }
 
-func (a *adapterStub) getApps() (apps []*App, err error) {
-	if a.FailGetApps {
+func (a *stubClientAPI) getApps() (apps []*App, err error) {
+	if a.FailAppsGet {
 		return nil, errors.New("fail")
 	}
 	return a.StApps, nil
 }
 
-func (a *adapterStub) connect(url string, creds *Creds) (_ error) {
+func (a *stubClientAPI) connect(url string, creds *Creds) (_ error) {
 	if a.FailConnect {
 		return errors.New("fail")
 	}
@@ -36,13 +34,13 @@ func (a *adapterStub) connect(url string, creds *Creds) (_ error) {
 	return nil
 }
 
-type credIStub struct {
+type stubCredsGetter struct {
 	U    string
 	P    string
 	Fail bool
 }
 
-func (c credIStub) getCreds() (*Creds, error) {
+func (c stubCredsGetter) getCreds() (*Creds, error) {
 	if c.Fail {
 		return nil, errors.New("fail")
 	}
@@ -50,25 +48,25 @@ func (c credIStub) getCreds() (*Creds, error) {
 }
 
 func TestNew(t *testing.T) {
-	optsStub := &Opts{CredI: credIStub{"a", "b", false}}
-	cgStub := &CG{&adapterStub{
+	optsStub := &Opts{CredsGetter: stubCredsGetter{"a", "b", false}}
+	cgStub := &Client{&stubClientAPI{
 		StURL:   apiRootURLDefault,
 		StCreds: &Creds{"a", "b"},
 	}, optsStub}
 
 	tests := []struct {
-		want    *CG
+		want    *Client
 		opts    *Opts
 		wantErr interface{}
 		name    string
 	}{
 		{name: "fails using default credential getter", wantErr: &syntaxError},
-		{name: "returns adapted CG struct", want: cgStub, opts: optsStub},
+		{name: "returns adapted Client struct", want: cgStub, opts: optsStub},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := New(&adapterStub{}, tt.opts)
+			got, err := New(&stubClientAPI{}, tt.opts)
 			if (err == nil) != (tt.wantErr == nil) {
 				t.Errorf("GetCfClient() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -84,9 +82,9 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func TestCG_apiRootURL(t *testing.T) {
+func TestClient_apiRootURL(t *testing.T) {
 	type fields struct {
-		CloudI
+		ClientAPI
 		Opts *Opts
 	}
 
@@ -99,24 +97,24 @@ func TestCG_apiRootURL(t *testing.T) {
 			name: "gets default root API URL",
 			want: apiRootURLDefault,
 			fields: fields{
-				CloudI: &adapterStub{},
-				Opts:   &Opts{CredI: credIStub{}},
+				ClientAPI: &stubClientAPI{},
+				Opts:      &Opts{CredsGetter: stubCredsGetter{}},
 			},
 		},
 		{
 			name: "updates root API URL",
 			want: "foo",
 			fields: fields{
-				CloudI: &adapterStub{},
-				Opts:   &Opts{CredI: credIStub{}, APIRootURL: "foo"},
+				ClientAPI: &stubClientAPI{},
+				Opts:      &Opts{CredsGetter: stubCredsGetter{}, APIRootURL: "foo"},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &CG{
-				CloudI: tt.fields.CloudI,
-				Opts:   tt.fields.Opts,
+			c := &Client{
+				ClientAPI: tt.fields.ClientAPI,
+				Opts:      tt.fields.Opts,
 			}
 			got := c.apiRootURL()
 			if diff := cmp.Diff(got, tt.want); diff != "" {
@@ -126,9 +124,9 @@ func TestCG_apiRootURL(t *testing.T) {
 	}
 }
 
-func TestCG_creds(t *testing.T) {
+func TestClient_creds(t *testing.T) {
 	type fields struct {
-		CloudI
+		ClientAPI
 		Opts *Opts
 	}
 
@@ -142,29 +140,29 @@ func TestCG_creds(t *testing.T) {
 			name: "returns creds when they already exist",
 			want: &Creds{"a", "b"},
 			fields: fields{
-				CloudI: &adapterStub{},
-				Opts:   &Opts{Creds: &Creds{"a", "b"}},
+				ClientAPI: &stubClientAPI{},
+				Opts:      &Opts{Creds: &Creds{"a", "b"}},
 			},
 		},
 		{
 			name: "returns creds from getter when not supplied",
 			want: &Creds{"foo", "bar"},
 			fields: fields{
-				CloudI: &adapterStub{},
-				Opts:   &Opts{CredI: credIStub{U: "foo", P: "bar"}},
+				ClientAPI: &stubClientAPI{},
+				Opts:      &Opts{CredsGetter: stubCredsGetter{U: "foo", P: "bar"}},
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &CG{
-				CloudI: tt.fields.CloudI,
-				Opts:   tt.fields.Opts,
+			c := &Client{
+				ClientAPI: tt.fields.ClientAPI,
+				Opts:      tt.fields.Opts,
 			}
 			got, err := c.creds()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("CG.creds() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Client.creds() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if diff := cmp.Diff(got, tt.want); diff != "" {
@@ -174,16 +172,16 @@ func TestCG_creds(t *testing.T) {
 	}
 }
 
-func TestCG_Connect(t *testing.T) {
+func TestClient_Connect(t *testing.T) {
 	type fields struct {
-		CloudI
+		ClientAPI
 		Opts *Opts
 	}
 
 	tests := []struct {
 		fields  fields
-		want    *CG
-		cmpGet  func(c *CG) any
+		want    *Client
+		cmpGet  func(c *Client) any
 		name    string
 		checks  []string
 		wantErr bool
@@ -192,47 +190,47 @@ func TestCG_Connect(t *testing.T) {
 			name:    "fails with creds() err",
 			wantErr: true,
 			fields: fields{
-				CloudI: &adapterStub{},
-				Opts:   &Opts{CredI: &credIStub{Fail: true}},
+				ClientAPI: &stubClientAPI{},
+				Opts:      &Opts{CredsGetter: &stubCredsGetter{Fail: true}},
 			},
 		},
 		{
 			name: "connect sets URL & creds",
-			want: &CG{
-				CloudI: &adapterStub{
+			want: &Client{
+				ClientAPI: &stubClientAPI{
 					StURL:   "butter",
 					StCreds: &Creds{Username: "corn", Password: "cob"},
 				},
 			},
 			fields: fields{
-				CloudI: &adapterStub{},
+				ClientAPI: &stubClientAPI{},
 				Opts: &Opts{
 					APIRootURL: "butter",
 					Creds:      &Creds{Username: "corn", Password: "cob"},
 				},
 			},
-			cmpGet: func(c *CG) any {
-				return c.CloudI
+			cmpGet: func(c *Client) any {
+				return c.ClientAPI
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &CG{
-				CloudI: tt.fields.CloudI,
-				Opts:   tt.fields.Opts,
+			c := &Client{
+				ClientAPI: tt.fields.ClientAPI,
+				Opts:      tt.fields.Opts,
 			}
 
 			got, err := c.Connect()
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("CG.Connect() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Client.Connect() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			if tt.cmpGet == nil {
-				tt.cmpGet = func(c *CG) any {
+				tt.cmpGet = func(c *Client) any {
 					return c
 				}
 			}
@@ -244,11 +242,11 @@ func TestCG_Connect(t *testing.T) {
 	}
 }
 
-func TestCG_GetApps(t *testing.T) {
+func TestClient_AppsGet(t *testing.T) {
 	testApps := []*App{{Id: "1", Name: "foo"}}
 
 	type fields struct {
-		CloudI
+		ClientAPI
 		Opts *Opts
 	}
 
@@ -262,29 +260,29 @@ func TestCG_GetApps(t *testing.T) {
 			name:    "reports errors",
 			wantErr: true,
 			fields: fields{
-				CloudI: &adapterStub{StApps: testApps, FailGetApps: true},
-				Opts:   &Opts{CredI: &credIStub{}},
+				ClientAPI: &stubClientAPI{StApps: testApps, FailAppsGet: true},
+				Opts:      &Opts{CredsGetter: &stubCredsGetter{}},
 			},
 		},
 		{
 			name: "returns available apps list",
 			want: testApps,
 			fields: fields{
-				CloudI: &adapterStub{StApps: testApps},
-				Opts:   &Opts{CredI: &credIStub{}},
+				ClientAPI: &stubClientAPI{StApps: testApps},
+				Opts:      &Opts{CredsGetter: &stubCredsGetter{}},
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &CG{
-				CloudI: tt.fields.CloudI,
-				Opts:   tt.fields.Opts,
+			c := &Client{
+				ClientAPI: tt.fields.ClientAPI,
+				Opts:      tt.fields.Opts,
 			}
-			got, err := c.GetApps()
+			got, err := c.AppsGet()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("CG.GetApps() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Client.AppsGet() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if diff := cmp.Diff(got, tt.want); diff != "" {
