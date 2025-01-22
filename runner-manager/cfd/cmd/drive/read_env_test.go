@@ -19,6 +19,7 @@ func Test_GetJobConfig(t *testing.T) {
 		WorkerDiskSize:  "1024M",
 		JobResponseFile: "",
 		VcapAppJSON:     "",
+		ContainerID:     "glrw-r-p-c-j",
 	}
 
 	envVarsToSet := map[string]string{

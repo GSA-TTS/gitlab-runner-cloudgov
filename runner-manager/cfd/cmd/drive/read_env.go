@@ -115,5 +115,14 @@ func GetJobConfig() *JobConfig {
 	if err := cfg.parseVcapAppJSON(); err != nil {
 		panic(err)
 	}
+
+	cfg.ContainerID = fmt.Sprintf(
+		"glrw-r%v-p%v-c%v-j%v",
+		cfg.RunnerID,
+		cfg.ProjectID,
+		cfg.ConcurrentProjectID,
+		cfg.JobID,
+	)
+
 	return cfg
 }
