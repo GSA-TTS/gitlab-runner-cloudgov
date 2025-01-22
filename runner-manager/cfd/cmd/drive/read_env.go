@@ -7,18 +7,22 @@ import (
 	"reflect"
 )
 
-type EnvConfig struct {
-	*JobResData
+type JobConfig struct {
+	*JobResponse           // Parsed JSON from JobResponseFile
+	JobResponseFile string `env:"JOB_RESPONSE_FILE"`
+
 	*VcapAppData
-	*ServicesData
+	VcapAppJSON string `env:"VCAP_APPLICATION"`
 
-	JobResFile   string `env:"JOB_RESPONSE_FILE"`
-	VcapAppJSON  string `env:"VCAP_APPLICATION"`
-	ServicesJSON string `env:"CUSTOM_ENV_CI_JOB_SERVICES"`
+	// We combine the following to make the container ID.
+	// Some are available in JOB_RESPONSE_FILE, but several are only found
+	// within `.variables` so we pull all from ENV for consistency.
+	ContainerID         string
+	JobID               string `env:"CUSTOM_ENV_CI_JOB_ID"`
+	RunnerID            string `env:"CUSTOM_ENV_CI_RUNNER_ID"`
+	ProjectID           string `env:"CUSTOM_ENV_CI_PROJECT_ID"`
+	ConcurrentProjectID string `env:"CUSTOM_ENV_CI_CONCURRENT_PROJECT_ID"`
 
-	ContainerId string `env:"CONTAINER_ID"`
-
-	JobImg         string `env:"CUSTOM_ENV_CI_JOB_IMAGE"`
 	CIRegistryUser string `env:"CUSTOM_ENV_CI_REGISTRY_USER"`
 	CIRegistryPass string `env:"CUSTOM_ENV_CI_REGISTRY_PASSWORD"`
 
@@ -29,36 +33,29 @@ type EnvConfig struct {
 	WorkerDiskSize string `env:"WORKER_DISK_SIZE"`
 }
 
-type JobResData struct {
-	Image     *JobResImg
-	Variables *JobResVars
-	Services  []*JobResServices
+type JobResponse struct {
+	Image     *Image
+	Variables []*CIVar
+	Services  []*Service
 }
-type JobResImg struct {
+type Image struct {
 	Name       string
 	Alias      string
 	Command    []string
 	Entrypoint []string
 }
-type JobResVars []struct {
+type CIVar struct {
 	Key   string
 	Value string
 }
-type JobResServices struct {
-	*JobResImg
-	Variables *JobResVars
+type Service struct {
+	*Image
+	Variables []*CIVar
 }
 
 type VcapAppData struct {
 	OrgName   string `json:"organization_name"`
 	SpaceName string `json:"space_name"`
-}
-
-type ServicesData []struct {
-	Name       string
-	Alias      string
-	Entrypoint []string
-	Command    []string
 }
 
 func parseCfgJSON[R any](j []byte, r *R) (*R, error) {
@@ -71,34 +68,29 @@ func parseCfgJSON[R any](j []byte, r *R) (*R, error) {
 	return r, nil
 }
 
-func (c *EnvConfig) parseJobResFile() (err error) {
-	if c.JobResFile == "" {
+func (c *JobConfig) parseJobResponseFile() (err error) {
+	if c.JobResponseFile == "" {
 		return nil
 	}
 
-	j, err := os.ReadFile(c.JobResFile)
+	j, err := os.ReadFile(c.JobResponseFile)
 	if err != nil {
-		return fmt.Errorf("error reading JobResFile: %w", err)
+		return fmt.Errorf("error reading JobResponseFile: %w", err)
 	}
 
-	c.JobResData, err = parseCfgJSON(j, &JobResData{})
+	c.JobResponse, err = parseCfgJSON(j, &JobResponse{})
 	return err
 }
 
-func (c *EnvConfig) parseVcapAppJSON() (err error) {
+func (c *JobConfig) parseVcapAppJSON() (err error) {
 	c.VcapAppData, err = parseCfgJSON([]byte(c.VcapAppJSON), &VcapAppData{})
-	return err
-}
-
-func (c *EnvConfig) parseServicesJSON() (err error) {
-	c.ServicesData, err = parseCfgJSON([]byte(c.ServicesJSON), &ServicesData{})
 	return err
 }
 
 // This is a pretty simple implementation, if our needs get more
 // complex we should use one of several existing packages to do this.
 // e.g., https://pkg.go.dev/github.com/caarlos0/env/v11
-func (c *EnvConfig) parseEnv() *EnvConfig {
+func (c *JobConfig) parseEnv() *JobConfig {
 	ct := reflect.TypeOf(*c)
 	ce := reflect.ValueOf(c).Elem()
 
@@ -114,15 +106,13 @@ func (c *EnvConfig) parseEnv() *EnvConfig {
 	return c
 }
 
-func getEnvCfg() *EnvConfig {
-	cfg := (&EnvConfig{}).parseEnv()
-	if err := cfg.parseJobResFile(); err != nil {
+func GetJobConfig() *JobConfig {
+	cfg := (&JobConfig{}).parseEnv()
+
+	if err := cfg.parseJobResponseFile(); err != nil {
 		panic(err)
 	}
 	if err := cfg.parseVcapAppJSON(); err != nil {
-		panic(err)
-	}
-	if err := cfg.parseServicesJSON(); err != nil {
 		panic(err)
 	}
 	return cfg

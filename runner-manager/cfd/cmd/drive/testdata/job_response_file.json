@@ -1,0 +1,918 @@
+{
+  "id": 1002,
+  "token": "glcbt-64_PjzhUFBgDTe_Skvx1V8j",
+  "allow_git_fetch": true,
+  "job_info": {
+    "name": "test-run-server",
+    "stage": "test",
+    "project_id": 24,
+    "project_name": "Rails Template CI",
+    "time_in_queue_seconds": 1,
+    "project_jobs_running_on_instance_runners_count": "+Inf"
+  },
+  "git_info": {
+    "repo_url": "https://gitlab-ci-token:glcbt-64_PjzhUFBgDTe_Skvx1V8j@gsa-0.gitlab-dedicated.us/zjrgov/rails-template-ci.git",
+    "repo_object_format": "sha1",
+    "ref": "zjr/logJobRes",
+    "sha": "167602f6faaf295c3bcee2a475d46b39b55e9b8a",
+    "before_sha": "fda5b2633e877e65b7771ac4312a73a62d079fbb",
+    "ref_type": "branch",
+    "refspecs": [
+      "+refs/pipelines/205:refs/pipelines/205",
+      "+refs/heads/zjr/logJobRes:refs/remotes/origin/zjr/logJobRes"
+    ],
+    "depth": 20
+  },
+  "runner_info": { "timeout": 3600 },
+  "variables": [
+    {
+      "key": "CI_PIPELINE_ID",
+      "value": "205",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PIPELINE_URL",
+      "value": "https://gsa-0.gitlab-dedicated.us/zjrgov/rails-template-ci/-/pipelines/205",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_JOB_ID",
+      "value": "1002",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_JOB_URL",
+      "value": "https://gsa-0.gitlab-dedicated.us/zjrgov/rails-template-ci/-/jobs/1002",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_JOB_TOKEN",
+      "value": "glcbt-64_PjzhUFBgDTe_Skvx1V8j",
+      "public": false,
+      "file": false,
+      "masked": true,
+      "raw": false
+    },
+    {
+      "key": "CI_JOB_STARTED_AT",
+      "value": "2025-01-22T15:23:05Z",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_REGISTRY_USER",
+      "value": "gitlab-ci-token",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_REGISTRY_PASSWORD",
+      "value": "glcbt-64_PjzhUFBgDTe_Skvx1V8j",
+      "public": false,
+      "file": false,
+      "masked": true,
+      "raw": false
+    },
+    {
+      "key": "CI_REPOSITORY_URL",
+      "value": "https://gitlab-ci-token:glcbt-64_PjzhUFBgDTe_Skvx1V8j@gsa-0.gitlab-dedicated.us/zjrgov/rails-template-ci.git",
+      "public": false,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_DEPENDENCY_PROXY_USER",
+      "value": "gitlab-ci-token",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_DEPENDENCY_PROXY_PASSWORD",
+      "value": "glcbt-64_PjzhUFBgDTe_Skvx1V8j",
+      "public": false,
+      "file": false,
+      "masked": true,
+      "raw": false
+    },
+    {
+      "key": "CI_JOB_NAME",
+      "value": "test-run-server",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_JOB_NAME_SLUG",
+      "value": "test-run-server",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_JOB_STAGE",
+      "value": "test",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_NODE_TOTAL",
+      "value": "1",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI",
+      "value": "true",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "GITLAB_CI",
+      "value": "true",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_SERVER_FQDN",
+      "value": "gsa-0.gitlab-dedicated.us",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_SERVER_URL",
+      "value": "https://gsa-0.gitlab-dedicated.us",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_SERVER_HOST",
+      "value": "gsa-0.gitlab-dedicated.us",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_SERVER_PORT",
+      "value": "443",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_SERVER_PROTOCOL",
+      "value": "https",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_SERVER_SHELL_SSH_HOST",
+      "value": "gsa-0.gitlab-dedicated.us",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_SERVER_SHELL_SSH_PORT",
+      "value": "22",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_SERVER_NAME",
+      "value": "GitLab",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_SERVER_VERSION",
+      "value": "17.7.2-ee",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_SERVER_VERSION_MAJOR",
+      "value": "17",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_SERVER_VERSION_MINOR",
+      "value": "7",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_SERVER_VERSION_PATCH",
+      "value": "2",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_SERVER_REVISION",
+      "value": "e2760d8d334",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "GITLAB_FEATURES",
+      "value": "audit_events,blocked_issues,blocked_work_items,board_iteration_lists,code_owners,code_review_analytics,full_codequality_report,group_activity_analytics,group_bulk_edit,issuable_default_templates,issue_weights,iterations,ldap_group_sync,merge_request_approvers,milestone_charts,multiple_issue_assignees,multiple_ldap_servers,multiple_merge_request_assignees,multiple_merge_request_reviewers,project_merge_request_analytics,protected_refs_for_users,push_rules,resource_access_token,seat_link,seat_usage_quotas,pipelines_usage_quotas,transfer_usage_quotas,product_analytics_usage_quotas,wip_limits,zoekt_code_search,description_diffs,send_emails_from_admin_area,repository_size_limit,maintenance_mode,scoped_issue_board,contribution_analytics,group_webhooks,member_lock,elastic_search,repository_mirrors,ai_chat,adjourned_deletion_for_projects_and_groups,admin_audit_log,auditor_user,blocking_merge_requests,board_assignee_lists,board_milestone_lists,ci_secrets_management,ci_pipeline_cancellation_restrictions,cluster_agents_ci_impersonation,cluster_agents_user_impersonation,cluster_deployments,code_owner_approval_required,code_suggestions,commit_committer_check,commit_committer_name_check,compliance_framework,custom_compliance_frameworks,custom_fields,custom_file_templates,custom_project_templates,cycle_analytics_for_groups,cycle_analytics_for_projects,db_load_balancing,default_branch_protection_restriction_in_groups,default_project_deletion_protection,delete_unconfirmed_users,dependency_proxy_for_packages,disable_extensions_marketplace_for_enterprise_users,disable_name_update_for_users,disable_personal_access_tokens,domain_verification,epic_colors,epics,extended_audit_events,external_authorization_service_api_management,feature_flags_code_references,file_locks,geo,generic_alert_fingerprinting,git_two_factor_enforcement,group_allowed_email_domains,group_coverage_reports,group_forking_protection,group_level_compliance_dashboard,group_milestone_project_releases,group_project_templates,group_repository_analytics,group_saml,group_scoped_ci_variables,ide_schema_config,incident_metric_upload,instance_level_scim,jira_issues_integration,ldap_group_sync_filter,linked_items_epics,merge_request_performance_metrics,admin_merge_request_approvers_rules,merge_trains,metrics_reports,multiple_alert_http_integrations,multiple_approval_rules,multiple_group_issue_boards,object_storage,microsoft_group_sync,operations_dashboard,package_forwarding,pages_size_limit,pages_multiple_versions,productivity_analytics,project_aliases,protected_environments,reject_non_dco_commits,reject_unsigned_commits,related_epics,remote_development,saml_group_sync,service_accounts,scoped_labels,smartcard_auth,ssh_certificates,swimlanes,target_branch_rules,type_of_work_analytics,minimal_access_role,unprotection_restrictions,ci_project_subscriptions,incident_timeline_view,oncall_schedules,escalation_policies,zentao_issues_integration,coverage_check_approval_rule,issuable_resource_links,group_protected_branches,group_level_merge_checks_setting,oidc_client_groups_claim,disable_deleting_account_for_users,disable_private_profiles,group_saved_replies,requested_changes_block_merge_request,project_saved_replies,default_roles_assignees,ci_component_usages_in_projects,branch_rule_squash_options,group_ip_restriction,issues_analytics,password_complexity,group_wikis,email_additional_text,custom_file_templates_for_namespace,incident_sla,export_user_permissions,cross_project_pipelines,feature_flags_related_issues,merge_pipelines,ci_cd_projects,github_integration,ai_agents,ai_config_chat,ai_features,ai_review_mr,ai_workflows,amazon_q,api_discovery,api_fuzzing,auto_rollback,glab_ask_git_command,cluster_receptive_agents,cluster_image_scanning,external_status_checks,combined_project_analytics_dashboards,compliance_pipeline_configuration,container_scanning,credentials_inventory,custom_roles,dast,dependency_scanning,dora4_analytics,enterprise_templates,environment_alerts,evaluate_group_level_compliance_pipeline,explain_code,external_audit_events,experimental_features,generate_description,generate_commit_message,generate_test_file,ai_generate_cube_query,git_abuse_rate_limit,group_ci_cd_analytics,group_level_compliance_adherence_report,group_level_compliance_violations_report,project_level_compliance_dashboard,project_level_compliance_adherence_report,project_level_compliance_violations_report,group_level_analytics_dashboard,incident_management,inline_codequality,insights,integrations_allow_list,issuable_health_status,issues_completed_analytics,jira_vulnerabilities_integration,jira_issue_association_enforcement,kubernetes_cluster_vulnerabilities,license_scanning,okrs,personal_access_token_expiration_policy,pre_receive_secret_detection,product_analytics,project_quality_summary,project_level_analytics_dashboard,quality_management,release_evidence_test_artifacts,report_approver_rules,required_ci_templates,requirements,runner_maintenance_note,runner_performance_insights,runner_performance_insights_for_namespace,runner_upgrade_management,runner_upgrade_management_for_namespace,sast,sast_advanced,sast_iac,sast_custom_rulesets,sast_fp_reduction,secret_detection,security_configuration_in_ui,security_dashboard,security_on_demand_scans,security_orchestration_policies,security_training,ssh_key_expiration_policy,summarize_mr_changes,summarize_my_mr_code_review,summarize_new_merge_request,summarize_comments,stale_runner_cleanup_for_namespace,status_page,suggested_reviewers,subepics,observability,troubleshoot_job,unique_project_download_limit,vulnerability_finding_signatures,container_scanning_for_registry,security_exclusions,security_scans_api,observability_alerts,measure_comment_temperature,coverage_fuzzing,devops_adoption,group_level_devops_adoption,instance_level_devops_adoption",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PROJECT_ID",
+      "value": "24",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PROJECT_NAME",
+      "value": "rails-template-ci",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PROJECT_TITLE",
+      "value": "Rails Template CI",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PROJECT_DESCRIPTION",
+      "value": "",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PROJECT_PATH",
+      "value": "zjrgov/rails-template-ci",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PROJECT_PATH_SLUG",
+      "value": "zjrgov-rails-template-ci",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PROJECT_NAMESPACE",
+      "value": "zjrgov",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PROJECT_NAMESPACE_ID",
+      "value": "8",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PROJECT_ROOT_NAMESPACE",
+      "value": "zjrgov",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PROJECT_URL",
+      "value": "https://gsa-0.gitlab-dedicated.us/zjrgov/rails-template-ci",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PROJECT_VISIBILITY",
+      "value": "public",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PROJECT_REPOSITORY_LANGUAGES",
+      "value": "ruby,shell,html+erb,html,hcl",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PROJECT_CLASSIFICATION_LABEL",
+      "value": "",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_DEFAULT_BRANCH",
+      "value": "main",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_CONFIG_PATH",
+      "value": ".gitlab-ci.yml",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PAGES_DOMAIN",
+      "value": "pages.gsa-0.gitlab-dedicated.us",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PAGES_URL",
+      "value": "https://zjrgov.pages.gsa-0.gitlab-dedicated.us/rails-template-ci",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_REGISTRY",
+      "value": "registry.gsa-0.gitlab-dedicated.us",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_REGISTRY_IMAGE",
+      "value": "registry.gsa-0.gitlab-dedicated.us/zjrgov/rails-template-ci",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_DEPENDENCY_PROXY_SERVER",
+      "value": "gsa-0.gitlab-dedicated.us:443",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX",
+      "value": "gsa-0.gitlab-dedicated.us:443/zjrgov/dependency_proxy/containers",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_DEPENDENCY_PROXY_DIRECT_GROUP_IMAGE_PREFIX",
+      "value": "gsa-0.gitlab-dedicated.us:443/zjrgov/dependency_proxy/containers",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_API_V4_URL",
+      "value": "https://gsa-0.gitlab-dedicated.us/api/v4",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_API_GRAPHQL_URL",
+      "value": "https://gsa-0.gitlab-dedicated.us/api/graphql",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_TEMPLATE_REGISTRY_HOST",
+      "value": "registry.gitlab.com",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PIPELINE_IID",
+      "value": "4",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PIPELINE_SOURCE",
+      "value": "push",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PIPELINE_CREATED_AT",
+      "value": "2025-01-21T19:02:05Z",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_PIPELINE_NAME",
+      "value": "",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_COMMIT_SHA",
+      "value": "167602f6faaf295c3bcee2a475d46b39b55e9b8a",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_COMMIT_SHORT_SHA",
+      "value": "167602f6",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_COMMIT_BEFORE_SHA",
+      "value": "fda5b2633e877e65b7771ac4312a73a62d079fbb",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_COMMIT_REF_NAME",
+      "value": "zjr/logJobRes",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_COMMIT_REF_SLUG",
+      "value": "zjr-logjobres",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_COMMIT_BRANCH",
+      "value": "zjr/logJobRes",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_COMMIT_MESSAGE",
+      "value": "chore: put the sleep first because i don't care about the tessssst\n",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_COMMIT_TITLE",
+      "value": "chore: put the sleep first because i don't care about the tessssst",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_COMMIT_DESCRIPTION",
+      "value": "",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_COMMIT_REF_PROTECTED",
+      "value": "false",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_COMMIT_TIMESTAMP",
+      "value": "2025-01-21T14:01:59-05:00",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_COMMIT_AUTHOR",
+      "value": "Zachary J. Rollyson \u003czachary.rollyson@gsa.gov\u003e",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_GITLAB_FIPS_MODE",
+      "value": "true",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_RUNNER_ID",
+      "value": "4",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_RUNNER_DESCRIPTION",
+      "value": "zrun",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_RUNNER_TAGS",
+      "value": "[]",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CI_DEBUG_TRACE",
+      "value": "true",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "PRESERVE_WORKERS",
+      "value": "true",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "DEPENDABOT_GITLAB_IMAGE",
+      "value": "docker.io/andrcuns/dependabot-gitlab",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "DEPENDABOT_GITLAB_VERSION",
+      "value": "3.24.0-alpha.1",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "RAILS_ENV",
+      "value": "ci",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "SECRET_KEY_BASE",
+      "value": "not-actually-secret",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "POSTGRES_DB",
+      "value": "rtci_test",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "POSTGRES_PASSWORD",
+      "value": "testpass123",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "CACHE_FALLBACK_KEY",
+      "value": "main",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "PACKAGE_MANAGER_SET",
+      "value": "bundler,npm",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "SETTINGS__GITLAB_ACCESS_TOKEN",
+      "value": "$DEPENDABOT_KEY",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "DIRECTORY",
+      "value": "/",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "a11y_urls",
+      "value": "https://localhost:8080",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "GITLAB_USER_ID",
+      "value": "7",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "GITLAB_USER_EMAIL",
+      "value": "zachary.rollyson@gsa.gov",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "GITLAB_USER_LOGIN",
+      "value": "zjrgov",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    },
+    {
+      "key": "GITLAB_USER_NAME",
+      "value": "Zach Rollyson",
+      "public": true,
+      "file": false,
+      "masked": false,
+      "raw": false
+    }
+  ],
+  "steps": [
+    {
+      "name": "script",
+      "script": [
+        "echo \"http_proxy: $http_proxy\" \u003e $HOME/.gemrc",
+        "export PATH=$PATH:/usr/local/bundle/bin",
+        "bundle config set --local path 'vendor/ruby'",
+        "bundle install -j 1",
+        "apt-get install -y curl",
+        "curl -fsSL https://deb.nodesource.com/setup_20.x -o nodesource_setup.sh",
+        "bash nodesource_setup.sh",
+        "apt-get install -y nodejs",
+        "npm install --global yarn",
+        "echo 'yarn-offline-mirror \".yarn-cache/\"' \u003e\u003e .yarnrc",
+        "echo 'yarn-offline-mirror-pruning true' \u003e\u003e .yarnrc",
+        "PUPPETEER_SKIP_DOWNLOAD=true https_proxy=$http_proxy yarn install --frozen-lockfile --no-progress --ignore-engines",
+        "export DATABASE_URL=\"postgres://postgres:${POSTGRES_PASSWORD}@${CI_SERVICE_pg}:5432/${POSTGRES_DB}\"",
+        "bin/rails db:create",
+        "bundle exec rake assets:precompile",
+        "bundle exec rake db:schema:load",
+        "bundle exec rails server \u003e /dev/null 2\u003e\u00261 \u0026",
+        "sleep 5",
+        "sleep 15m",
+        "RESULT=$(curl http://localhost:8080)",
+        "echo \"$RESULT\" | grep -q \"\u003ctitle\u003eRtci\u003c/title\u003e\""
+      ],
+      "timeout": 3600,
+      "when": "on_success",
+      "allow_failure": false
+    }
+  ],
+  "image": {
+    "name": "ruby:3.3.4",
+    "executor_opts": { "docker": { "platform": "", "user": "" } }
+  },
+  "services": [
+    {
+      "name": "postgres:15",
+      "alias": "pg",
+      "executor_opts": { "docker": { "platform": "", "user": "" } }
+    }
+  ],
+  "artifacts": null,
+  "cache": [
+    {
+      "key": "0_Gemfile-d104c5ed7ef151b9ada76bc84b48d3131a185360-non_protected",
+      "untracked": false,
+      "policy": "pull",
+      "paths": ["vendor/ruby"],
+      "when": "on_success",
+      "fallback_keys": []
+    },
+    {
+      "key": "1_Gemfile-d104c5ed7ef151b9ada76bc84b48d3131a185360-non_protected",
+      "untracked": false,
+      "policy": "pull",
+      "paths": ["vendor/ruby"],
+      "when": "on_success",
+      "fallback_keys": []
+    },
+    {
+      "key": "$CI_COMMIT_SHA-non_protected",
+      "untracked": false,
+      "policy": "pull",
+      "paths": [
+        "public/assets",
+        "tmp/cache/assets",
+        "node_modules/.cache/webpack/"
+      ],
+      "when": "on_success",
+      "fallback_keys": []
+    }
+  ],
+  "credentials": [
+    {
+      "type": "registry",
+      "url": "registry.gsa-0.gitlab-dedicated.us",
+      "username": "gitlab-ci-token",
+      "password": "glcbt-64_PjzhUFBgDTe_Skvx1V8j"
+    },
+    {
+      "type": "registry",
+      "url": "gsa-0.gitlab-dedicated.us:443",
+      "username": "gitlab-ci-token",
+      "password": "glcbt-64_PjzhUFBgDTe_Skvx1V8j"
+    }
+  ],
+  "dependencies": [
+    {
+      "id": 991,
+      "token": "glcbt-64_PjzhUFBgDTe_Skvx1V8j",
+      "name": "install-deps",
+      "artifacts_file": { "filename": "", "size": 0 }
+    },
+    {
+      "id": 992,
+      "token": "glcbt-64_PjzhUFBgDTe_Skvx1V8j",
+      "name": "build-project",
+      "artifacts_file": { "filename": "", "size": 0 }
+    }
+  ],
+  "features": {
+    "trace_sections": true,
+    "token_mask_prefixes": null,
+    "failure_reasons": [
+      "unknown_failure",
+      "script_failure",
+      "api_failure",
+      "stuck_or_timeout_failure",
+      "runner_system_failure",
+      "missing_dependency_failure",
+      "runner_unsupported",
+      "stale_schedule",
+      "job_execution_timeout",
+      "archived_failure",
+      "unmet_prerequisites",
+      "scheduler_failure",
+      "data_integrity_failure",
+      "forward_deployment_failure",
+      "user_blocked",
+      "project_deleted",
+      "ci_quota_exceeded",
+      "pipeline_loop_detected",
+      "no_matching_runner",
+      "trace_size_exceeded",
+      "builds_disabled",
+      "environment_creation_failure",
+      "deployment_rejected",
+      "failed_outdated_deployment_job",
+      "protected_environment_failure",
+      "insufficient_bridge_permissions",
+      "downstream_bridge_project_not_found",
+      "invalid_bridge_trigger",
+      "upstream_bridge_project_not_found",
+      "insufficient_upstream_permissions",
+      "bridge_pipeline_is_child_pipeline",
+      "downstream_pipeline_creation_failed",
+      "secrets_provider_not_found",
+      "reached_max_descendant_pipelines_depth",
+      "ip_restriction_failure",
+      "reached_max_pipeline_hierarchy_size",
+      "reached_downstream_pipeline_trigger_rate_limit"
+    ]
+  },
+  "run": ""
+}
