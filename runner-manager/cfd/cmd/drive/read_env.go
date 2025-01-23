@@ -117,8 +117,7 @@ func GetJobConfig() *JobConfig {
 	}
 
 	cfg.ContainerID = fmt.Sprintf(
-		"glrw-r%v-p%v-c%v-j%v",
-		cfg.RunnerID,
+		"glrw-p%v-c%v-j%v",
 		cfg.ProjectID,
 		cfg.ConcurrentProjectID,
 		cfg.JobID,
