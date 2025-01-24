@@ -106,14 +106,20 @@ func (c *JobConfig) parseEnv() *JobConfig {
 	return c
 }
 
-func GetJobConfig() *JobConfig {
-	cfg := (&JobConfig{}).parseEnv()
+func getJobConfig() (cfg *JobConfig, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("error getting job config: %w", err)
+		}
+	}()
 
-	if err := cfg.parseJobResponseFile(); err != nil {
-		panic(err)
+	cfg = (&JobConfig{}).parseEnv()
+
+	if err = cfg.parseJobResponseFile(); err != nil {
+		return nil, err
 	}
-	if err := cfg.parseVcapAppJSON(); err != nil {
-		panic(err)
+	if err = cfg.parseVcapAppJSON(); err != nil {
+		return nil, err
 	}
 
 	cfg.ContainerID = fmt.Sprintf(
@@ -123,5 +129,5 @@ func GetJobConfig() *JobConfig {
 		cfg.JobID,
 	)
 
-	return cfg
+	return cfg, nil
 }
