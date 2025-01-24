@@ -14,7 +14,9 @@ package cloudgov
 type ClientAPI interface {
 	connect(url string, creds *Creds) error
 
-	appsGet() (apps []*App, err error)
+	appsList() (apps []*App, err error)
+	appsGet(id string) (*App, error)
+	appsDelete(id string) error
 }
 
 type CredsGetter interface {
@@ -39,7 +41,7 @@ func New(i ClientAPI, o *Opts) (*Client, error) {
 	if o == nil {
 		o = &Opts{CredsGetter: EnvCredsGetter{}}
 	}
-	cg := &Client{i, o}
+	cg := &Client{ClientAPI: i, Opts: o}
 	return cg.Connect()
 }
 
@@ -74,6 +76,14 @@ type App struct {
 	State string
 }
 
-func (c *Client) AppsGet() ([]*App, error) {
-	return c.appsGet()
+func (c *Client) AppsList() ([]*App, error) {
+	return c.appsList()
+}
+
+func (c *Client) AppsGet(id string) (*App, error) {
+	return c.appsGet(id)
+}
+
+func (c *Client) AppsDelete(id string) error {
+	return c.appsDelete(id)
 }

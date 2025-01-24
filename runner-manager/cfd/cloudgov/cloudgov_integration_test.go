@@ -68,9 +68,9 @@ scanning:
 		return
 	}
 
-	apps, err := cgClient.AppsGet()
+	apps, err := cgClient.AppsList()
 	if err != nil {
-		t.Errorf("Error running AppsGet() = %v", err)
+		t.Errorf("Error running AppsList() = %v", err)
 		return
 	}
 

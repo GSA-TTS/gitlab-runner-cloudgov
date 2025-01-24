@@ -34,18 +34,35 @@ func (cf *CFClientAPI) conn() *client.Client {
 	panic("go-cfclient adapter is not connected")
 }
 
+func castApp(app *resource.App) *App {
+	return &(App{app.GUID, app.Name, app.State})
+}
+
 func castApps(apps []*resource.App) []*App {
 	Apps := make([]*App, len(apps))
 	for idx, app := range apps {
-		Apps[idx] = &(App{app.GUID, app.Name, app.State})
+		Apps[idx] = castApp(app)
 	}
 	return Apps
 }
 
-func (cf *CFClientAPI) appsGet() ([]*App, error) {
+func (cf *CFClientAPI) appsList() ([]*App, error) {
 	apps, err := cf.conn().Applications.ListAll(context.Background(), nil)
 	if err != nil {
 		return nil, err
 	}
 	return castApps(apps), nil
+}
+
+func (cf *CFClientAPI) appsGet(id string) (*App, error) {
+	app, err := cf.conn().Applications.Get(context.Background(), id)
+	if err != nil {
+		return nil, err
+	}
+	return castApp(app), nil
+}
+
+func (cf *CFClientAPI) appsDelete(id string) error {
+	_, err := cf.conn().Applications.Delete(context.Background(), id)
+	return err
 }

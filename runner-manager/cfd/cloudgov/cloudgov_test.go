@@ -14,12 +14,12 @@ type stubClientAPI struct {
 	StCreds *Creds
 	StApps  []*App
 
-	FailAppsGet bool
-	FailConnect bool
+	FailAppsList bool
+	FailConnect  bool
 }
 
-func (a *stubClientAPI) appsGet() (apps []*App, err error) {
-	if a.FailAppsGet {
+func (a *stubClientAPI) appsList() (apps []*App, err error) {
+	if a.FailAppsList {
 		return nil, errors.New("fail")
 	}
 	return a.StApps, nil
@@ -242,7 +242,7 @@ func TestClient_Connect(t *testing.T) {
 	}
 }
 
-func TestClient_AppsGet(t *testing.T) {
+func TestClient_AppsList(t *testing.T) {
 	testApps := []*App{{Id: "1", Name: "foo"}}
 
 	type fields struct {
@@ -260,7 +260,7 @@ func TestClient_AppsGet(t *testing.T) {
 			name:    "reports errors",
 			wantErr: true,
 			fields: fields{
-				ClientAPI: &stubClientAPI{StApps: testApps, FailAppsGet: true},
+				ClientAPI: &stubClientAPI{StApps: testApps, FailAppsList: true},
 				Opts:      &Opts{CredsGetter: &stubCredsGetter{}},
 			},
 		},
@@ -280,9 +280,9 @@ func TestClient_AppsGet(t *testing.T) {
 				ClientAPI: tt.fields.ClientAPI,
 				Opts:      tt.fields.Opts,
 			}
-			got, err := c.AppsGet()
+			got, err := c.AppsList()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Client.AppsGet() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Client.AppsList() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if diff := cmp.Diff(got, tt.want); diff != "" {
