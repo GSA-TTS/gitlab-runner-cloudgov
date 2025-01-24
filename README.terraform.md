@@ -45,11 +45,6 @@ For local development, there is a `sandbox-deploy` module set up to deploy the r
     cd sandbox-deploy
     ```
 
-1. Create a [cloud.gov service account](https://cloud.gov/docs/services/cloud-gov-service-account/) with the `OrgManager` permission
-    ```
-    ./create_service_account -s SPACEPREFIX-mgmt -u glr-local-deploy > secrets.auto.tfvars
-    ```
-
 1. Copy `vars.tfvars-example` to `vars.auto.tfvars`.
     ```
     cp vars.tfvars-example vars.auto.tfvars
@@ -62,18 +57,24 @@ For local development, there is a `sandbox-deploy` module set up to deploy the r
     * set `developer_emails` to whoever might need to debug this deployment
     * set `worker_egress_allowlist` to the package hosts needed for your supported programming languages
 
-1. Run `terraform init`
+1. Run `./terraform.sh -s SPACEPREFIX-mgmt -c validate` to setup terraform and check that the config is valid
 
-1. Run `terraform validate`
+1. Run `./terraform.sh` and double check that the changes are what is expected
 
-1. Run `terraform plan` and double check that the changes are what is expected.
+1. Apply your changes with `./terraform.sh -c apply`
 
-1. Apply your changes with `terraform apply`
-
-1. Check to see that the runner has registered itself in GitLab under your project repository under Settings -> CI/CD -> Runners (Expand)
+1. Check to see that the runner has registered itself in GitLab under your project repository under `Settings -> CI/CD -> Runners (Expand)`
 
 At this point the runner should be available to run jobs. See [Use GitLab - Use CI/CD to build your application - Getting started](https://docs.gitlab.com/ee/ci/)
 for much more on GitLab CI/CD and runners.
+
+#### Sandbox disposal
+
+Once you are done with your sandbox, or to completely remove it before re-creating, run:
+
+`./terraform.sh -c destroy`
+
+This will remove the full runner setup, delete the deployer service account, and remove obsolete credentials files.
 
 ## Troubleshooting
 
