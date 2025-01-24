@@ -14,7 +14,7 @@ Usage:
 Options:
 -h: show help and exit
 -o ORG: cloud.gov org. Defaults to $org
--s MGMT_SPACE_NAME: MGMT_SPACE_NAME - required unless 'secrets.auto.tfvars' already exists
+-s MGMT_SPACE_NAME: Non-terraform managed space to hold the service account - required unless 'secrets.auto.tfvars' already exists
 -u SERVICE_ACCOUNT_USERNAME: Deployer account name. Defaults to $sa_username
 -f: Force, pass -auto-approve to all invocations of terraform
 -c TERRAFORM-CMD: command to run. Defaults to $cmd
