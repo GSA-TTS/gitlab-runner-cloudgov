@@ -120,6 +120,17 @@ variable "docker_hub_token" {
   description = "Docker Hub Token"
 }
 
+variable "program_technologies" {
+  type        = set(string)
+  default     = []
+  description = "A list of technologies in use by program repositories, to enable known egress endpoints"
+
+  validation {
+    condition     = alltrue([for t in var.program_technologies : contains(keys(local.allowlist_map), t)])
+    error_message = "program_technologies must be a subset of ${join(", ", keys(local.allowlist_map))}"
+  }
+}
+
 variable "worker_egress_allowlist" {
   type        = set(string)
   default     = []

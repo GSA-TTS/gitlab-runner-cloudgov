@@ -8,7 +8,8 @@ provider "cloudfoundry-community" {
 variables {
   cf_space_prefix         = "glr-cg-ci-tests"
   ci_server_token         = "fake-gdg-server-token"
-  worker_egress_allowlist = ["*.rubygems.org", "gsa-0.gitlab-dedicated.us"]
+  program_technologies    = ["ruby", "terraform"]
+  worker_egress_allowlist = ["api.example.gov", "gsa-0.gitlab-dedicated.us"]
 }
 
 run "test-system-creation" {
@@ -105,8 +106,12 @@ run "test-system-creation" {
       "dl-cdn.alpinelinux.org",
       "*.fedoraproject.org",
       "s3.dualstack.us-east-1.amazonaws.com",
-      "*.rubygems.org"
+      "*.rubygems.org",
+      "api.example.gov",
+      "objects.githubusercontent.com",
+      "*.releases.hashicorp.com",
+      "registry.terraform.io"
     ])
-    error_message = "The egress allowlist contains manager and worker entries"
+    error_message = "The egress allowlist contains manager, technology, and worker entries"
   }
 }
