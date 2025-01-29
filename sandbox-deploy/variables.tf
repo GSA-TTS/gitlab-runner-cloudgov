@@ -25,6 +25,9 @@ variable "developer_emails" {
 variable "worker_disk_size" {
   type = string
 }
+variable "program_technologies" {
+  type = set(string)
+}
 variable "worker_egress_allowlist" {
   type = set(string)
 }
