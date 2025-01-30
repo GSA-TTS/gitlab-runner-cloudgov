@@ -33,6 +33,7 @@ module "sandbox-runner" {
   manager_instances       = 1
   developer_emails        = var.developer_emails
   worker_disk_size        = var.worker_disk_size
+  program_technologies    = var.program_technologies
   worker_egress_allowlist = var.worker_egress_allowlist
   allow_ssh               = var.allow_ssh
 }

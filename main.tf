@@ -9,7 +9,8 @@ locals {
     "*.fedoraproject.org",                 # fedora runner dependencies install
     "s3.dualstack.us-east-1.amazonaws.com" # gitlab-runner-helper source for runners
   ]
-  proxy_allowlist = setunion(local.devtools_egress_allowlist, var.worker_egress_allowlist)
+  technology_allowlist = flatten([for t in var.program_technologies : local.allowlist_map[t]])
+  proxy_allowlist      = setunion(local.devtools_egress_allowlist, var.worker_egress_allowlist, local.technology_allowlist)
 }
 
 # the `depends_on` lines for each resource or module is needed to properly sequence initial creation
