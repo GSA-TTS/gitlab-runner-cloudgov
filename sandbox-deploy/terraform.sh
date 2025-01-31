@@ -9,7 +9,7 @@ $0: Run terraform commands against a given environment
 
 Usage:
   $0 -h
-  $0 [-o <ORG>] [-m <MGMT_SPACE_NAME>] [-u <SERVICE_ACCOUNT_USERNAME>] [-f] [-c <TERRAFORM-CMD>] [-- <EXTRA CMD ARGUMENTS>]
+  $0 [-o <ORG>] [-s <MGMT_SPACE_NAME>] [-u <SERVICE_ACCOUNT_USERNAME>] [-f] [-c <TERRAFORM-CMD>] [-- <EXTRA CMD ARGUMENTS>]
 
 Options:
 -h: show help and exit
