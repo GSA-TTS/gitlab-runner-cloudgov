@@ -14,9 +14,9 @@ package cloudgov
 type ClientAPI interface {
 	connect(url string, creds *Creds) error
 
+	appGet(id string) (*App, error)
+	appDelete(id string) error
 	appsList() (apps []*App, err error)
-	appsGet(id string) (*App, error)
-	appsDelete(id string) error
 }
 
 type CredsGetter interface {
@@ -76,14 +76,14 @@ type App struct {
 	State string
 }
 
+func (c *Client) AppGet(id string) (*App, error) {
+	return c.appGet(id)
+}
+
+func (c *Client) AppDelete(id string) error {
+	return c.appDelete(id)
+}
+
 func (c *Client) AppsList() ([]*App, error) {
 	return c.appsList()
-}
-
-func (c *Client) AppsGet(id string) (*App, error) {
-	return c.appsGet(id)
-}
-
-func (c *Client) AppsDelete(id string) error {
-	return c.appsDelete(id)
 }

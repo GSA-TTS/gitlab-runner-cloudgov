@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func Test_CFAdapter_AppsGet(t *testing.T) {
+func Test_CFAdapter_AppGet(t *testing.T) {
 	var u, p, want string
 	var l int
 

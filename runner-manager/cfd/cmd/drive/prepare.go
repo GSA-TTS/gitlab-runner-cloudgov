@@ -64,12 +64,12 @@ func (s *prepStage) startServices() error {
 		containerID := fmt.Sprintf("%v-svc-%v", s.config.ContainerID, serv.Alias)
 
 		// check for an old instance of the service, delete if found
-		app, err := s.client.AppsGet(containerID)
+		app, err := s.client.AppGet(containerID)
 		if err != nil {
 			return fmt.Errorf("error checking for existing service (%v): %w", containerID, err)
 		}
 		if app != nil {
-			err = s.client.AppsDelete(containerID)
+			err = s.client.AppDelete(containerID)
 		}
 		if err != nil {
 			return fmt.Errorf("error deleting existing service (%v): %w", containerID, err)

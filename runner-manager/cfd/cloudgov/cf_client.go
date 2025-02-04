@@ -46,15 +46,7 @@ func castApps(apps []*resource.App) []*App {
 	return Apps
 }
 
-func (cf *CFClientAPI) appsList() ([]*App, error) {
-	apps, err := cf.conn().Applications.ListAll(context.Background(), nil)
-	if err != nil {
-		return nil, err
-	}
-	return castApps(apps), nil
-}
-
-func (cf *CFClientAPI) appsGet(id string) (*App, error) {
+func (cf *CFClientAPI) appGet(id string) (*App, error) {
 	app, err := cf.conn().Applications.Get(context.Background(), id)
 	if err != nil {
 		return nil, err
@@ -62,7 +54,15 @@ func (cf *CFClientAPI) appsGet(id string) (*App, error) {
 	return castApp(app), nil
 }
 
-func (cf *CFClientAPI) appsDelete(id string) error {
+func (cf *CFClientAPI) appDelete(id string) error {
 	_, err := cf.conn().Applications.Delete(context.Background(), id)
 	return err
+}
+
+func (cf *CFClientAPI) appsList() ([]*App, error) {
+	apps, err := cf.conn().Applications.ListAll(context.Background(), nil)
+	if err != nil {
+		return nil, err
+	}
+	return castApps(apps), nil
 }
