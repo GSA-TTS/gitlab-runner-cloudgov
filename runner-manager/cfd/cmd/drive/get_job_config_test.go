@@ -19,7 +19,7 @@ func Test_GetJobConfig(t *testing.T) {
 		WorkerDiskSize:  "1024M",
 		JobResponseFile: "",
 		VcapAppJSON:     "",
-		ContainerID:     "glrw-r-p-c-j",
+		ContainerID:     "glrw-p-c-j",
 	}
 
 	envVarsToSet := map[string]string{
@@ -36,7 +36,11 @@ func Test_GetJobConfig(t *testing.T) {
 	for k, v := range envVarsToSet {
 		t.Setenv(k, v)
 	}
-	parsedCfg := GetJobConfig()
+	parsedCfg, err := getJobConfig()
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	if diff := cmp.Diff(cfgWant, parsedCfg); diff != "" {
 		t.Error(diff)
 	}
@@ -62,7 +66,11 @@ func Test_parseJobResponseFile(t *testing.T) {
 		Variables: []*CIVar{{Key: "foo", Value: "bar"}},
 	}
 
-	cfg := GetJobConfig()
+	cfg, err := getJobConfig()
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	if diff := cmp.Diff(wanted, cfg.JobResponse); diff != "" {
 		t.Error(diff)
@@ -78,7 +86,11 @@ func Test_parseVcapAppJSON(t *testing.T) {
 		SpaceName: "zjr-gl-test",
 	}
 
-	cfg := GetJobConfig()
+	cfg, err := getJobConfig()
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	if diff := cmp.Diff(wanted, cfg.VcapAppData); diff != "" {
 		t.Error(diff)

@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func Test_CFAdapter_AppsGet(t *testing.T) {
+func Test_CFAdapter_AppGet(t *testing.T) {
 	var u, p, want string
 	var l int
 
@@ -68,9 +68,9 @@ scanning:
 		return
 	}
 
-	apps, err := cgClient.AppsGet()
+	apps, err := cgClient.AppsList()
 	if err != nil {
-		t.Errorf("Error running AppsGet() = %v", err)
+		t.Errorf("Error running AppsList() = %v", err)
 		return
 	}
 

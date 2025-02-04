@@ -1,7 +1,7 @@
 package drive
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/spf13/cobra"
 )
@@ -28,7 +28,74 @@ job log.
 
 Read more in GitLab's documentation:
 https://docs.gitlab.com/runner/executors/custom.html#prepare`,
-	Run: func(cmd *cobra.Command, args []string) {
-		log.Println("preparing...")
-	},
+	Run: run,
+}
+
+type prepStage commonStage
+
+func run(cmd *cobra.Command, args []string) {
+	// Move this stuff into a setup, add methods.
+	s, err := newStage()
+	if err != nil {
+		panic(fmt.Errorf("error getting cgClient: %w", err))
+	}
+
+	s.prep.startServices()
+
+	// if services, start services
+
+	// if os.Getenv("")
+
+	// create temp manifest
+
+	// start container
+
+	// install deps
+
+	// allow access to services
+}
+
+func (s *prepStage) startServices() error {
+	if len(s.config.Services) < 1 {
+		return nil
+	}
+
+	for _, serv := range s.config.Services {
+		containerID := fmt.Sprintf("%v-svc-%v", s.config.ContainerID, serv.Alias)
+
+		// check for an old instance of the service, delete if found
+		app, err := s.client.AppGet(containerID)
+		if err != nil {
+			return fmt.Errorf("error checking for existing service (%v): %w", containerID, err)
+		}
+		if app != nil {
+			err = s.client.AppDelete(containerID)
+		}
+		if err != nil {
+			return fmt.Errorf("error deleting existing service (%v): %w", containerID, err)
+		}
+
+		// args =
+		// guid
+		// worker_mem
+		// docker image
+		// health check type
+		// no-route
+		//
+		// add job-vars & service-vars
+		// (we add to $SVCMANIFEST right now, maybe a way around that?)
+		//
+		// add entrypoint & command
+		//
+		// add docker user/pass
+		//
+		// push
+		//
+		// map-route containerID apps.internal --hostname containerID
+		//
+		// export CI_SERVICE_$alias=$containerID.apps.internal
+		//
+	}
+
+	return nil
 }
