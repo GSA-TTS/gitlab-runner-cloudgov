@@ -2,7 +2,7 @@ locals {
   # the list of egress hosts to allow for runner-manager and always needed by runner workers
   devtools_egress_allowlist = [
     "*.fr.cloud.gov",                      # cf-cli calls from manager
-    "gsa-0.gitlab-dedicated.us",           # connections from both manager and runners
+    var.ci_server_url,                     # connections from both manager and runners
     "deb.debian.org",                      # debian runner dependencies install
     "*.ubuntu.com",                        # ubuntu runner dependencies install
     "dl-cdn.alpinelinux.org",              # alpine runner dependencies install
@@ -94,7 +94,7 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     # Following vars are used directly by gitlab-runner register
     # See gitlab-runner register --help for available vars
     CI_SERVER_TOKEN = var.ci_server_token
-    CI_SERVER_URL   = var.ci_server_url
+    CI_SERVER_URL   = "https://${var.ci_server_url}"
     RUNNER_EXECUTOR = var.runner_executor
     RUNNER_NAME     = var.runner_manager_app_name
     # Following vars are for tuning worker defaults
