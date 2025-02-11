@@ -119,32 +119,6 @@ command line options in `runner/.profile` or having a .toml add on.
 
 ## Compliance Documentation
 
-Security controls and other compliance documents for the DevTools SaaS system live at https://github.com/GSA-TTS/devtools-compliance and also as a git submodule under `/doc/compliance`
+Security controls and other compliance documents for the DevTools SaaS system live at https://github.com/GSA-TTS/devtools-compliance
 
-From this repo, run `bin/trestle` to start a trestle CLI with helper scripts for maintaining and updating the documents.
-
-See the [docker-trestle README](https://github.com/gsa-tts/docker-trestle) for help with the individual scripts.
-
-### Git Submodule Commands
-
-See git's [submodule documentation](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
-for more information on tracking changes to the compliance files.
-
-#### Cloning this project
-
-`git clone --recurse-submodules <<REPO_ADDRESS>>`
-
-#### Pull changes including OSCAL changes
-
-`git pull --recurse-submodules`
-
-#### Push changes including OSCAL changes
-
-`git push --recurse-submodules=check` _then_ `git push --recurse-submodules=on-demand`
-
-#### Helpful config settings:
-
-* `git config diff.submodule log`
-* `git config status.submodulesummary 1`
-* `git config push.recurseSubmodules check`
-* `git config submodule.recurse true`
+Any changes to the code here that affect the security posture of the system should have a corresponding documentation update in the compliance repo.
