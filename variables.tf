@@ -28,7 +28,7 @@ variable "ci_server_token" {
 
 variable "ci_server_url" {
   type        = string
-  default     = "https://gsa-0.gitlab-dedicated.us"
+  default     = "gsa.gitlab-dedicated.us"
   description = "Gitlab Dedicated for Government URL"
 }
 

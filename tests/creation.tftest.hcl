@@ -9,7 +9,7 @@ variables {
   cf_space_prefix         = "glr-cg-ci-tests"
   ci_server_token         = "fake-gdg-server-token"
   program_technologies    = ["ruby", "terraform"]
-  worker_egress_allowlist = ["api.example.gov", "gsa-0.gitlab-dedicated.us"]
+  worker_egress_allowlist = ["api.example.gov", "gsa.gitlab-dedicated.us"]
 }
 
 run "test-system-creation" {
@@ -100,7 +100,7 @@ run "test-system-creation" {
   assert {
     condition = local.proxy_allowlist == toset([
       "*.fr.cloud.gov",
-      "gsa-0.gitlab-dedicated.us",
+      "gsa.gitlab-dedicated.us",
       "deb.debian.org",
       "*.ubuntu.com",
       "dl-cdn.alpinelinux.org",
