@@ -69,6 +69,8 @@ func parseCfgJSON[R any](j []byte, r *R) (*R, error) {
 }
 
 func (c *JobConfig) parseJobResponseFile() (err error) {
+	c.JobResponse = &JobResponse{}
+
 	if c.JobResponseFile == "" {
 		return nil
 	}
@@ -78,12 +80,13 @@ func (c *JobConfig) parseJobResponseFile() (err error) {
 		return fmt.Errorf("error reading JobResponseFile: %w", err)
 	}
 
-	c.JobResponse, err = parseCfgJSON(j, &JobResponse{})
+	c.JobResponse, err = parseCfgJSON(j, c.JobResponse)
 	return err
 }
 
 func (c *JobConfig) parseVcapAppJSON() (err error) {
-	c.VcapAppData, err = parseCfgJSON([]byte(c.VcapAppJSON), &VcapAppData{})
+	c.VcapAppData = &VcapAppData{}
+	c.VcapAppData, err = parseCfgJSON([]byte(c.VcapAppJSON), c.VcapAppData)
 	return err
 }
 
