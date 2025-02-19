@@ -5,6 +5,7 @@ import (
 
 	"github.com/cloudfoundry/go-cfclient/v3/client"
 	"github.com/cloudfoundry/go-cfclient/v3/config"
+	"github.com/cloudfoundry/go-cfclient/v3/operation"
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
 )
 
@@ -34,8 +35,24 @@ func (cf *CFClientAPI) conn() *client.Client {
 	panic("go-cfclient adapter is not connected")
 }
 
+// TODO: this isn't a great name
+func toExtManifest(am *AppManifest) *operation.AppManifest {
+	return operation.NewManifest().Applications[0]
+}
+
+// TODO: several…
+// - process org and space options
+// - translate manifest from internal to external form
+// - possibly track a proper context
+// - get docker pass into env (CF_DOCKER_PASSWORD) if used
+func (cf *CFClientAPI) appPush(m *AppManifest) (*App, error) {
+	op := operation.NewAppPushOperation(cf._con, "org", "space")
+	app, err := op.Push(context.Background(), toExtManifest(m), nil)
+	return castApp(app), err
+}
+
 func castApp(app *resource.App) *App {
-	return &(App{app.GUID, app.Name, app.State})
+	return &(App{Name: app.GUID})
 }
 
 func castApps(apps []*resource.App) []*App {

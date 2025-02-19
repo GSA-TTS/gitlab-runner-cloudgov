@@ -61,32 +61,7 @@ func (s *prepStage) startServices() error {
 	}
 
 	for _, serv := range s.config.Services {
-		containerID := fmt.Sprintf("%v-svc-%v", s.config.ContainerID, serv.Alias)
-
-		// check for an old instance of the service, delete if found
-		app, err := s.client.AppGet(containerID)
-		if err != nil {
-			return fmt.Errorf("error checking for existing service (%v): %w", containerID, err)
-		}
-		if app != nil {
-			err = s.client.AppDelete(containerID)
-		}
-		if err != nil {
-			return fmt.Errorf("error deleting existing service (%v): %w", containerID, err)
-		}
-
-		// args =
-		// guid
-		// worker_mem
-		// docker image
-		// health check type
-		// no-route
-		//
-		// add job-vars & service-vars
-		// (we add to $SVCMANIFEST right now, maybe a way around that?)
-		//
-		// add entrypoint & command
-		//
+		s.client.ServicePush(serv.Manifest)
 		// add docker user/pass
 		//
 		// push

@@ -119,6 +119,43 @@ func NewAppManifest(id string, memory string, disk string) *AppManifest {
 		},
 	}
 }
+
+func (c *Client) ServicePush(manifest *AppManifest) (*App, error) {
+	containerID := manifest.Name
+
+	// check for an old instance of the service, delete if found
+	app, err := c.AppGet(containerID)
+	if err != nil {
+		return nil, fmt.Errorf("error checking for existing service (%v): %w", containerID, err)
+	}
+	if app != nil {
+		err = c.AppDelete(containerID)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("error deleting existing service (%v): %w", containerID, err)
+	}
+
+	return nil, nil
+}
+
+// func (c *Client) ServicesPush(svcs []*drive.Service) ([]*App, error) {
+// 	if len(svcs) < 1 {
+// 		return nil, nil
+// 	}
+//
+// 	apps := make([]*App, len(svcs))
+//
+// 	for i, s := range svcs {
+// 		app, err := c.ServicePush(s)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		apps[i] = app
+// 	}
+//
+// 	return nil, nil
+// }
+
 func (c *Client) AppsList() ([]*App, error) {
 	return c.appsList()
 }
