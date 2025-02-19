@@ -243,7 +243,7 @@ func TestClient_Connect(t *testing.T) {
 }
 
 func TestClient_AppsList(t *testing.T) {
-	testApps := []*App{{Id: "1", Name: "foo"}}
+	testApps := []*App{{Name: "foo"}}
 
 	type fields struct {
 		ClientAPI

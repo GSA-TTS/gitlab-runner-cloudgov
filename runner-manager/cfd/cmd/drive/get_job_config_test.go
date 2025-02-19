@@ -3,6 +3,7 @@ package drive
 import (
 	"testing"
 
+	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cfd/cloudgov"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -11,6 +12,7 @@ import (
 // think about that later.
 func Test_GetJobConfig(t *testing.T) {
 	cfgWant := &JobConfig{
+		JobResponse:     &JobResponse{},
 		CIRegistryUser:  "foo",
 		CIRegistryPass:  "bar",
 		DockerHubUser:   "foo",
@@ -20,6 +22,14 @@ func Test_GetJobConfig(t *testing.T) {
 		JobResponseFile: "",
 		VcapAppJSON:     "",
 		ContainerID:     "glrw-p-c-j",
+		Manifest: &cloudgov.AppManifest{
+			Name:    "glrw-p-c-j",
+			NoRoute: true,
+			Docker:  &cloudgov.AppManifestDocker{},
+			Process: &cloudgov.AppManifestProcess{
+				DiskQuota: "1024M", Memory: "1024M", HealthCheckType: "process",
+			},
+		},
 	}
 
 	envVarsToSet := map[string]string{
@@ -62,16 +72,37 @@ func Test_parseJobResponseFile(t *testing.T) {
 				Entrypoint: []string{"j", "k", "l"},
 			},
 			Variables: []*CIVar{{Key: "bazz", Value: "buzz"}},
+			Manifest: &cloudgov.AppManifest{
+				Name:    "glrw-p-c-j-svc-my-pg-service",
+				Env:     map[string]string{"bazz": "buzz", "foo": "bar"},
+				NoRoute: true,
+				Docker:  &cloudgov.AppManifestDocker{},
+				Process: &cloudgov.AppManifestProcess{Command: "j k l g h i", HealthCheckType: "process"},
+			},
+			Config: &JobConfig{
+				ContainerID:     "glrw-p-c-j",
+				JobResponseFile: "./testdata/sample_job_response.json",
+				Manifest: &cloudgov.AppManifest{
+					Name:    "glrw-p-c-j",
+					Env:     map[string]string{"foo": "bar"},
+					NoRoute: true,
+					Docker:  &cloudgov.AppManifestDocker{},
+					Process: &cloudgov.AppManifestProcess{Command: "d e f a b c", HealthCheckType: "process"},
+				},
+			},
 		}},
 		Variables: []*CIVar{{Key: "foo", Value: "bar"}},
 	}
+
+	// here to complete the cicurular reference from services back to cfg
+	wanted.Services[0].Config.JobResponse = wanted
 
 	cfg, err := getJobConfig()
 	if err != nil {
 		t.Error(err)
 		return
-	}
 
+	}
 	if diff := cmp.Diff(wanted, cfg.JobResponse); diff != "" {
 		t.Error(diff)
 	}

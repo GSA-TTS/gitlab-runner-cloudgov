@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"regexp"
+	"strings"
+
+	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cfd/cloudgov"
 )
 
 type JobConfig struct {
@@ -13,6 +17,8 @@ type JobConfig struct {
 
 	*VcapAppData
 	VcapAppJSON string `env:"VCAP_APPLICATION"`
+
+	Manifest *cloudgov.AppManifest
 
 	// We combine the following to make the container ID.
 	// Some are available in JOB_RESPONSE_FILE, but several are only found
@@ -44,13 +50,15 @@ type Image struct {
 	Command    []string
 	Entrypoint []string
 }
-type CIVar struct {
-	Key   string
-	Value string
-}
 type Service struct {
 	*Image
 	Variables []*CIVar
+	Manifest  *cloudgov.AppManifest
+	Config    *JobConfig
+}
+type CIVar struct {
+	Key   string
+	Value string
 }
 
 type VcapAppData struct {
@@ -81,6 +89,14 @@ func (c *JobConfig) parseJobResponseFile() (err error) {
 	}
 
 	c.JobResponse, err = parseCfgJSON(j, c.JobResponse)
+	if err != nil {
+		return err
+	}
+
+	for _, s := range c.Services {
+		s.Config = c
+	}
+
 	return err
 }
 
@@ -109,6 +125,17 @@ func (c *JobConfig) parseEnv() *JobConfig {
 	return c
 }
 
+func CIVarsToMap(vars []*CIVar) map[string]string {
+	if vars == nil {
+		return nil
+	}
+	mapped := make(map[string]string)
+	for _, v := range vars {
+		mapped[v.Key] = v.Value
+	}
+	return mapped
+}
+
 func getJobConfig() (cfg *JobConfig, err error) {
 	defer func() {
 		if err != nil {
@@ -117,7 +144,6 @@ func getJobConfig() (cfg *JobConfig, err error) {
 	}()
 
 	cfg = (&JobConfig{}).parseEnv()
-
 	if err = cfg.parseJobResponseFile(); err != nil {
 		return nil, err
 	}
@@ -131,6 +157,60 @@ func getJobConfig() (cfg *JobConfig, err error) {
 		cfg.ConcurrentProjectID,
 		cfg.JobID,
 	)
+
+	cfg.Manifest = cloudgov.NewAppManifest(
+		cfg.ContainerID,
+		cfg.WorkerMemory,
+		cfg.WorkerDiskSize,
+	)
+
+	cfg.Manifest.Env = CIVarsToMap(cfg.Variables)
+
+	if cfg.Image != nil {
+		img := cfg.Image.Name
+		cfg.Manifest.Docker.Image = img
+
+		// match images w/ docker domain, or no domain (i.e. docker by default)
+		re := regexp.MustCompile(`^((registry-\d+|index)?\.?docker.io\/|[^.]*(:|$))`)
+
+		if strings.Contains(img, "registry.gitlab.com") {
+			cfg.Manifest.Docker.Username = cfg.CIRegistryUser
+			cfg.Manifest.Docker.Password = cfg.CIRegistryPass
+		} else if re.FindString(img) != "" {
+			cfg.Manifest.Docker.Username = cfg.DockerHubUser
+			cfg.Manifest.Docker.Password = cfg.DockerHubToken
+		}
+
+		var x []string
+		for _, str := range append(cfg.Image.Entrypoint, cfg.Image.Command...) {
+			str = strings.Trim(str, " ")
+			if str != "" {
+				x = append(x, str)
+			}
+		}
+		cfg.Manifest.Process.Command = strings.Join(x, " ")
+	}
+
+	// TODO: still need to process service images when they get used
+	for _, s := range cfg.Services {
+		s.Manifest = cloudgov.NewAppManifest(
+			fmt.Sprintf("%v-svc-%v", cfg.ContainerID, s.Alias),
+			cfg.WorkerMemory,
+			cfg.WorkerDiskSize,
+		)
+		s.Manifest.Env = CIVarsToMap(append(cfg.Variables, s.Variables...))
+		var x []string
+		for _, str := range append(s.Entrypoint, s.Command...) {
+			str = strings.Trim(str, " ")
+			if str != "" {
+				x = append(x, str)
+			}
+		}
+		s.Manifest.Process.Command = strings.Join(x, " ")
+		fmt.Println(s.Manifest)
+	}
+
+	fmt.Println(cfg.Manifest)
 
 	return cfg, nil
 }

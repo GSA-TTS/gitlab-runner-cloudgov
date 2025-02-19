@@ -1,5 +1,7 @@
 package cloudgov
 
+import "fmt"
+
 // Stuff we'll need to implement, for ref
 //
 // mapRoute()
@@ -15,6 +17,7 @@ type ClientAPI interface {
 	connect(url string, creds *Creds) error
 
 	appGet(id string) (*App, error)
+	appPush(m AppManifest) (*App, error)
 	appDelete(id string) error
 	appsList() (apps []*App, err error)
 }
@@ -71,8 +74,7 @@ func (c *Client) Connect() (*Client, error) {
 }
 
 type App struct {
-	Id    string
-	Name  string
+	Name  string // i.e., container ID
 	State string
 }
 
@@ -84,6 +86,39 @@ func (c *Client) AppDelete(id string) error {
 	return c.appDelete(id)
 }
 
+// func (c *Client) JobPush(img *drive.Image, vars []*drive.CIVar)
+
+type AppManifest struct {
+	Name    string // i.e., container ID
+	Env     map[string]string
+	NoRoute bool
+	Docker  *AppManifestDocker
+	Process *AppManifestProcess
+}
+type AppManifestDocker struct {
+	Image    string
+	Username string
+	Password string
+}
+type AppManifestProcess struct {
+	Command         string // Entrypoint + Cmd
+	DiskQuota       string
+	Memory          string
+	HealthCheckType string
+}
+
+func NewAppManifest(id string, memory string, disk string) *AppManifest {
+	return &AppManifest{
+		Name:    id,
+		NoRoute: true,
+		Docker:  &AppManifestDocker{},
+		Process: &AppManifestProcess{
+			Memory:          memory,
+			DiskQuota:       disk,
+			HealthCheckType: "process",
+		},
+	}
+}
 func (c *Client) AppsList() ([]*App, error) {
 	return c.appsList()
 }
