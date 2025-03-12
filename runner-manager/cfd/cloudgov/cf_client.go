@@ -52,7 +52,7 @@ func (cf *CFClientAPI) appPush(m *AppManifest) (*App, error) {
 }
 
 func castApp(app *resource.App) *App {
-	return &(App{Name: app.GUID})
+	return &(App{Name: app.GUID, State: app.State})
 }
 
 func castApps(apps []*resource.App) []*App {

@@ -17,7 +17,7 @@ type ClientAPI interface {
 	connect(url string, creds *Creds) error
 
 	appGet(id string) (*App, error)
-	appPush(m AppManifest) (*App, error)
+	appPush(m *AppManifest) (*App, error)
 	appDelete(id string) error
 	appsList() (apps []*App, err error)
 }
