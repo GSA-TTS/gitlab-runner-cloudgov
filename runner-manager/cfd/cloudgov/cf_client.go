@@ -2,6 +2,7 @@ package cloudgov
 
 import (
 	"context"
+	"os"
 
 	"github.com/cloudfoundry/go-cfclient/v3/client"
 	"github.com/cloudfoundry/go-cfclient/v3/config"
@@ -35,23 +36,42 @@ func (cf *CFClientAPI) conn() *client.Client {
 	panic("go-cfclient adapter is not connected")
 }
 
-// TODO: this isn't a great name
-func toExtManifest(am *AppManifest) *operation.AppManifest {
-	return operation.NewManifest().Applications[0]
+func toCFManifest(am *AppManifest) *operation.AppManifest {
+	return &operation.AppManifest{
+		Name:    am.Name,
+		Env:     am.Env,
+		NoRoute: am.NoRoute,
+		Docker: &operation.AppManifestDocker{
+			Image:    am.Docker.Image,
+			Username: am.Docker.Username,
+		},
+		AppManifestProcess: operation.AppManifestProcess{
+			Command:         am.Process.Command,
+			Memory:          am.Process.Memory,
+			DiskQuota:       am.Process.DiskQuota,
+			HealthCheckType: operation.AppHealthCheckType(am.Process.HealthCheckType),
+		},
+	}
 }
 
-// TODO: several…
-// - process org and space options
-// - translate manifest from internal to external form
-// - possibly track a proper context
-// - get docker pass into env (CF_DOCKER_PASSWORD) if used
+// TODO: #95 - we'll want to change how docker creds get passed
 func (cf *CFClientAPI) appPush(m *AppManifest) (*App, error) {
-	op := operation.NewAppPushOperation(cf._con, "org", "space")
-	app, err := op.Push(context.Background(), toExtManifest(m), nil)
+	// Initializes some state for the CF lib w/ connected client and org/space
+	op := operation.NewAppPushOperation(cf._con, m.OrgName, m.SpaceName)
+
+	// Translate manifest
+	cfManifest := toCFManifest(m)
+
+	// op.Push is a go-ified cli cmd, currently only takes env pass, see #95
+	os.Setenv("CF_DOCKER_PASSWORD", m.Docker.Password)
+
+	app, err := op.Push(context.Background(), cfManifest, nil)
 	return castApp(app), err
 }
 
 func castApp(app *resource.App) *App {
+	// NOTE I seem to have been wanting to get rid
+	// of the app "Name|title", don't remember why
 	return &(App{Name: app.GUID, State: app.State})
 }
 

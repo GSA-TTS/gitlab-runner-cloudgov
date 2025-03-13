@@ -29,9 +29,9 @@ type JobConfig struct {
 	ProjectID           string `env:"CUSTOM_ENV_CI_PROJECT_ID"`
 	ConcurrentProjectID string `env:"CUSTOM_ENV_CI_CONCURRENT_PROJECT_ID"`
 
+	// TODO: #95 - we might want to grab/store these differently
 	CIRegistryUser string `env:"CUSTOM_ENV_CI_REGISTRY_USER"`
 	CIRegistryPass string `env:"CUSTOM_ENV_CI_REGISTRY_PASSWORD"`
-
 	DockerHubUser  string `env:"DOCKER_HUB_USER"`
 	DockerHubToken string `env:"DOCKER_HUB_TOKEN"`
 
@@ -62,7 +62,10 @@ type CIVar struct {
 }
 
 type VcapAppData struct {
+	CFApi     string `json:"cf_api"`
+	OrgId     string `json:"org_id"`
 	OrgName   string `json:"organization_name"`
+	SpaceId   string `json:"space_id"`
 	SpaceName string `json:"space_name"`
 }
 
@@ -160,6 +163,8 @@ func getJobConfig() (cfg *JobConfig, err error) {
 
 	cfg.Manifest = cloudgov.NewAppManifest(
 		cfg.ContainerID,
+		cfg.OrgName,
+		cfg.SpaceName,
 		cfg.WorkerMemory,
 		cfg.WorkerDiskSize,
 	)
@@ -173,6 +178,7 @@ func getJobConfig() (cfg *JobConfig, err error) {
 		// match images w/ docker domain, or no domain (i.e. docker by default)
 		re := regexp.MustCompile(`^((registry-\d+|index)?\.?docker.io\/|[^.]*(:|$))`)
 
+		// TODO: #95
 		if strings.Contains(img, "registry.gitlab.com") {
 			cfg.Manifest.Docker.Username = cfg.CIRegistryUser
 			cfg.Manifest.Docker.Password = cfg.CIRegistryPass
@@ -195,6 +201,8 @@ func getJobConfig() (cfg *JobConfig, err error) {
 	for _, s := range cfg.Services {
 		s.Manifest = cloudgov.NewAppManifest(
 			fmt.Sprintf("%v-svc-%v", cfg.ContainerID, s.Alias),
+			cfg.OrgName,
+			cfg.SpaceName,
 			cfg.WorkerMemory,
 			cfg.WorkerDiskSize,
 		)

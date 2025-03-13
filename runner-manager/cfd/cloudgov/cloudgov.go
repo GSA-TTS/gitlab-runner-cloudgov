@@ -89,11 +89,13 @@ func (c *Client) AppDelete(id string) error {
 // func (c *Client) JobPush(img *drive.Image, vars []*drive.CIVar)
 
 type AppManifest struct {
-	Name    string // i.e., container ID
-	Env     map[string]string
-	NoRoute bool
-	Docker  *AppManifestDocker
-	Process *AppManifestProcess
+	Name      string // i.e., container ID
+	Env       map[string]string
+	NoRoute   bool
+	Docker    *AppManifestDocker
+	Process   *AppManifestProcess
+	OrgName   string
+	SpaceName string
 }
 type AppManifestDocker struct {
 	Image    string
@@ -107,11 +109,13 @@ type AppManifestProcess struct {
 	HealthCheckType string
 }
 
-func NewAppManifest(id string, memory string, disk string) *AppManifest {
+func NewAppManifest(id string, org string, space string, memory string, disk string) *AppManifest {
 	return &AppManifest{
-		Name:    id,
-		NoRoute: true,
-		Docker:  &AppManifestDocker{},
+		Name:      id,
+		OrgName:   org,
+		SpaceName: space,
+		NoRoute:   true,
+		Docker:    &AppManifestDocker{},
 		Process: &AppManifestProcess{
 			Memory:          memory,
 			DiskQuota:       disk,
