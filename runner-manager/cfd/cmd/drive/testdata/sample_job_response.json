@@ -1,5 +1,6 @@
 {
   "image": {
+    "name": "ubuntu:jammy",
     "command": ["a", "b", "c"],
     "entrypoint": ["d", "e", "f"]
   },

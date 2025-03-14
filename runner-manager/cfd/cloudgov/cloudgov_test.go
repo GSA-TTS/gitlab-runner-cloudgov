@@ -2,6 +2,7 @@ package cloudgov
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -14,15 +15,11 @@ type stubClientAPI struct {
 	StCreds *Creds
 	StApps  []*App
 
-	FailAppsList bool
-	FailConnect  bool
-}
-
-func (a *stubClientAPI) appsList() (apps []*App, err error) {
-	if a.FailAppsList {
-		return nil, errors.New("fail")
-	}
-	return a.StApps, nil
+	FailConnect   bool
+	FailAppsList  bool
+	FailAppPush   bool
+	FailAppFound  bool
+	FailAppDelete bool
 }
 
 func (a *stubClientAPI) connect(url string, creds *Creds) (_ error) {
@@ -32,6 +29,37 @@ func (a *stubClientAPI) connect(url string, creds *Creds) (_ error) {
 	a.StURL = url
 	a.StCreds = creds
 	return nil
+}
+
+func (a *stubClientAPI) appGet(id string) (*App, error) {
+	if id == "" || a.FailAppFound {
+		return nil, nil
+	}
+	return &App{Name: id}, nil
+}
+
+func (a *stubClientAPI) appDelete(id string) error {
+	if id == "" {
+		return errors.New("Need an App ID to delete")
+	}
+	if a.FailAppDelete {
+		return errors.New("FailAppDelete")
+	}
+	return nil
+}
+
+func (a *stubClientAPI) appPush(m *AppManifest) (*App, error) {
+	if a.FailAppPush {
+		return nil, errors.New("FailAppPush")
+	}
+	return &App{Name: m.Name, State: "TEST"}, nil
+}
+
+func (a *stubClientAPI) appsList() (apps []*App, err error) {
+	if a.FailAppsList {
+		return nil, errors.New("FailAppsList")
+	}
+	return a.StApps, nil
 }
 
 type stubCredsGetter struct {
@@ -287,6 +315,51 @@ func TestClient_AppsList(t *testing.T) {
 			}
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Errorf("mismatch (-got +want):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestClient_ServicePush(t *testing.T) {
+	optsStub := &Opts{CredsGetter: stubCredsGetter{"a", "b", false}}
+	cgStub := &Client{&stubClientAPI{
+		StURL:   apiRootURLDefault,
+		StCreds: &Creds{"a", "b"},
+	}, optsStub}
+
+	type fields struct {
+		ClientAPI ClientAPI
+		Opts      *Opts
+	}
+	type args struct {
+		manifest *AppManifest
+	}
+
+	tests := map[string]struct {
+		fields  fields
+		args    args
+		want    *App
+		wantErr bool
+	}{
+		"thing": {
+			fields: fields{ClientAPI: cgStub, Opts: optsStub},
+			args:   args{manifest: &AppManifest{}},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			c := &Client{
+				ClientAPI: tt.fields.ClientAPI,
+				Opts:      tt.fields.Opts,
+			}
+			got, err := c.ServicePush(tt.args.manifest)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Client.ServicePush() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Client.ServicePush() = %v, want %v", got, tt.want)
 			}
 		})
 	}

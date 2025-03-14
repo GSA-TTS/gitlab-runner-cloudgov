@@ -1,6 +1,8 @@
 package cloudgov
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Stuff we'll need to implement, for ref
 //
@@ -38,6 +40,7 @@ type Client struct {
 	*Opts
 }
 
+// TODO: we should pull this out of VCAP_APPLICATION
 const apiRootURLDefault = "https://api.fr.cloud.gov"
 
 func New(i ClientAPI, o *Opts) (*Client, error) {
@@ -86,44 +89,12 @@ func (c *Client) AppDelete(id string) error {
 	return c.appDelete(id)
 }
 
-// func (c *Client) JobPush(img *drive.Image, vars []*drive.CIVar)
-
-type AppManifest struct {
-	Name      string // i.e., container ID
-	Env       map[string]string
-	NoRoute   bool
-	Docker    *AppManifestDocker
-	Process   *AppManifestProcess
-	OrgName   string
-	SpaceName string
-}
-type AppManifestDocker struct {
-	Image    string
-	Username string
-	Password string
-}
-type AppManifestProcess struct {
-	Command         string // Entrypoint + Cmd
-	DiskQuota       string
-	Memory          string
-	HealthCheckType string
+func (c *Client) AppsList() ([]*App, error) {
+	return c.appsList()
 }
 
-func NewAppManifest(id string, org string, space string, memory string, disk string) *AppManifest {
-	return &AppManifest{
-		Name:      id,
-		OrgName:   org,
-		SpaceName: space,
-		NoRoute:   true,
-		Docker:    &AppManifestDocker{},
-		Process: &AppManifestProcess{
-			Memory:          memory,
-			DiskQuota:       disk,
-			HealthCheckType: "process",
-		},
-	}
-}
-
+// TODO: this abstraction might belong in /cmd,
+// unless it can be further generalized to all pushes
 func (c *Client) ServicePush(manifest *AppManifest) (*App, error) {
 	containerID := manifest.Name
 
@@ -139,27 +110,23 @@ func (c *Client) ServicePush(manifest *AppManifest) (*App, error) {
 		return nil, fmt.Errorf("error deleting existing service (%v): %w", containerID, err)
 	}
 
-	return nil, nil
+	return c.appPush(manifest)
 }
 
-// func (c *Client) ServicesPush(svcs []*drive.Service) ([]*App, error) {
-// 	if len(svcs) < 1 {
-// 		return nil, nil
-// 	}
-//
-// 	apps := make([]*App, len(svcs))
-//
-// 	for i, s := range svcs {
-// 		app, err := c.ServicePush(s)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		apps[i] = app
-// 	}
-//
-// 	return nil, nil
-// }
+func (c *Client) ServicesPush(manifests []*AppManifest) ([]*App, error) {
+	if len(manifests) < 1 {
+		return nil, nil
+	}
 
-func (c *Client) AppsList() ([]*App, error) {
-	return c.appsList()
+	apps := make([]*App, len(manifests))
+
+	for i, s := range manifests {
+		app, err := c.ServicePush(s)
+		if err != nil {
+			return nil, err
+		}
+		apps[i] = app
+	}
+
+	return apps, nil
 }

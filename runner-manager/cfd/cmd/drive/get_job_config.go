@@ -12,13 +12,13 @@ import (
 )
 
 type JobConfig struct {
-	*JobResponse           // Parsed JSON from JobResponseFile
+	JobResponse            // Parsed JSON from JobResponseFile
 	JobResponseFile string `env:"JOB_RESPONSE_FILE"`
 
-	*VcapAppData
+	VcapAppData
 	VcapAppJSON string `env:"VCAP_APPLICATION"`
 
-	Manifest *cloudgov.AppManifest
+	Manifest cloudgov.AppManifest
 
 	// We combine the following to make the container ID.
 	// Some are available in JOB_RESPONSE_FILE, but several are only found
@@ -40,8 +40,8 @@ type JobConfig struct {
 }
 
 type JobResponse struct {
-	Image     *Image
-	Variables []*CIVar
+	Image     Image
+	Variables []CIVar
 	Services  []*Service
 }
 type Image struct {
@@ -51,9 +51,9 @@ type Image struct {
 	Entrypoint []string
 }
 type Service struct {
-	*Image
-	Variables []*CIVar
-	Manifest  *cloudgov.AppManifest
+	Image
+	Variables []CIVar
+	Manifest  cloudgov.AppManifest
 	Config    *JobConfig
 }
 type CIVar struct {
@@ -63,7 +63,7 @@ type CIVar struct {
 
 type VcapAppData struct {
 	CFApi     string `json:"cf_api"`
-	OrgId     string `json:"org_id"`
+	OrgID     string `json:"org_id"`
 	OrgName   string `json:"organization_name"`
 	SpaceId   string `json:"space_id"`
 	SpaceName string `json:"space_name"`
@@ -71,7 +71,7 @@ type VcapAppData struct {
 
 func parseCfgJSON[R any](j []byte, r *R) (*R, error) {
 	if len(j) < 1 {
-		return nil, nil
+		return r, nil
 	}
 	if err := json.Unmarshal(j, r); err != nil {
 		return nil, fmt.Errorf("error parsing %t: %w", r, err)
@@ -80,7 +80,7 @@ func parseCfgJSON[R any](j []byte, r *R) (*R, error) {
 }
 
 func (c *JobConfig) parseJobResponseFile() (err error) {
-	c.JobResponse = &JobResponse{}
+	ref := &JobResponse{}
 
 	if c.JobResponseFile == "" {
 		return nil
@@ -91,10 +91,12 @@ func (c *JobConfig) parseJobResponseFile() (err error) {
 		return fmt.Errorf("error reading JobResponseFile: %w", err)
 	}
 
-	c.JobResponse, err = parseCfgJSON(j, c.JobResponse)
+	ref, err = parseCfgJSON(j, ref)
 	if err != nil {
 		return err
 	}
+
+	c.JobResponse = *ref
 
 	for _, s := range c.Services {
 		s.Config = c
@@ -104,8 +106,9 @@ func (c *JobConfig) parseJobResponseFile() (err error) {
 }
 
 func (c *JobConfig) parseVcapAppJSON() (err error) {
-	c.VcapAppData = &VcapAppData{}
-	c.VcapAppData, err = parseCfgJSON([]byte(c.VcapAppJSON), c.VcapAppData)
+	ref := &VcapAppData{}
+	ref, err = parseCfgJSON([]byte(c.VcapAppJSON), ref)
+	c.VcapAppData = *ref
 	return err
 }
 
@@ -128,7 +131,7 @@ func (c *JobConfig) parseEnv() *JobConfig {
 	return c
 }
 
-func CIVarsToMap(vars []*CIVar) map[string]string {
+func CIVarsToMap(vars []CIVar) map[string]string {
 	if vars == nil {
 		return nil
 	}
@@ -171,9 +174,12 @@ func getJobConfig() (cfg *JobConfig, err error) {
 
 	cfg.Manifest.Env = CIVarsToMap(cfg.Variables)
 
-	if cfg.Image != nil {
+	if cfg.Image.Name != "" {
 		img := cfg.Image.Name
 		cfg.Manifest.Docker.Image = img
+
+		// TODO: on MONDAY MONDAY MONDAY!!!! you should de-duplicate this
+		// process w/ services and then commit the unit testing
 
 		// match images w/ docker domain, or no domain (i.e. docker by default)
 		re := regexp.MustCompile(`^((registry-\d+|index)?\.?docker.io\/|[^.]*(:|$))`)
@@ -207,6 +213,17 @@ func getJobConfig() (cfg *JobConfig, err error) {
 			cfg.WorkerDiskSize,
 		)
 		s.Manifest.Env = CIVarsToMap(append(cfg.Variables, s.Variables...))
+		img := s.Name
+		s.Manifest.Docker.Image = img
+		re := regexp.MustCompile(`^((registry-\d+|index)?\.?docker.io\/|[^.]*(:|$))`)
+		// TODO: #95
+		if strings.Contains(img, "registry.gitlab.com") {
+			cfg.Manifest.Docker.Username = cfg.CIRegistryUser
+			cfg.Manifest.Docker.Password = cfg.CIRegistryPass
+		} else if re.FindString(img) != "" {
+			cfg.Manifest.Docker.Username = cfg.DockerHubUser
+			cfg.Manifest.Docker.Password = cfg.DockerHubToken
+		}
 		var x []string
 		for _, str := range append(s.Entrypoint, s.Command...) {
 			str = strings.Trim(str, " ")
@@ -215,10 +232,7 @@ func getJobConfig() (cfg *JobConfig, err error) {
 			}
 		}
 		s.Manifest.Process.Command = strings.Join(x, " ")
-		fmt.Println(s.Manifest)
 	}
-
-	fmt.Println(cfg.Manifest)
 
 	return cfg, nil
 }

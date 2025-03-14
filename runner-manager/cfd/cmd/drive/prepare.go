@@ -61,7 +61,7 @@ func (s *prepStage) startServices() error {
 	}
 
 	for _, serv := range s.config.Services {
-		s.client.ServicePush(serv.Manifest)
+		s.client.ServicePush(&serv.Manifest)
 		// add docker user/pass
 		//
 		// push

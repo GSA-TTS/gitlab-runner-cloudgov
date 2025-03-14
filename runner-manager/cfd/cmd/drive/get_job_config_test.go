@@ -12,7 +12,7 @@ import (
 // think about that later.
 func Test_GetJobConfig(t *testing.T) {
 	cfgWant := &JobConfig{
-		JobResponse:     &JobResponse{},
+		JobResponse:     JobResponse{},
 		CIRegistryUser:  "foo",
 		CIRegistryPass:  "bar",
 		DockerHubUser:   "foo",
@@ -22,10 +22,9 @@ func Test_GetJobConfig(t *testing.T) {
 		JobResponseFile: "",
 		VcapAppJSON:     "",
 		ContainerID:     "glrw-p-c-j",
-		Manifest: &cloudgov.AppManifest{
+		Manifest: cloudgov.AppManifest{
 			Name:    "glrw-p-c-j",
 			NoRoute: true,
-			Docker:  &cloudgov.AppManifestDocker{},
 			Process: &cloudgov.AppManifestProcess{
 				DiskQuota: "1024M", Memory: "1024M", HealthCheckType: "process",
 			},
@@ -59,39 +58,40 @@ func Test_GetJobConfig(t *testing.T) {
 func Test_parseJobResponseFile(t *testing.T) {
 	t.Setenv("JOB_RESPONSE_FILE", "./testdata/sample_job_response.json")
 
-	wanted := &JobResponse{
-		Image: &Image{
+	wanted := JobResponse{
+		Image: Image{
+			Name:       "ubuntu:jammy",
 			Command:    []string{"a", "b", "c"},
 			Entrypoint: []string{"d", "e", "f"},
 		},
 		Services: []*Service{{
-			Image: &Image{
+			Image: Image{
 				Name:       "postgres:wormy",
 				Alias:      "my-pg-service",
 				Command:    []string{"g", "h", "i"},
 				Entrypoint: []string{"j", "k", "l"},
 			},
-			Variables: []*CIVar{{Key: "bazz", Value: "buzz"}},
-			Manifest: &cloudgov.AppManifest{
+			Variables: []CIVar{{Key: "bazz", Value: "buzz"}},
+			Manifest: cloudgov.AppManifest{
 				Name:    "glrw-p-c-j-svc-my-pg-service",
 				Env:     map[string]string{"bazz": "buzz", "foo": "bar"},
 				NoRoute: true,
-				Docker:  &cloudgov.AppManifestDocker{},
+				Docker:  cloudgov.AppManifestDocker{Image: "postgres:wormy"},
 				Process: &cloudgov.AppManifestProcess{Command: "j k l g h i", HealthCheckType: "process"},
 			},
 			Config: &JobConfig{
 				ContainerID:     "glrw-p-c-j",
 				JobResponseFile: "./testdata/sample_job_response.json",
-				Manifest: &cloudgov.AppManifest{
+				Manifest: cloudgov.AppManifest{
 					Name:    "glrw-p-c-j",
 					Env:     map[string]string{"foo": "bar"},
 					NoRoute: true,
-					Docker:  &cloudgov.AppManifestDocker{},
+					Docker:  cloudgov.AppManifestDocker{Image: "ubuntu:jammy"},
 					Process: &cloudgov.AppManifestProcess{Command: "d e f a b c", HealthCheckType: "process"},
 				},
 			},
 		}},
-		Variables: []*CIVar{{Key: "foo", Value: "bar"}},
+		Variables: []CIVar{{Key: "foo", Value: "bar"}},
 	}
 
 	// here to complete the cicurular reference from services back to cfg
@@ -101,10 +101,9 @@ func Test_parseJobResponseFile(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 		return
-
 	}
-	if diff := cmp.Diff(wanted, cfg.JobResponse); diff != "" {
-		t.Error(diff)
+	if diff := cmp.Diff(cfg.JobResponse, wanted); diff != "" {
+		t.Errorf("msmatch (-got +want):\n%s", diff)
 	}
 }
 
