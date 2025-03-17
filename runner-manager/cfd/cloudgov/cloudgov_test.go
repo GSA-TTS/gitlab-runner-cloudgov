@@ -2,7 +2,6 @@ package cloudgov
 
 import (
 	"errors"
-	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -22,9 +21,21 @@ type stubClientAPI struct {
 	FailAppDelete bool
 }
 
+type testErr struct {
+	message string
+}
+
+func (e *testErr) Error() string {
+	return e.message
+}
+
+func (e *testErr) Is(err error) bool {
+	return e.Error() == err.Error()
+}
+
 func (a *stubClientAPI) connect(url string, creds *Creds) (_ error) {
 	if a.FailConnect {
-		return errors.New("fail")
+		return &testErr{"fail"}
 	}
 	a.StURL = url
 	a.StCreds = creds
@@ -40,24 +51,27 @@ func (a *stubClientAPI) appGet(id string) (*App, error) {
 
 func (a *stubClientAPI) appDelete(id string) error {
 	if id == "" {
-		return errors.New("Need an App ID to delete")
+		return &testErr{"Need an App ID to delete"}
 	}
 	if a.FailAppDelete {
-		return errors.New("FailAppDelete")
+		return &testErr{"FailAppDelete"}
 	}
 	return nil
 }
 
 func (a *stubClientAPI) appPush(m *AppManifest) (*App, error) {
 	if a.FailAppPush {
-		return nil, errors.New("FailAppPush")
+		return nil, &testErr{"FailAppPush"}
+	}
+	if m.Name == "" {
+		return nil, &testErr{"appPush: malformed manifest"}
 	}
 	return &App{Name: m.Name, State: "TEST"}, nil
 }
 
 func (a *stubClientAPI) appsList() (apps []*App, err error) {
 	if a.FailAppsList {
-		return nil, errors.New("FailAppsList")
+		return nil, &testErr{"FailAppsList"}
 	}
 	return a.StApps, nil
 }
@@ -70,7 +84,7 @@ type stubCredsGetter struct {
 
 func (c stubCredsGetter) getCreds() (*Creds, error) {
 	if c.Fail {
-		return nil, errors.New("fail")
+		return nil, &testErr{"fail"}
 	}
 	return &Creds{c.U, c.P}, nil
 }
@@ -321,8 +335,6 @@ func TestClient_AppsList(t *testing.T) {
 }
 
 func TestClient_ServicePush(t *testing.T) {
-	t.SkipNow()
-
 	optsStub := &Opts{CredsGetter: stubCredsGetter{"a", "b", false}}
 	cgStub := &Client{&stubClientAPI{
 		StURL:   apiRootURLDefault,
@@ -341,11 +353,17 @@ func TestClient_ServicePush(t *testing.T) {
 		fields  fields
 		args    args
 		want    *App
-		wantErr bool
+		wantErr error
 	}{
-		"thing": {
+		"Fails without name": {
+			fields:  fields{ClientAPI: cgStub, Opts: optsStub},
+			args:    args{manifest: &AppManifest{}},
+			wantErr: &testErr{"appPush: malformed manifest"},
+		},
+		"Passes with a name": {
 			fields: fields{ClientAPI: cgStub, Opts: optsStub},
-			args:   args{manifest: &AppManifest{}},
+			args:   args{manifest: &AppManifest{Name: "Some App"}},
+			want:   &App{Name: "Some App", State: "TEST"},
 		},
 	}
 
@@ -356,12 +374,12 @@ func TestClient_ServicePush(t *testing.T) {
 				Opts:      tt.fields.Opts,
 			}
 			got, err := c.ServicePush(tt.args.manifest)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Client.ServicePush() error = %v, wantErr %v", err, tt.wantErr)
+			if ((err == nil) != (tt.wantErr == nil)) || !errors.Is(err, tt.wantErr) {
+				t.Errorf("Client.ServicePush() error = %v, wantErr = %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Client.ServicePush() = %v, want %v", got, tt.want)
+			if diff := cmp.Diff(got, tt.want); diff != "" {
+				t.Errorf("mismatch (-got +want):\n%s", diff)
 			}
 		})
 	}
