@@ -22,17 +22,3 @@ type AppManifestProcess struct {
 	Memory          string
 	HealthCheckType string
 }
-
-func NewAppManifest(id string, org string, space string, memory string, disk string) AppManifest {
-	return AppManifest{
-		Name:      id,
-		OrgName:   org,
-		SpaceName: space,
-		NoRoute:   true,
-		Process: &AppManifestProcess{
-			Memory:          memory,
-			DiskQuota:       disk,
-			HealthCheckType: "process",
-		},
-	}
-}

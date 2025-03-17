@@ -131,15 +131,55 @@ func (c *JobConfig) parseEnv() *JobConfig {
 	return c
 }
 
-func CIVarsToMap(vars []CIVar) map[string]string {
+func (cfg *JobConfig) makeManifest(id string) *cloudgov.AppManifest {
+	return &cloudgov.AppManifest{
+		Name:      id,
+		OrgName:   cfg.OrgName,
+		SpaceName: cfg.SpaceName,
+		NoRoute:   true,
+		Process: &cloudgov.AppManifestProcess{
+			Memory:          cfg.WorkerMemory,
+			DiskQuota:       cfg.WorkerDiskSize,
+			HealthCheckType: "process",
+		},
+	}
+}
+
+func (cfg *JobConfig) ciVarsToMap(vars []CIVar, m *cloudgov.AppManifest) {
 	if vars == nil {
-		return nil
+		return
 	}
-	mapped := make(map[string]string)
+	m.Env = make(map[string]string)
 	for _, v := range vars {
-		mapped[v.Key] = v.Value
+		m.Env[v.Key] = v.Value
 	}
-	return mapped
+}
+
+func (cfg *JobConfig) processImage(img Image, m *cloudgov.AppManifest) {
+	if img.Name != "" {
+		m.Docker.Image = img.Name
+
+		// match images w/ docker domain, or no domain (i.e. docker by default)
+		re := regexp.MustCompile(`^((registry-\d+|index)?\.?docker.io\/|[^.]*(:|$))`)
+
+		// TODO: #95
+		if strings.Contains(img.Name, "registry.gitlab.com") {
+			m.Docker.Username = cfg.CIRegistryUser
+			m.Docker.Password = cfg.CIRegistryPass
+		} else if re.FindString(img.Name) != "" {
+			m.Docker.Username = cfg.DockerHubUser
+			m.Docker.Password = cfg.DockerHubToken
+		}
+
+		var x []string
+		for _, str := range append(img.Entrypoint, img.Command...) {
+			str = strings.Trim(str, " ")
+			if str != "" {
+				x = append(x, str)
+			}
+		}
+		m.Process.Command = strings.Join(x, " ")
+	}
 }
 
 func getJobConfig() (cfg *JobConfig, err error) {
@@ -150,6 +190,7 @@ func getJobConfig() (cfg *JobConfig, err error) {
 	}()
 
 	cfg = (&JobConfig{}).parseEnv()
+
 	if err = cfg.parseJobResponseFile(); err != nil {
 		return nil, err
 	}
@@ -164,74 +205,15 @@ func getJobConfig() (cfg *JobConfig, err error) {
 		cfg.JobID,
 	)
 
-	cfg.Manifest = cloudgov.NewAppManifest(
-		cfg.ContainerID,
-		cfg.OrgName,
-		cfg.SpaceName,
-		cfg.WorkerMemory,
-		cfg.WorkerDiskSize,
-	)
+	cfg.Manifest = cfg.makeManifest(cfg.ContainerID)
+	cfg.ciVarsToMap(cfg.Variables, cfg.Manifest)
+	cfg.processImage(cfg.Image, cfg.Manifest)
 
-	cfg.Manifest.Env = CIVarsToMap(cfg.Variables)
-
-	if cfg.Image.Name != "" {
-		img := cfg.Image.Name
-		cfg.Manifest.Docker.Image = img
-
-		// TODO: on MONDAY MONDAY MONDAY!!!! you should de-duplicate this
-		// process w/ services and then commit the unit testing
-
-		// match images w/ docker domain, or no domain (i.e. docker by default)
-		re := regexp.MustCompile(`^((registry-\d+|index)?\.?docker.io\/|[^.]*(:|$))`)
-
-		// TODO: #95
-		if strings.Contains(img, "registry.gitlab.com") {
-			cfg.Manifest.Docker.Username = cfg.CIRegistryUser
-			cfg.Manifest.Docker.Password = cfg.CIRegistryPass
-		} else if re.FindString(img) != "" {
-			cfg.Manifest.Docker.Username = cfg.DockerHubUser
-			cfg.Manifest.Docker.Password = cfg.DockerHubToken
-		}
-
-		var x []string
-		for _, str := range append(cfg.Image.Entrypoint, cfg.Image.Command...) {
-			str = strings.Trim(str, " ")
-			if str != "" {
-				x = append(x, str)
-			}
-		}
-		cfg.Manifest.Process.Command = strings.Join(x, " ")
-	}
-
-	// TODO: still need to process service images when they get used
 	for _, s := range cfg.Services {
-		s.Manifest = cloudgov.NewAppManifest(
-			fmt.Sprintf("%v-svc-%v", cfg.ContainerID, s.Alias),
-			cfg.OrgName,
-			cfg.SpaceName,
-			cfg.WorkerMemory,
-			cfg.WorkerDiskSize,
-		)
-		s.Manifest.Env = CIVarsToMap(append(cfg.Variables, s.Variables...))
-		img := s.Name
-		s.Manifest.Docker.Image = img
-		re := regexp.MustCompile(`^((registry-\d+|index)?\.?docker.io\/|[^.]*(:|$))`)
-		// TODO: #95
-		if strings.Contains(img, "registry.gitlab.com") {
-			cfg.Manifest.Docker.Username = cfg.CIRegistryUser
-			cfg.Manifest.Docker.Password = cfg.CIRegistryPass
-		} else if re.FindString(img) != "" {
-			cfg.Manifest.Docker.Username = cfg.DockerHubUser
-			cfg.Manifest.Docker.Password = cfg.DockerHubToken
-		}
-		var x []string
-		for _, str := range append(s.Entrypoint, s.Command...) {
-			str = strings.Trim(str, " ")
-			if str != "" {
-				x = append(x, str)
-			}
-		}
-		s.Manifest.Process.Command = strings.Join(x, " ")
+		serviceId := fmt.Sprintf("%v-svc-%v", cfg.ContainerID, s.Alias)
+		s.Manifest = cfg.makeManifest(serviceId)
+		cfg.ciVarsToMap(append(cfg.Variables, s.Variables...), s.Manifest)
+		cfg.processImage(s.Image, s.Manifest)
 	}
 
 	return cfg, nil
