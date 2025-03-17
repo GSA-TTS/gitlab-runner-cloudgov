@@ -10,11 +10,6 @@ import (
 //
 // addNetworkPolicy()
 // removeNetworkPolicy()
-//
-// appGet()
-// appCmd()
-// appPush()
-// appDelete()
 type ClientAPI interface {
 	connect(url string, creds *Creds) error
 
