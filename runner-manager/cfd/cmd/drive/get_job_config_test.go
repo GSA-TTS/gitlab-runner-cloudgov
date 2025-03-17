@@ -111,8 +111,10 @@ func Test_parseVcapAppJSON(t *testing.T) {
 	sample := `{"cf_api":"https://api.fr.cloud.gov","limits":{"fds":16384,"mem":128,"disk":1024},"application_name":"gitlab-runner","application_uris":[],"name":"gitlab-runner","space_name":"zjr-gl-test","space_id":"8969a4b6-01aa-431d-9790-77cc4c47e3e7","organization_id":"f0a46189-6f64-43fb-99c3-0719cf9ee255","organization_name":"gsa-tts-devtools-prototyping","uris":[],"process_id":"e905fbb9-aea0-44aa-ba10-f76aed1668d1","process_type":"web","application_id":"e905fbb9-aea0-44aa-ba10-f76aed1668d1","version":"f115779a-17a3-4700-9941-aae3fe81a4c8","application_version":"f115779a-17a3-4700-9941-aae3fe81a4c8"}`
 	t.Setenv("VCAP_APPLICATION", sample)
 
-	wanted := &VcapAppData{
+	wanted := VcapAppData{
+		CFApi:     "https://api.fr.cloud.gov",
 		OrgName:   "gsa-tts-devtools-prototyping",
+		SpaceId:   "8969a4b6-01aa-431d-9790-77cc4c47e3e7",
 		SpaceName: "zjr-gl-test",
 	}
 
@@ -122,7 +124,7 @@ func Test_parseVcapAppJSON(t *testing.T) {
 		return
 	}
 
-	if diff := cmp.Diff(wanted, cfg.VcapAppData); diff != "" {
-		t.Error(diff)
+	if diff := cmp.Diff(cfg.VcapAppData, wanted); diff != "" {
+		t.Errorf("msmatch (-got +want):\n%s", diff)
 	}
 }
