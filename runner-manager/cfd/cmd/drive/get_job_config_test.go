@@ -22,7 +22,7 @@ func Test_GetJobConfig(t *testing.T) {
 		JobResponseFile: "",
 		VcapAppJSON:     "",
 		ContainerID:     "glrw-p-c-j",
-		Manifest: cloudgov.AppManifest{
+		Manifest: &cloudgov.AppManifest{
 			Name:    "glrw-p-c-j",
 			NoRoute: true,
 			Process: &cloudgov.AppManifestProcess{
@@ -72,7 +72,7 @@ func Test_parseJobResponseFile(t *testing.T) {
 				Entrypoint: []string{"j", "k", "l"},
 			},
 			Variables: []CIVar{{Key: "bazz", Value: "buzz"}},
-			Manifest: cloudgov.AppManifest{
+			Manifest: &cloudgov.AppManifest{
 				Name:    "glrw-p-c-j-svc-my-pg-service",
 				Env:     map[string]string{"bazz": "buzz", "foo": "bar"},
 				NoRoute: true,
@@ -82,7 +82,7 @@ func Test_parseJobResponseFile(t *testing.T) {
 			Config: &JobConfig{
 				ContainerID:     "glrw-p-c-j",
 				JobResponseFile: "./testdata/sample_job_response.json",
-				Manifest: cloudgov.AppManifest{
+				Manifest: &cloudgov.AppManifest{
 					Name:    "glrw-p-c-j",
 					Env:     map[string]string{"foo": "bar"},
 					NoRoute: true,

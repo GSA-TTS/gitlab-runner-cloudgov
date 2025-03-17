@@ -18,7 +18,7 @@ type JobConfig struct {
 	VcapAppData
 	VcapAppJSON string `env:"VCAP_APPLICATION"`
 
-	Manifest cloudgov.AppManifest
+	Manifest *cloudgov.AppManifest
 
 	// We combine the following to make the container ID.
 	// Some are available in JOB_RESPONSE_FILE, but several are only found
@@ -53,7 +53,7 @@ type Image struct {
 type Service struct {
 	Image
 	Variables []CIVar
-	Manifest  cloudgov.AppManifest
+	Manifest  *cloudgov.AppManifest
 	Config    *JobConfig
 }
 type CIVar struct {
