@@ -74,7 +74,6 @@ if [[ ! -f secrets.auto.tfvars ]]; then
   username=`echo "$creds" | jq -r '.username'`
   password=`echo "$creds" | jq -r '.password'`
 
-  cf set-org-role "$username" "$org" OrgManager
   cat > secrets.auto.tfvars << EOF
 # generated with terraform.sh, will be cleaned up by terraform.sh when destroying the entire sandbox
 #mgmt_space $mgmt_space
