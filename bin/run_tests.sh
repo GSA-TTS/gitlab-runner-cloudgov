@@ -6,4 +6,4 @@ if [ -z "$CF_USER" ] || [ -z "$CF_PASSWORD" ]; then
   exit 1
 fi
 
-TF_VAR_cf_user="$CF_USER" terraform test
+TF_VAR_cf_org_manager="$CF_USER" TF_VAR_cf_community_user="$CF_USER" terraform test
