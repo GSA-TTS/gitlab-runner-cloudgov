@@ -13,13 +13,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: terraform validate
-        uses: dflook/terraform-validate@5f83a55d86936418dfc1d1f13d317ee8607b5ed5 #v1.47.0
+        uses: dflook/terraform-validate@a8236b6ed2ac088b60f65142d4933e6bfc9d71ec #v1.47.0
 
       - name: terraform fmt
-        uses: dflook/terraform-fmt-check@5f83a55d86936418dfc1d1f13d317ee8607b5ed5 #v1.47.0
+        uses: dflook/terraform-fmt-check@84e7351536952f1ba88f750a17e5bcfcf55dbd0e #v1.47.0
 
       - name: terraform test
-        uses: dflook/terraform-test@5f83a55d86936418dfc1d1f13d317ee8607b5ed5 #v1.47.0
+        uses: dflook/terraform-test@f203156ff9dbd7e7ae26e7dc2f7c8530262a88ff #v1.47.0
         env:
           CF_USER: ${{ secrets.CF_USER }}
           CF_PASSWORD: ${{ secrets.CF_PASSWORD }}
@@ -37,6 +37,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: terraform validate
-        uses: dflook/terraform-validate@5f83a55d86936418dfc1d1f13d317ee8607b5ed5 #v1.47.0
+        uses: dflook/terraform-validate@a8236b6ed2ac088b60f65142d4933e6bfc9d71ec #v1.47.0
         with:
           path: sandbox-deploy
