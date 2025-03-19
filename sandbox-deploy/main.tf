@@ -11,11 +11,8 @@ terraform {
     }
   }
 }
-provider "cloudfoundry" {
-  api_url  = "https://api.fr.cloud.gov"
-  user     = var.cf_user
-  password = var.cf_password
-}
+provider "cloudfoundry" {}
+
 provider "cloudfoundry-community" {
   api_url  = "https://api.fr.cloud.gov"
   user     = var.cf_user
@@ -25,7 +22,8 @@ provider "cloudfoundry-community" {
 module "sandbox-runner" {
   source = "../"
 
-  cf_user                 = var.cf_user
+  cf_org_manager          = var.cf_org_manager
+  cf_community_user       = var.cf_user
   cf_space_prefix         = var.cf_space_prefix
   ci_server_url           = "gsa-0.gitlab-dedicated.us"
   ci_server_token         = var.ci_server_token

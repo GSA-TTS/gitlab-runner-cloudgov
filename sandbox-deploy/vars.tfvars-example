@@ -1,3 +1,4 @@
+cf_org_manager       = "your.email@gsa.gov"
 allow_ssh            = true
 cf_space_prefix      = ""
 ci_server_token      = ""
