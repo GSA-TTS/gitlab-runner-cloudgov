@@ -160,7 +160,7 @@ func (cfg *JobConfig) processImage(img Image, m *cloudgov.AppManifest) {
 		m.Docker.Image = img.Name
 
 		// match images w/ docker domain, or no domain (i.e. docker by default)
-		re := regexp.MustCompile(`^((registry-\d+|index)?\.?docker.io\/|[^.]*(:|$))`)
+		re := regexp.MustCompile(`^((registry-\d+|index)?\.?docker\.io\/|[^.]*(:|$))`)
 
 		// TODO: #95
 		if strings.Contains(img.Name, "registry.gitlab.com") {
