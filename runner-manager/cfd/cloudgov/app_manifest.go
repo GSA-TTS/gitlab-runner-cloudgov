@@ -5,7 +5,7 @@ type AppManifest struct {
 	Env       map[string]string
 	NoRoute   bool
 	Docker    AppManifestDocker
-	Process   *AppManifestProcess
+	Process   AppManifestProcess
 	OrgName   string
 	SpaceName string
 }

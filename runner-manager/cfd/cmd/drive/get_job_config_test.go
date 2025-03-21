@@ -25,7 +25,7 @@ func Test_GetJobConfig(t *testing.T) {
 		Manifest: &cloudgov.AppManifest{
 			Name:    "glrw-p-c-j",
 			NoRoute: true,
-			Process: &cloudgov.AppManifestProcess{
+			Process: cloudgov.AppManifestProcess{
 				DiskQuota: "1024M", Memory: "1024M", HealthCheckType: "process",
 			},
 		},
@@ -77,7 +77,7 @@ func Test_parseJobResponseFile(t *testing.T) {
 				Env:     map[string]string{"bazz": "buzz", "foo": "bar"},
 				NoRoute: true,
 				Docker:  cloudgov.AppManifestDocker{Image: "postgres:wormy"},
-				Process: &cloudgov.AppManifestProcess{Command: "j k l g h i", HealthCheckType: "process"},
+				Process: cloudgov.AppManifestProcess{Command: "j k l g h i", HealthCheckType: "process"},
 			},
 			Config: &JobConfig{
 				ContainerID:     "glrw-p-c-j",
@@ -87,7 +87,7 @@ func Test_parseJobResponseFile(t *testing.T) {
 					Env:     map[string]string{"foo": "bar"},
 					NoRoute: true,
 					Docker:  cloudgov.AppManifestDocker{Image: "ubuntu:jammy"},
-					Process: &cloudgov.AppManifestProcess{Command: "d e f a b c", HealthCheckType: "process"},
+					Process: cloudgov.AppManifestProcess{Command: "d e f a b c", HealthCheckType: "process"},
 				},
 			},
 		}},

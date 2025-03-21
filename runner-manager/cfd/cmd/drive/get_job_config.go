@@ -137,7 +137,7 @@ func (cfg *JobConfig) makeManifest(id string) *cloudgov.AppManifest {
 		OrgName:   cfg.OrgName,
 		SpaceName: cfg.SpaceName,
 		NoRoute:   true,
-		Process: &cloudgov.AppManifestProcess{
+		Process: cloudgov.AppManifestProcess{
 			Memory:          cfg.WorkerMemory,
 			DiskQuota:       cfg.WorkerDiskSize,
 			HealthCheckType: "process",
