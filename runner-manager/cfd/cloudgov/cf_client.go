@@ -70,6 +70,9 @@ func (cf *CFClientAPI) appPush(m *AppManifest) (*App, error) {
 }
 
 func castApp(app *resource.App) *App {
+	if app == nil || app.GUID == "" {
+		return nil
+	}
 	// NOTE I seem to have been wanting to get rid
 	// of the app "Name|title", don't remember why
 	return &(App{Name: app.GUID, State: app.State})
