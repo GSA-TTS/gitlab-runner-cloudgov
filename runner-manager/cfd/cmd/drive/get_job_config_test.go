@@ -125,6 +125,6 @@ func Test_parseVcapAppJSON(t *testing.T) {
 	}
 
 	if diff := cmp.Diff(cfg.VcapAppData, wanted); diff != "" {
-		t.Errorf("msmatch (-got +want):\n%s", diff)
+		t.Errorf("mismatch (-got +want):\n%s", diff)
 	}
 }
