@@ -1,7 +1,10 @@
 package cloudgov
 
 import (
+	"errors"
 	"fmt"
+
+	"github.com/cloudfoundry/go-cfclient/v3/resource"
 )
 
 // Stuff we'll need to implement, for ref
@@ -33,6 +36,14 @@ type Opts struct {
 type Client struct {
 	ClientAPI
 	*Opts
+}
+
+type CloudGovClientError struct {
+	msg string
+}
+
+func (e CloudGovClientError) Error() string {
+	return e.msg
 }
 
 // TODO: we should pull this out of VCAP_APPLICATION
@@ -93,10 +104,26 @@ func (c *Client) AppsList() ([]*App, error) {
 func (c *Client) ServicePush(manifest *AppManifest) (*App, error) {
 	containerID := manifest.Name
 
+	if containerID == "" {
+		return nil, CloudGovClientError{"ServicePush: AppManifest.Name must be defined"}
+	}
+
+	if manifest.OrgName == "" || manifest.SpaceName == "" {
+		return nil, CloudGovClientError{"ServicePush: AppManifest must have Org and Space names"}
+	}
+
 	// check for an old instance of the service, delete if found
 	app, err := c.AppGet(containerID)
 	if err != nil {
-		return nil, fmt.Errorf("error checking for existing service (%v): %w", containerID, err)
+		var cferr resource.CloudFoundryError
+		if errors.As(err, &cferr) {
+			err = nil
+			if cferr.Code != 10010 {
+				return nil, fmt.Errorf("unexpected cferr checking for existing app: %w", cferr)
+			}
+		} else {
+			return nil, fmt.Errorf("error checking for existing service (%v): %w", containerID, err)
+		}
 	}
 	if app != nil {
 		err = c.AppDelete(containerID)
