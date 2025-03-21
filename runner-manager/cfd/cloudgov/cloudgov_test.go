@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 type stubClientAPI struct {
@@ -358,11 +359,16 @@ func TestClient_ServicePush(t *testing.T) {
 		"Fails without name": {
 			fields:  fields{ClientAPI: cgStub, Opts: optsStub},
 			args:    args{manifest: &AppManifest{}},
-			wantErr: &testErr{"appPush: malformed manifest"},
+			wantErr: CloudGovClientError{"ServicePush: AppManifest.Name must be defined"},
 		},
-		"Passes with a name": {
+		"Fails without org": {
+			fields:  fields{ClientAPI: cgStub, Opts: optsStub},
+			args:    args{manifest: &AppManifest{Name: "Some App"}},
+			wantErr: CloudGovClientError{"ServicePush: AppManifest must have Org and Space names"},
+		},
+		"Passes with all fields": {
 			fields: fields{ClientAPI: cgStub, Opts: optsStub},
-			args:   args{manifest: &AppManifest{Name: "Some App"}},
+			args:   args{manifest: &AppManifest{Name: "Some App", OrgName: "Some", SpaceName: "Space"}},
 			want:   &App{Name: "Some App", State: "TEST"},
 		},
 	}
@@ -374,12 +380,16 @@ func TestClient_ServicePush(t *testing.T) {
 				Opts:      tt.fields.Opts,
 			}
 			got, err := c.ServicePush(tt.args.manifest)
-			if ((err == nil) != (tt.wantErr == nil)) || !errors.Is(err, tt.wantErr) {
-				t.Errorf("Client.ServicePush() error = %v, wantErr = %v", err, tt.wantErr)
+			if err != nil || tt.wantErr != nil {
+				if tt.wantErr == nil {
+					t.Errorf("Client.AppsList() error = %v", err)
+				} else if diff := cmp.Diff(tt.wantErr, err, cmpopts.EquateErrors()); diff != "" {
+					t.Errorf("Client.ServicePush() error mismatch (-want +got):\n%s", diff)
+				}
 				return
 			}
-			if diff := cmp.Diff(got, tt.want); diff != "" {
-				t.Errorf("mismatch (-got +want):\n%s", diff)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
