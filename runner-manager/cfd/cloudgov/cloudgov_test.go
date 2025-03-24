@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 type stubClientAPI struct {
@@ -14,24 +15,66 @@ type stubClientAPI struct {
 	StCreds *Creds
 	StApps  []*App
 
-	FailAppsList bool
-	FailConnect  bool
+	FailConnect   bool
+	FailAppsList  bool
+	FailAppPush   bool
+	FailAppFound  bool
+	FailAppDelete bool
 }
 
-func (a *stubClientAPI) appsList() (apps []*App, err error) {
-	if a.FailAppsList {
-		return nil, errors.New("fail")
-	}
-	return a.StApps, nil
+type testErr struct {
+	message string
+}
+
+func (e *testErr) Error() string {
+	return e.message
+}
+
+func (e *testErr) Is(err error) bool {
+	return e.Error() == err.Error()
 }
 
 func (a *stubClientAPI) connect(url string, creds *Creds) (_ error) {
 	if a.FailConnect {
-		return errors.New("fail")
+		return &testErr{"fail"}
 	}
 	a.StURL = url
 	a.StCreds = creds
 	return nil
+}
+
+func (a *stubClientAPI) appGet(id string) (*App, error) {
+	if id == "" || a.FailAppFound {
+		return nil, nil
+	}
+	return &App{Name: id}, nil
+}
+
+func (a *stubClientAPI) appDelete(id string) error {
+	if id == "" {
+		return &testErr{"Need an App ID to delete"}
+	}
+	if a.FailAppDelete {
+		return &testErr{"FailAppDelete"}
+	}
+	return nil
+}
+
+func (a *stubClientAPI) appPush(m *AppManifest) (*App, error) {
+	if a.FailAppPush {
+		return nil, &testErr{"FailAppPush"}
+	}
+	if m.Name == "" {
+		return nil, &testErr{"appPush: malformed manifest"}
+	}
+	return &App{Name: m.Name, State: "TEST"}, nil
+}
+
+func (a *stubClientAPI) appsList() (apps []*App, err error) {
+	if a.FailAppsList {
+		return nil, &testErr{"FailAppsList"}
+	}
+	return a.StApps, nil
 }
 
 type stubCredsGetter struct {
@@ -42,7 +85,7 @@ type stubCredsGetter struct {
 
 func (c stubCredsGetter) getCreds() (*Creds, error) {
 	if c.Fail {
-		return nil, errors.New("fail")
+		return nil, &testErr{"fail"}
 	}
 	return &Creds{c.U, c.P}, nil
 }
@@ -243,7 +286,7 @@ func TestClient_Connect(t *testing.T) {
 }
 
 func TestClient_AppsList(t *testing.T) {
-	testApps := []*App{{Id: "1", Name: "foo"}}
+	testApps := []*App{{Name: "foo"}}
 
 	type fields struct {
 		ClientAPI
@@ -287,6 +330,66 @@ func TestClient_AppsList(t *testing.T) {
 			}
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Errorf("mismatch (-got +want):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestClient_ServicePush(t *testing.T) {
+	optsStub := &Opts{CredsGetter: stubCredsGetter{"a", "b", false}}
+	cgStub := &Client{&stubClientAPI{
+		StURL:   apiRootURLDefault,
+		StCreds: &Creds{"a", "b"},
+	}, optsStub}
+
+	type fields struct {
+		ClientAPI ClientAPI
+		Opts      *Opts
+	}
+	type args struct {
+		manifest *AppManifest
+	}
+
+	tests := map[string]struct {
+		fields  fields
+		args    args
+		want    *App
+		wantErr error
+	}{
+		"Fails without name": {
+			fields:  fields{ClientAPI: cgStub, Opts: optsStub},
+			args:    args{manifest: &AppManifest{}},
+			wantErr: CloudGovClientError{"ServicePush: AppManifest.Name must be defined"},
+		},
+		"Fails without org": {
+			fields:  fields{ClientAPI: cgStub, Opts: optsStub},
+			args:    args{manifest: &AppManifest{Name: "Some App"}},
+			wantErr: CloudGovClientError{"ServicePush: AppManifest must have Org and Space names"},
+		},
+		"Passes with all fields": {
+			fields: fields{ClientAPI: cgStub, Opts: optsStub},
+			args:   args{manifest: &AppManifest{Name: "Some App", OrgName: "Some", SpaceName: "Space"}},
+			want:   &App{Name: "Some App", State: "TEST"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			c := &Client{
+				ClientAPI: tt.fields.ClientAPI,
+				Opts:      tt.fields.Opts,
+			}
+			got, err := c.ServicePush(tt.args.manifest)
+			if err != nil || tt.wantErr != nil {
+				if tt.wantErr == nil {
+					t.Errorf("Client.AppsList() error = %v", err)
+				} else if diff := cmp.Diff(tt.wantErr, err, cmpopts.EquateErrors()); diff != "" {
+					t.Errorf("Client.ServicePush() error mismatch (-want +got):\n%s", diff)
+				}
+				return
+			}
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

@@ -1,20 +1,23 @@
 package cloudgov
 
+import (
+	"errors"
+	"fmt"
+
+	"github.com/cloudfoundry/go-cfclient/v3/resource"
+)
+
 // Stuff we'll need to implement, for ref
 //
 // mapRoute()
 //
 // addNetworkPolicy()
 // removeNetworkPolicy()
-//
-// appGet()
-// appCmd()
-// appPush()
-// appDelete()
 type ClientAPI interface {
 	connect(url string, creds *Creds) error
 
 	appGet(id string) (*App, error)
+	appPush(m *AppManifest) (*App, error)
 	appDelete(id string) error
 	appsList() (apps []*App, err error)
 }
@@ -35,6 +38,15 @@ type Client struct {
 	*Opts
 }
 
+type CloudGovClientError struct {
+	msg string
+}
+
+func (e CloudGovClientError) Error() string {
+	return e.msg
+}
+
+// TODO: we should pull this out of VCAP_APPLICATION
 const apiRootURLDefault = "https://api.fr.cloud.gov"
 
 func New(i ClientAPI, o *Opts) (*Client, error) {
@@ -71,8 +83,8 @@ func (c *Client) Connect() (*Client, error) {
 }
 
 type App struct {
-	Id    string
 	Name  string
+	GUID  string
 	State string
 }
 
@@ -86,4 +98,58 @@ func (c *Client) AppDelete(id string) error {
 
 func (c *Client) AppsList() ([]*App, error) {
 	return c.appsList()
+}
+
+// TODO: this abstraction might belong in /cmd,
+// unless it can be further generalized to all pushes
+func (c *Client) ServicePush(manifest *AppManifest) (*App, error) {
+	containerID := manifest.Name
+
+	if containerID == "" {
+		return nil, CloudGovClientError{"ServicePush: AppManifest.Name must be defined"}
+	}
+
+	if manifest.OrgName == "" || manifest.SpaceName == "" {
+		return nil, CloudGovClientError{"ServicePush: AppManifest must have Org and Space names"}
+	}
+
+	// check for an old instance of the service, delete if found
+	app, err := c.AppGet(containerID)
+	if err != nil {
+		var cferr resource.CloudFoundryError
+		if errors.As(err, &cferr) {
+			err = nil
+			if cferr.Code != 10010 {
+				return nil, fmt.Errorf("unexpected cferr checking for existing app: %w", cferr)
+			}
+		} else {
+			return nil, fmt.Errorf("error checking for existing service (%v): %w", containerID, err)
+		}
+	}
+	if app != nil {
+		if err := c.AppDelete(containerID); err != nil {
+			return nil, fmt.Errorf("error deleting existing service (%v): %w", containerID, err)
+		}
+	}
+
+	return c.appPush(manifest)
+}
+
+// TODO: use this in prepare or get rid of it
+func (c *Client) ServicesPush(manifests []*AppManifest) ([]*App, error) {
+	if len(manifests) < 1 {
+		return nil, nil
+	}
+
+	apps := make([]*App, len(manifests))
+
+	for i, s := range manifests {
+		app, err := c.ServicePush(s)
+		if err != nil {
+			return nil, err
+		}
+		apps[i] = app
+	}
+
+	return apps, nil
 }
