@@ -83,7 +83,8 @@ func (c *Client) Connect() (*Client, error) {
 }
 
 type App struct {
-	Name  string // i.e., container ID
+	Name  string
+	GUID  string
 	State string
 }
 
