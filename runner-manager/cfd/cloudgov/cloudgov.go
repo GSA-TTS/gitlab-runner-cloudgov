@@ -126,10 +126,9 @@ func (c *Client) ServicePush(manifest *AppManifest) (*App, error) {
 		}
 	}
 	if app != nil {
-		err = c.AppDelete(containerID)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("error deleting existing service (%v): %w", containerID, err)
+		if err := c.AppDelete(containerID); err != nil {
+			return nil, fmt.Errorf("error deleting existing service (%v): %w", containerID, err)
+		}
 	}
 
 	return c.appPush(manifest)
