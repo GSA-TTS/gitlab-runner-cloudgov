@@ -40,7 +40,7 @@ func toCFManifest(am *AppManifest) *operation.AppManifest {
 	return &operation.AppManifest{
 		Name:    am.Name,
 		Env:     am.Env,
-		NoRoute: am.NoRoute,
+		NoRoute: true,
 		Docker: &operation.AppManifestDocker{
 			Image:    am.Docker.Image,
 			Username: am.Docker.Username,
