@@ -135,6 +135,7 @@ func (c *Client) ServicePush(manifest *AppManifest) (*App, error) {
 	return c.appPush(manifest)
 }
 
+// TODO: use this in prepare or get rid of it
 func (c *Client) ServicesPush(manifests []*AppManifest) ([]*App, error) {
 	if len(manifests) < 1 {
 		return nil, nil

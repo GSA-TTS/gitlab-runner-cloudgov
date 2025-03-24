@@ -55,6 +55,8 @@ func run(cmd *cobra.Command, args []string) {
 	// allow access to services
 }
 
+// TODO: refactor to include a service manifests slice and
+// use client.ServicesPush or get rid of it
 func (s *prepStage) startServices() error {
 	if len(s.config.Services) < 1 {
 		return nil
