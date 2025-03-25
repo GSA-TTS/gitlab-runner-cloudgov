@@ -1,12 +1,5 @@
 package cloudgov
 
-import (
-	"errors"
-	"fmt"
-
-	"github.com/cloudfoundry/go-cfclient/v3/resource"
-)
-
 // Stuff we'll need to implement, for ref
 //
 // mapRoute()
@@ -111,25 +104,6 @@ func (c *Client) ServicePush(manifest *AppManifest) (*App, error) {
 
 	if manifest.OrgName == "" || manifest.SpaceName == "" {
 		return nil, CloudGovClientError{"ServicePush: AppManifest must have Org and Space names"}
-	}
-
-	// check for an old instance of the service, delete if found
-	app, err := c.AppGet(containerID)
-	if err != nil {
-		var cferr resource.CloudFoundryError
-		if errors.As(err, &cferr) {
-			err = nil
-			if cferr.Code != 10010 {
-				return nil, fmt.Errorf("unexpected cferr checking for existing app: %w", cferr)
-			}
-		} else {
-			return nil, fmt.Errorf("error checking for existing service (%v): %w", containerID, err)
-		}
-	}
-	if app != nil {
-		if err := c.AppDelete(containerID); err != nil {
-			return nil, fmt.Errorf("error deleting existing service (%v): %w", containerID, err)
-		}
 	}
 
 	return c.appPush(manifest)
