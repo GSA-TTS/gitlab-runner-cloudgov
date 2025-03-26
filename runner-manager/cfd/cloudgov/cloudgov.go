@@ -95,15 +95,15 @@ func (c *Client) AppsList() ([]*App, error) {
 
 // TODO: this abstraction might belong in /cmd,
 // unless it can be further generalized to all pushes
-func (c *Client) ServicePush(manifest *AppManifest) (*App, error) {
+func (c *Client) Push(manifest *AppManifest) (*App, error) {
 	containerID := manifest.Name
 
 	if containerID == "" {
-		return nil, CloudGovClientError{"ServicePush: AppManifest.Name must be defined"}
+		return nil, CloudGovClientError{"Push: AppManifest.Name must be defined"}
 	}
 
 	if manifest.OrgName == "" || manifest.SpaceName == "" {
-		return nil, CloudGovClientError{"ServicePush: AppManifest must have Org and Space names"}
+		return nil, CloudGovClientError{"Push: AppManifest must have Org and Space names"}
 	}
 
 	return c.appPush(manifest)
@@ -118,7 +118,7 @@ func (c *Client) ServicesPush(manifests []*AppManifest) ([]*App, error) {
 	apps := make([]*App, len(manifests))
 
 	for i, s := range manifests {
-		app, err := c.ServicePush(s)
+		app, err := c.Push(s)
 		if err != nil {
 			return nil, err
 		}
