@@ -26,7 +26,7 @@ module "manager_space" {
   cf_space_name = "${var.cf_space_prefix}-manager"
   allow_ssh     = var.allow_ssh
   deployers     = [var.cf_org_manager]
-  developers    = setunion(var.developer_emails, [var.cf_community_user])
+  developers    = var.developer_emails
   auditors      = var.auditor_emails
 }
 
@@ -145,7 +145,7 @@ module "egress_space" {
   cf_space_name        = "${var.cf_space_prefix}-egress"
   allow_ssh            = var.allow_ssh
   deployers            = [var.cf_org_manager]
-  developers           = setunion(var.developer_emails, [var.cf_community_user])
+  developers           = var.developer_emails
   auditors             = var.auditor_emails
   security_group_names = ["public_networks_egress"]
 }
@@ -173,18 +173,19 @@ module "egress_proxy" {
 
 # egress_routing: open up access to the egress proxy from the runner-manager
 resource "cloudfoundry_network_policy" "egress_routing" {
-  provider = cloudfoundry-community
-  policy {
-    source_app      = cloudfoundry_app.gitlab-runner-manager.id
-    destination_app = module.egress_proxy.app_id
-    port            = "61443"
-  }
+  policies = [
+    {
+      source_app      = cloudfoundry_app.gitlab-runner-manager.id
+      destination_app = module.egress_proxy.app_id
+      port            = "61443"
+    },
 
-  policy {
-    source_app      = cloudfoundry_app.gitlab-runner-manager.id
-    destination_app = module.egress_proxy.app_id
-    port            = "8080"
-  }
+    {
+      source_app      = cloudfoundry_app.gitlab-runner-manager.id
+      destination_app = module.egress_proxy.app_id
+      port            = "8080"
+    }
+  ]
 }
 
 # egress-proxy-credentials: store the egress proxy credentials in a UPSI for the manager

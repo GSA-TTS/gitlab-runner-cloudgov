@@ -1,9 +1,4 @@
-provider "cloudfoundry" {
-  api_url = "https://api.fr.cloud.gov"
-}
-provider "cloudfoundry-community" {
-  api_url = "https://api.fr.cloud.gov"
-}
+provider "cloudfoundry" {}
 
 variables {
   cf_space_prefix         = "glr-cg-ci-tests"
@@ -13,10 +8,6 @@ variables {
 }
 
 run "test-system-creation" {
-  override_resource {
-    target = cloudfoundry_app.gitlab-runner-manager
-  }
-
   assert {
     condition     = cloudfoundry_app.gitlab-runner-manager.id == output.manager_app_id && output.manager_app_id != null
     error_message = "Runner manager should have an ID"
@@ -58,27 +49,27 @@ run "test-system-creation" {
   }
 
   assert {
-    condition     = length(cloudfoundry_network_policy.egress_routing.policy) == 2
+    condition     = length(cloudfoundry_network_policy.egress_routing.policies) == 2
     error_message = "Egress routing policy should have two entries"
   }
 
   assert {
     condition = alltrue([
-      for p in cloudfoundry_network_policy.egress_routing.policy : p.source_app == output.manager_app_id
+      for p in cloudfoundry_network_policy.egress_routing.policies : p.source_app == output.manager_app_id
     ])
     error_message = "Egress routing only allows routing from the manager app"
   }
 
   assert {
     condition = alltrue([
-      for p in cloudfoundry_network_policy.egress_routing.policy : p.destination_app == output.egress_app_id
+      for p in cloudfoundry_network_policy.egress_routing.policies : p.destination_app == output.egress_app_id
     ])
     error_message = "Egress routing only allows routing to the egress app"
   }
 
   assert {
     condition = alltrue([
-      for p in cloudfoundry_network_policy.egress_routing.policy : contains(["8080", "61443"], p.port)
+      for p in cloudfoundry_network_policy.egress_routing.policies : contains(["8080", "61443"], p.port)
     ])
     error_message = "Egress routing only allows ports 8080 or 61443"
   }
