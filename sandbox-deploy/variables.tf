@@ -3,15 +3,6 @@ variable "cf_org_manager" {
   description = "The OrgManager developer email that is running the sandbox deploy"
 }
 
-variable "cf_user" {
-  type        = string
-  description = "A regular space developer to log into the community provider"
-}
-variable "cf_password" {
-  type        = string
-  sensitive   = true
-  description = "The password associated with cf_user to log into the community provider"
-}
 variable "cf_space_prefix" {
   type = string
 }
