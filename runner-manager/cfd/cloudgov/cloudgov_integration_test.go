@@ -1,5 +1,3 @@
-//go:build integration
-
 package cloudgov_test
 
 import (
@@ -119,7 +117,7 @@ func Test_ServicePush(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			c := cgClient
-			got, err := c.ServicePush(tt.manifest)
+			got, err := c.Push(tt.manifest)
 			if err != nil && (tt.wantErr == nil || err.Error() != tt.wantErr.Error()) {
 				t.Errorf("Client.ServicePush() error = %v, wantErr = %v", err, tt.wantErr)
 				return
@@ -128,5 +126,18 @@ func Test_ServicePush(t *testing.T) {
 				t.Errorf("mismatch (-got +want):\n%s", diff)
 			}
 		})
+	}
+}
+
+func Test_SSHCode(t *testing.T) {
+	c := cgClient
+	want := "hi"
+	got, err := c.SSHCode()
+	if err != nil {
+		t.Errorf("got error = %v", err)
+		return
+	}
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Errorf("mismatch (-got +want):\n%s", diff)
 	}
 }

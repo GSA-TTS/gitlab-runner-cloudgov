@@ -13,6 +13,8 @@ type ClientAPI interface {
 	appPush(m *AppManifest) (*App, error)
 	appDelete(id string) error
 	appsList() (apps []*App, err error)
+
+	sshCode() (string, error)
 }
 
 type CredsGetter interface {
@@ -126,4 +128,8 @@ func (c *Client) ServicesPush(manifests []*AppManifest) ([]*App, error) {
 	}
 
 	return apps, nil
+}
+
+func (c *Client) SSHCode() (string, error) {
+	return c.sshCode()
 }

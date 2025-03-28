@@ -379,7 +379,7 @@ func TestClient_ServicePush(t *testing.T) {
 				ClientAPI: tt.fields.ClientAPI,
 				Opts:      tt.fields.Opts,
 			}
-			got, err := c.ServicePush(tt.args.manifest)
+			got, err := c.Push(tt.args.manifest)
 			if err != nil || tt.wantErr != nil {
 				if tt.wantErr == nil {
 					t.Errorf("Client.AppsList() error = %v", err)

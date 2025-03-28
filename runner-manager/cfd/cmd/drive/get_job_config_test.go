@@ -128,3 +128,28 @@ func Test_parseVcapAppJSON(t *testing.T) {
 		t.Errorf("mismatch (-got +want):\n%s", diff)
 	}
 }
+
+func Test_parseVcapServicesJSON(t *testing.T) {
+	sample := `{"s3":[{"label":"s3","provider":null,"plan":"basic-sandbox","name":"glr-dependency-cache","tags":["AWS","S3","object-storage","terraform-cloudgov-managed"],"instance_guid":"d1541026-64ca-44fb-8a48-39298885ff68","instance_name":"glr-dependency-cache","binding_guid":"9f316c56-a910-4c68-b30c-b42df87fdfec","binding_name":null,"credentials":{"uri":"s3://goooo:booo@s3-fips.us-gov-west-1.amazonaws.com/cg-d1541026-64ca-44fb-8a48-39298885ff68","insecure_skip_verify":false,"access_key_id":"jjjjj","secret_access_key":"ssssssss","region":"us-gov-west-1","bucket":"cg-d1541026-64ca-44fb-8a48-39298885ff68","endpoint":"s3-fips.us-gov-west-1.amazonaws.com","fips_endpoint":"s3-fips.us-gov-west-1.amazonaws.com","additional_buckets":[]},"syslog_drain_url":null,"volume_mounts":[]}],"user-provided":[{"label":"user-provided","name":"glr-egress-proxy-credentials","tags":[],"instance_guid":"608e3f73-40df-4866-8d3a-fd5fda6bedcd","instance_name":"glr-egress-proxy-credentials","binding_guid":"7530ea7b-a04d-4c59-a05f-e07ab3efa573","binding_name":null,"credentials":{"cred_string":"018052ba-ab88-cd96-e1fb-146be5abd727:ukHK19mbG5i5JrgZ","domain":"vtools-prototyping-devtools-staging-glr-egress-glr-egress-proxy.apps.internal","http_port":8080,"http_uri":"http://018052ba-ab88-cd96-e1fb-146be5abd727:ukHK19mbG5i5JrgZ@vtools-prototyping-devtools-staging-glr-egress-glr-egress-proxy.apps.internal:8080","https_uri":"https://018052ba-ab88-cd96-e1fb-146be5abd727:ukHK19mbG5i5JrgZ@vtools-prototyping-devtools-staging-glr-egress-glr-egress-proxy.apps.internal:61443"},"syslog_drain_url":null,"volume_mounts":[]}]}`
+	t.Setenv("VCAP_SERVICES", sample)
+
+	wanted := VcapServicesData{
+		"s3": []VcapServiceInstance{{
+			Name: "glr-dependency-cache",
+		}},
+		"user-provided": []VcapServiceInstance{{
+			Name:        "glr-egress-proxy-credentials",
+			Credentials: VcapServiceCredentials{Domain: "vtools-prototyping-devtools-staging-glr-egress-glr-egress-proxy.apps.internal", HTTPPort: 8080, HTTPURI: "http://018052ba-ab88-cd96-e1fb-146be5abd727:ukHK19mbG5i5JrgZ@vtools-prototyping-devtools-staging-glr-egress-glr-egress-proxy.apps.internal:8080", HTTPSURI: "https://018052ba-ab88-cd96-e1fb-146be5abd727:ukHK19mbG5i5JrgZ@vtools-prototyping-devtools-staging-glr-egress-glr-egress-proxy.apps.internal:8080", CredString: "018052ba-ab88-cd96-e1fb-146be5abd727:ukHK19mbG5i5JrgZ"},
+		}},
+	}
+
+	cfg, err := getJobConfig()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if diff := cmp.Diff(cfg.VcapServicesData, wanted); diff != "" {
+		t.Errorf("mismatch (-got +want):\n%s", diff)
+	}
+}

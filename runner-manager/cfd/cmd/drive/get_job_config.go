@@ -18,6 +18,9 @@ type JobConfig struct {
 	VcapAppData
 	VcapAppJSON string `env:"VCAP_APPLICATION"`
 
+	VcapServicesData
+	VcapServicesJSON string `env:"VCAP_SERVICES"`
+
 	Manifest *cloudgov.AppManifest
 
 	// We combine the following to make the container ID.
@@ -69,6 +72,26 @@ type VcapAppData struct {
 	SpaceName string `json:"space_name"`
 }
 
+type (
+	VcapServicesData    map[string][]VcapServiceInstance
+	VcapServiceInstance struct {
+		Name        string
+		Credentials VcapServiceCredentials
+	}
+)
+
+type VcapServiceCredentials struct {
+	Domain     string
+	HTTPPort   int
+	HTTPURI    string
+	HTTPSURI   string
+	CredString string
+}
+
+// TODO:
+// echo "$EGRESS_CREDENTIALS" | jq --raw-output ".cred_string" > /home/vcap/app/ssh_proxy.auth
+// chmod 0600 /home/vcap/app/ssh_proxy.auth
+
 func parseCfgJSON[R any](j []byte, r *R) (*R, error) {
 	if len(j) < 1 {
 		return r, nil
@@ -109,6 +132,13 @@ func (c *JobConfig) parseVcapAppJSON() (err error) {
 	ref := &VcapAppData{}
 	ref, err = parseCfgJSON([]byte(c.VcapAppJSON), ref)
 	c.VcapAppData = *ref
+	return err
+}
+
+func (c *JobConfig) parseVcapServicesJSON() (err error) {
+	ref := &map[string][]VcapServiceInstance{}
+	ref, err = parseCfgJSON([]byte(c.VcapServicesJSON), ref)
+	c.VcapServicesData = *ref
 	return err
 }
 
@@ -195,6 +225,9 @@ func getJobConfig() (cfg *JobConfig, err error) {
 		return nil, err
 	}
 	if err = cfg.parseVcapAppJSON(); err != nil {
+		return nil, err
+	}
+	if err = cfg.parseVcapServicesJSON(); err != nil {
 		return nil, err
 	}
 
