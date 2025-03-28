@@ -104,3 +104,8 @@ func (cf *CFClientAPI) appsList() ([]*App, error) {
 	}
 	return castApps(apps), nil
 }
+
+func (cf *CFClientAPI) sshCode() (string, error) {
+	ctx := context.Background()
+	return cf.conn().SSHCode(ctx)
+}
