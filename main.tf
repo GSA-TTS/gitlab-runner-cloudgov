@@ -20,24 +20,26 @@ locals {
 
 # manager_space: cloud.gov space for running the manager app
 module "manager_space" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=v2.1.0"
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=395242c571c1e0cbaf5a180c89e15cb8453ebc0b"
 
   cf_org_name   = var.cf_org_name
   cf_space_name = "${var.cf_space_prefix}-manager"
   allow_ssh     = var.allow_ssh
   deployers     = [var.cf_org_manager]
   developers    = setunion(var.developer_emails, [var.cf_community_user])
+  auditors      = var.auditor_emails
 }
 
 # worker_space: cloud.gov space for running runner workers and runner services
 module "worker_space" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=v2.1.0"
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=395242c571c1e0cbaf5a180c89e15cb8453ebc0b"
 
   cf_org_name          = var.cf_org_name
   cf_space_name        = "${var.cf_space_prefix}-workers"
   allow_ssh            = true # manager must be able to cf ssh into workers
   deployers            = [var.cf_org_manager]
   developers           = var.developer_emails
+  auditors             = var.auditor_emails
   security_group_names = ["trusted_local_networks_egress"]
 }
 
@@ -137,13 +139,14 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
 
 # egress_space: cloud.gov space for running the egress proxy
 module "egress_space" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=v2.1.0"
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=395242c571c1e0cbaf5a180c89e15cb8453ebc0b"
 
   cf_org_name          = var.cf_org_name
   cf_space_name        = "${var.cf_space_prefix}-egress"
   allow_ssh            = var.allow_ssh
   deployers            = [var.cf_org_manager]
   developers           = setunion(var.developer_emails, [var.cf_community_user])
+  auditors             = var.auditor_emails
   security_group_names = ["public_networks_egress"]
 }
 
