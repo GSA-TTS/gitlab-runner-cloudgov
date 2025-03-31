@@ -10,7 +10,13 @@ variable "cf_community_user" {
 
 variable "developer_emails" {
   type        = set(string)
-  description = "cloud.gov accounts to grant SpaceDeveloper access to the runner space and runner egress space"
+  description = "cloud.gov accounts to grant SpaceDeveloper access to the manager, worker, and egress spaces"
+  default     = []
+}
+
+variable "auditor_emails" {
+  type        = set(string)
+  description = "cloud.gov accounts to grant SpaceAuditor access to the manager, worker, and egress spaces"
   default     = []
 }
 
