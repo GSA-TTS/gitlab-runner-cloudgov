@@ -1,6 +1,8 @@
 package drive
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cfd/cloudgov"
@@ -12,16 +14,17 @@ import (
 // think about that later.
 func Test_GetJobConfig(t *testing.T) {
 	cfgWant := &JobConfig{
-		JobResponse:     JobResponse{},
-		CIRegistryUser:  "foo",
-		CIRegistryPass:  "bar",
-		DockerHubUser:   "foo",
-		DockerHubToken:  "1234",
-		WorkerMemory:    "1024M",
-		WorkerDiskSize:  "1024M",
-		JobResponseFile: "",
-		VcapAppJSON:     "",
-		ContainerID:     "glrw-p-c-j",
+		JobResponse:      JobResponse{},
+		CIRegistryUser:   "foo",
+		CIRegistryPass:   "bar",
+		DockerHubUser:    "foo",
+		DockerHubToken:   "1234",
+		WorkerMemory:     "1024M",
+		WorkerDiskSize:   "1024M",
+		JobResponseFile:  "",
+		VcapAppJSON:      "",
+		VcapServicesData: VcapServicesData{},
+		ContainerID:      "glrw-p-c-j",
 		Manifest: &cloudgov.AppManifest{
 			Name:    "glrw-p-c-j",
 			NoRoute: true,
@@ -50,7 +53,7 @@ func Test_GetJobConfig(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	if diff := cmp.Diff(cfgWant, parsedCfg); diff != "" {
+	if diff := cmp.Diff(parsedCfg, cfgWant); diff != "" {
 		t.Error(diff)
 	}
 }
@@ -80,8 +83,9 @@ func Test_parseJobResponseFile(t *testing.T) {
 				Process: cloudgov.AppManifestProcess{Command: "j k l g h i", HealthCheckType: "process"},
 			},
 			Config: &JobConfig{
-				ContainerID:     "glrw-p-c-j",
-				JobResponseFile: "./testdata/sample_job_response.json",
+				ContainerID:      "glrw-p-c-j",
+				JobResponseFile:  "./testdata/sample_job_response.json",
+				VcapServicesData: VcapServicesData{},
 				Manifest: &cloudgov.AppManifest{
 					Name:    "glrw-p-c-j",
 					Env:     map[string]string{"foo": "bar"},
@@ -130,17 +134,42 @@ func Test_parseVcapAppJSON(t *testing.T) {
 }
 
 func Test_parseVcapServicesJSON(t *testing.T) {
-	sample := `{"s3":[{"label":"s3","provider":null,"plan":"basic-sandbox","name":"glr-dependency-cache","tags":["AWS","S3","object-storage","terraform-cloudgov-managed"],"instance_guid":"d1541026-64ca-44fb-8a48-39298885ff68","instance_name":"glr-dependency-cache","binding_guid":"9f316c56-a910-4c68-b30c-b42df87fdfec","binding_name":null,"credentials":{"uri":"s3://goooo:booo@s3-fips.us-gov-west-1.amazonaws.com/cg-d1541026-64ca-44fb-8a48-39298885ff68","insecure_skip_verify":false,"access_key_id":"jjjjj","secret_access_key":"ssssssss","region":"us-gov-west-1","bucket":"cg-d1541026-64ca-44fb-8a48-39298885ff68","endpoint":"s3-fips.us-gov-west-1.amazonaws.com","fips_endpoint":"s3-fips.us-gov-west-1.amazonaws.com","additional_buckets":[]},"syslog_drain_url":null,"volume_mounts":[]}],"user-provided":[{"label":"user-provided","name":"glr-egress-proxy-credentials","tags":[],"instance_guid":"608e3f73-40df-4866-8d3a-fd5fda6bedcd","instance_name":"glr-egress-proxy-credentials","binding_guid":"7530ea7b-a04d-4c59-a05f-e07ab3efa573","binding_name":null,"credentials":{"cred_string":"018052ba-ab88-cd96-e1fb-146be5abd727:ukHK19mbG5i5JrgZ","domain":"vtools-prototyping-devtools-staging-glr-egress-glr-egress-proxy.apps.internal","http_port":8080,"http_uri":"http://018052ba-ab88-cd96-e1fb-146be5abd727:ukHK19mbG5i5JrgZ@vtools-prototyping-devtools-staging-glr-egress-glr-egress-proxy.apps.internal:8080","https_uri":"https://018052ba-ab88-cd96-e1fb-146be5abd727:ukHK19mbG5i5JrgZ@vtools-prototyping-devtools-staging-glr-egress-glr-egress-proxy.apps.internal:61443"},"syslog_drain_url":null,"volume_mounts":[]}]}`
+	sample := `{"s3":[{"label":"s3","provider":null,"plan":"basic-sandbox","name":"glr-dependency-cache","tags":["AWS","S3","object-storage","terraform-cloudgov-managed"],"instance_guid":"d1541026","instance_name":"glr-dependency-cache","binding_guid":"9f316c56","binding_name":null,"credentials":{"uri":"s3://goooo:booo@s3-fips.us-gov-west-1.aaws.com/cg-d1541026","insecure_skip_verify":false,"access_key_id":"jjjjj","secret_access_key":"ssssssss","region":"us-gov-west-1","bucket":"cg-d1541026","endpoint":"s3-fips.us-gov-west-1.amazonaws.com","fips_endpoint":"s3-fips.us-gov-west-1.amazonaws.com","additional_buckets":[]},"syslog_drain_url":null,"volume_mounts":[]}],"user-provided":[{"label":"user-provided","name":"glr-egress-proxy-credentials","tags":[],"instance_guid":"608e3f73","instance_name":"glr-egress-proxy-credentials","binding_guid":"7530ea7b","binding_name":null,"credentials":{"cred_string":"018052ba:ukgZ","domain":"egress-proxy.apps.internal","http_port":8080,"http_uri":"http://018052b:ukHK@egress-proxy.apps.internal:8080","https_uri":"https://018052ba:ukHK1@egress-proxy.apps.internal:61443"},"syslog_drain_url":null,"volume_mounts":[]}]}`
 	t.Setenv("VCAP_SERVICES", sample)
+	t.Setenv("PROXY_CREDENTIAL_INSTANCE", "glr-egress-proxy-credentials")
 
-	wanted := VcapServicesData{
+	dir, err := os.MkdirTemp("", "temp_auth_files")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+	authFile := filepath.Join(dir, "ssh_proxy.auth")
+	t.Setenv("PROXY_AUTH_FILE", authFile)
+
+	credStringWanted := "018052ba:ukgZ"
+
+	wantedServices := VcapServicesData{
 		"s3": []VcapServiceInstance{{
 			Name: "glr-dependency-cache",
 		}},
 		"user-provided": []VcapServiceInstance{{
-			Name:        "glr-egress-proxy-credentials",
-			Credentials: VcapServiceCredentials{Domain: "vtools-prototyping-devtools-staging-glr-egress-glr-egress-proxy.apps.internal", HTTPPort: 8080, HTTPURI: "http://018052ba-ab88-cd96-e1fb-146be5abd727:ukHK19mbG5i5JrgZ@vtools-prototyping-devtools-staging-glr-egress-glr-egress-proxy.apps.internal:8080", HTTPSURI: "https://018052ba-ab88-cd96-e1fb-146be5abd727:ukHK19mbG5i5JrgZ@vtools-prototyping-devtools-staging-glr-egress-glr-egress-proxy.apps.internal:8080", CredString: "018052ba-ab88-cd96-e1fb-146be5abd727:ukHK19mbG5i5JrgZ"},
+			Name: "glr-egress-proxy-credentials",
+			Credentials: VcapServiceCredentials{
+				Domain:     "egress-proxy.apps.internal",
+				HTTPPort:   8080,
+				HTTPURI:    "http://018052b:ukHK@egress-proxy.apps.internal:8080",
+				HTTPSURI:   "https://018052ba:ukHK1@egress-proxy.apps.internal:61443",
+				CredString: credStringWanted,
+			},
 		}},
+	}
+
+	wantedEgressConfig := EgressProxyConfig{
+		ProxyHostHTTP:  "http://018052b:ukHK@egress-proxy.apps.internal:8080",
+		ProxyHostHTTPS: "https://018052ba:ukHK1@egress-proxy.apps.internal:61443",
+		ProxyHostSSH:   "egress-proxy.apps.internal",
+		ProxyPortSSH:   8080,
+		ProxyAuthFile:  authFile,
 	}
 
 	cfg, err := getJobConfig()
@@ -149,7 +178,23 @@ func Test_parseVcapServicesJSON(t *testing.T) {
 		return
 	}
 
-	if diff := cmp.Diff(cfg.VcapServicesData, wanted); diff != "" {
+	if diff := cmp.Diff(cfg.VcapServicesData, wantedServices); diff != "" {
 		t.Errorf("mismatch (-got +want):\n%s", diff)
+	}
+
+	if diff := cmp.Diff(cfg.VcapServicesData["user-provided"][0], wantedServices["user-provided"][0]); diff != "" {
+		t.Fatalf("mismatch (-got +want):\n%s", diff)
+	}
+
+	if diff := cmp.Diff(cfg.EgressProxyConfig, wantedEgressConfig); diff != "" {
+		t.Fatalf("mismatch (-got +want):\n%s", diff)
+	}
+
+	credString, err := os.ReadFile(cfg.ProxyAuthFile)
+	if err != nil {
+		t.Fatalf("error reading ProxyAuthFile: %v", err)
+	}
+	if diff := cmp.Diff(string(credString), credStringWanted); diff != "" {
+		t.Fatalf("mismatch (-got +want):\n%s", diff)
 	}
 }
