@@ -335,7 +335,7 @@ func TestClient_AppsList(t *testing.T) {
 	}
 }
 
-func TestClient_ServicePush(t *testing.T) {
+func TestClient_Push(t *testing.T) {
 	optsStub := &Opts{CredsGetter: stubCredsGetter{"a", "b", false}}
 	cgStub := &Client{&stubClientAPI{
 		StURL:   apiRootURLDefault,
@@ -359,12 +359,12 @@ func TestClient_ServicePush(t *testing.T) {
 		"Fails without name": {
 			fields:  fields{ClientAPI: cgStub, Opts: optsStub},
 			args:    args{manifest: &AppManifest{}},
-			wantErr: CloudGovClientError{"ServicePush: AppManifest.Name must be defined"},
+			wantErr: CloudGovClientError{"Push: AppManifest.Name must be defined"},
 		},
 		"Fails without org": {
 			fields:  fields{ClientAPI: cgStub, Opts: optsStub},
 			args:    args{manifest: &AppManifest{Name: "Some App"}},
-			wantErr: CloudGovClientError{"ServicePush: AppManifest must have Org and Space names"},
+			wantErr: CloudGovClientError{"Push: AppManifest must have Org and Space names"},
 		},
 		"Passes with all fields": {
 			fields: fields{ClientAPI: cgStub, Opts: optsStub},
@@ -384,7 +384,7 @@ func TestClient_ServicePush(t *testing.T) {
 				if tt.wantErr == nil {
 					t.Errorf("Client.AppsList() error = %v", err)
 				} else if diff := cmp.Diff(tt.wantErr, err, cmpopts.EquateErrors()); diff != "" {
-					t.Errorf("Client.ServicePush() error mismatch (-want +got):\n%s", diff)
+					t.Errorf("Client.Push() error mismatch (-want +got):\n%s", diff)
 				}
 				return
 			}

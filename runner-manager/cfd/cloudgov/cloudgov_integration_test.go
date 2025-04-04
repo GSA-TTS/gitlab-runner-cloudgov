@@ -1,3 +1,5 @@
+//go:build integration
+
 package cloudgov_test
 
 import (
@@ -88,7 +90,7 @@ func Test_CFAdapter_AppGet(t *testing.T) {
 	}
 }
 
-func Test_ServicePush(t *testing.T) {
+func Test_Push(t *testing.T) {
 	tests := map[string]struct {
 		want     *cg.App
 		wantErr  error
@@ -119,7 +121,7 @@ func Test_ServicePush(t *testing.T) {
 			c := cgClient
 			got, err := c.Push(tt.manifest)
 			if err != nil && (tt.wantErr == nil || err.Error() != tt.wantErr.Error()) {
-				t.Errorf("Client.ServicePush() error = %v, wantErr = %v", err, tt.wantErr)
+				t.Errorf("Client.Push() error = %v, wantErr = %v", err, tt.wantErr)
 				return
 			}
 			if diff := cmp.Diff(got, tt.want); diff != "" {
