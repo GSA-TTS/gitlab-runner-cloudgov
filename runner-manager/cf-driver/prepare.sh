@@ -81,6 +81,9 @@ setup_proxy_access() {
         (command -v update-ca-certificates && update-ca-certificates) || \
         ([ -f /etc/ssl/certs/ca-certificates.crt ] && cat /etc/cf-system-certificates/* >> /etc/ssl/certs/ca-certificates.crt) || \
         (echo "[cf-driver] Could not update system ca certificates. This may or may not be a problem depending on your base image." && exit 0)'
+    cf_ssh "$container_id" \
+        'source /etc/profile && \
+        (command -v apt-get && echo "Acquire::http::Proxy \"$http_proxy\";" > /etc/apt/apt.conf.d/proxy.conf) || exit 0'
 }
 
 start_container () {
@@ -303,14 +306,14 @@ install_dependencies () {
     cf_ssh "$container_id" \
         'source /etc/profile && (command -v git && command -v curl) || \
         (command -v apk && https_proxy=$http_proxy apk add git curl) || \
-        (command -v apt-get && echo "Acquire::http::Proxy \"$http_proxy\";" > /etc/apt/apt.conf.d/proxy.conf && apt-get update && apt-get install -y git curl) || \
+        (command -v apt-get && apt-get update && apt-get install -y git curl) || \
         (command -v dnf && dnf -y install git curl) || \
         (echo "[cf-driver] Required packages missing and install attempt failed" && exit 1)'
     echo "[cf-driver] Ensuring git-lfs is installed"
     cf_ssh "$container_id" \
         'source /etc/profile && (command -v git-lfs) || \
         (command -v apk && https_proxy=$http_proxy apk add git-lfs) || \
-        (command -v apt-get && echo "Acquire::http::Proxy \"$http_proxy\";" > /etc/apt/apt.conf.d/proxy.conf && apt-get update && apt-get install -y git-lfs) || \
+        (command -v apt-get && apt-get update && apt-get install -y git-lfs) || \
         (command -v dnf && dnf -y install git-lfs) || \
         (echo "[cf-driver] git-lfs install attempt failed, proceeding" && exit 0)'
 
