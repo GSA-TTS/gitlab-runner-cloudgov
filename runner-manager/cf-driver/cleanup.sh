@@ -37,11 +37,11 @@ cleanup_services () {
     done
 }
 
-if [ -z "$CUSTOM_ENV_PRESERVE_SERVICES" ]; then
+if [ "$CUSTOM_ENV_PRESERVE_SERVICES" != "true" ]; then
     cleanup_services "$CONTAINER_ID" "$CUSTOM_ENV_CI_JOB_SERVICES"
 fi
 
-if [ -z "$CUSTOM_ENV_PRESERVE_WORKER" ]; then
+if [ "$CUSTOM_ENV_PRESERVE_WORKER" != "true" ]; then
     echo "[cf-driver] Deleting executor instance $CONTAINER_ID"
     cf delete -f "$CONTAINER_ID"
 fi
