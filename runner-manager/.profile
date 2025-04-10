@@ -21,10 +21,16 @@ function setup_proxy_access() {
         echo "Configuring HTTPS_PROXY environment variable"
         export https_proxy=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".https_uri")
         export http_proxy=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".http_uri")
-        export SSH_PROXY_HOST=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".domain")
-        export SSH_PROXY_PORT=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".http_port")
-        echo "$EGRESS_CREDENTIALS" | jq --raw-output ".cred_string" > /home/vcap/app/ssh_proxy.auth
-        chmod 0600 /home/vcap/app/ssh_proxy.auth
+        ssh_proxy_host=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".domain")
+        ssh_proxy_port=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".http_port")
+        mkdir -p /home/vcap/.ssh
+        cat << EOC > /home/vcap/.ssh/config
+Host ssh.fr.cloud.gov
+    StrictHostKeyChecking accept-new
+    ProxyCommand corkscrew $ssh_proxy_host $ssh_proxy_port %h %p /home/vcap/.ssh/ssh_proxy.auth
+EOC
+        echo "$EGRESS_CREDENTIALS" | jq --raw-output ".cred_string" > /home/vcap/.ssh/ssh_proxy.auth
+        chmod 0600 /home/vcap/.ssh/ssh_proxy.auth
     else
         echo "WARNING: Could not configure the egress proxy"
     fi

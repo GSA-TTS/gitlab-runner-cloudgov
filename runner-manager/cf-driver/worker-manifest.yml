@@ -7,5 +7,5 @@ applications:
     env:
       NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-certificates.crt
       SSL_CERT_FILE: /etc/ssl/certs/ca-certificates.crt
-      no_proxy: "apps.internal,s3-fips.us-gov-west-1.amazonaws.com"
+      no_proxy: "localhost,apps.internal,s3-fips.us-gov-west-1.amazonaws.com"
 # Additional items may be added below this point in prepare.sh
