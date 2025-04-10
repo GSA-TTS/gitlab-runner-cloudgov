@@ -247,7 +247,7 @@ start_services () {
     # See: https://docs.gitlab.com/runner/executors/custom.html#job-response
     services=$(jq -rc '.services[]' "$JOB_RESPONSE_FILE")
     job_vars=$(jq -r \
-        '.variables[]? | select((.key | test("^(?!(CI|GITLAB)_)"))) | [.key, .value] | @sh' \
+        '.variables[]? | select(.file == false) | select(.key | test("^(?!(CI|GITLAB)_)")) | [.key, .value] | @sh' \
         "$JOB_RESPONSE_FILE")
 
     for l in $services; do
@@ -340,6 +340,12 @@ install_dependencies () {
 echo "[cf-driver] re-auth to cloud.gov"
 cf auth
 cf target -o "$WORKER_ORG" -s "$WORKER_SPACE"
+
+if [ "$RUNNER_DEBUG" == "true" ]; then
+    echo "[cf-driver] JOB_RESPONSE_FILE ======================================="
+    cat "$JOB_RESPONSE_FILE"
+    echo "[cf-driver] ======================================= JOB_RESPONSE_FILE"
+fi
 
 if [ -n "$CUSTOM_ENV_CI_JOB_SERVICES" ]; then
     echo "[cf-driver] Starting services"
