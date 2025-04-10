@@ -299,13 +299,20 @@ install_dependencies () {
     # Build a command to try and install git and git-lfs on common distros.
     # Of course, RedHat/UBI will need more help to add RPM repos with the correct
     # version. TODO - RedHat support
-    echo "[cf-driver] Ensuring git, git-lfs, and curl are installed"
+    echo "[cf-driver] Ensuring git and curl are installed"
     cf_ssh "$container_id" \
-        'source /etc/profile && (command -v git && command -v git-lfs && command -v curl) || \
-        (command -v apk && https_proxy=$http_proxy apk add git git-lfs curl) || \
-        (command -v apt-get && echo "Acquire::http::Proxy \"$http_proxy\";" > /etc/apt/apt.conf.d/proxy.conf && apt-get update && apt-get install -y git git-lfs curl) || \
-        (command -v dnf && dnf -y install git git-lfs curl) || \
+        'source /etc/profile && (command -v git && command -v curl) || \
+        (command -v apk && https_proxy=$http_proxy apk add git curl) || \
+        (command -v apt-get && echo "Acquire::http::Proxy \"$http_proxy\";" > /etc/apt/apt.conf.d/proxy.conf && apt-get update && apt-get install -y git curl) || \
+        (command -v dnf && dnf -y install git curl) || \
         (echo "[cf-driver] Required packages missing and install attempt failed" && exit 1)'
+    echo "[cf-driver] Ensuring git-lfs is installed"
+    cf_ssh "$container_id" \
+        'source /etc/profile && (command -v git-lfs) || \
+        (command -v apk && https_proxy=$http_proxy apk add git-lfs) || \
+        (command -v apt-get && echo "Acquire::http::Proxy \"$http_proxy\";" > /etc/apt/apt.conf.d/proxy.conf && apt-get update && apt-get install -y git-lfs) || \
+        (command -v dnf && dnf -y install git-lfs) || \
+        (echo "[cf-driver] git-lfs install attempt failed, proceeding" && exit 0)'
 
     # gitlab-runner-helper includes a limited subset of gitlab-runner functionality
     # plus Git and Git-LFS. https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/index.html
@@ -315,7 +322,7 @@ install_dependencies () {
     # TODO: Pin the version and support more arches than X86_64
     echo "[cf-driver] Installing gitlab-runner-helper"
 
-    helper_dir='bin'
+    helper_dir='/usr/local/bin'
     helper_path="$helper_dir/gitlab-runner-helper" # PATH'ed in run.sh
 
     cf_ssh "$container_id" \
