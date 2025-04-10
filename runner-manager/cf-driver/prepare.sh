@@ -92,11 +92,19 @@ start_container () {
         cf delete -f "$container_id"
     fi
 
+    local worker_memory=$(jq -r '.variables[]? | select(.key == "WORKER_MEMORY") | .value' "$JOB_RESPONSE_FILE")
+    if [ -z "$worker_memory" ]; then
+        worker_memory=$WORKER_MEMORY
+    fi
+    local worker_disk=$(jq -r '.variables[]? | select(.key == "WORKER_DISK") | .value' "$JOB_RESPONSE_FILE")
+    if [ -z "$worker_disk" ]; then
+        worker_disk=$WORKER_DISK_SIZE
+    fi
     push_args=(
         "$container_id"
         -f "$TMPMANIFEST"
-        -m "$WORKER_MEMORY"
-        -k "$WORKER_DISK_SIZE"
+        -m "$worker_memory"
+        -k "$worker_disk"
         --docker-image "$image_name"
     )
 

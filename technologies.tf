@@ -11,7 +11,7 @@ locals {
     node = [
       "deb.nodesource.com",
       "registry.npmjs.org",
-      "registry.yarnpkg.com"
+      "*.yarnpkg.com"
     ]
   }
 }
