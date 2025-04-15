@@ -1,0 +1,10 @@
+# For simple integration test with cloudgov_integration_test.go
+# 
+# This test will use the credentials provided to run `cf apps` and
+# check the output against what you have provided.
+#
+# 1. copy this file to `.cloudgov_creds`
+# 2. replace with real credentials, e.g. a service key's
+# 3. replace with real output from `cf apps`
+username-1234-asdf
+password-asdf-1234

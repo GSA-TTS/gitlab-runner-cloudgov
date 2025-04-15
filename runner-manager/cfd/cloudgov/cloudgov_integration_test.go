@@ -3,75 +3,34 @@
 package cloudgov_test
 
 import (
-	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"testing"
 
 	cg "github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cfd/cloudgov"
+	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cfd/testutil"
 	"github.com/google/go-cmp/cmp"
 )
 
-var (
-	appGetWanted string
-	cgClient     *cg.Client
-)
+var cgClient *cg.Client
 
 func TestMain(m *testing.M) {
-	var user, pass string
 	var err error
 
-	path := "./testdata/.cloudgov_creds"
-	f, err := os.Open(path)
+	cgClient, err = testutil.IntegrationSetup()
 	if err != nil {
-		fmt.Printf(
-			"Error opening testdata file = %v\n\033[1;33mDid you forget to create `%v`?\033[0m",
-			err, path,
-		)
+		fmt.Println(err)
 		os.Exit(1)
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-
-	var i int
-	var l [3]string
-	for scanner.Scan() {
-		text := scanner.Text()
-		if text[0] == '#' {
-			continue
-		}
-		l[i] = text
-		if i++; i > 2 {
-			user, pass, appGetWanted = l[0], l[1], l[2]
-			break
-		}
-	}
-
-	if err = scanner.Err(); err != nil {
-		fmt.Printf("Error scanning testdata file = %v", err)
-		return
-	}
-
-	if user == "" || pass == "" {
-		fmt.Printf("Could not load variables from testdata")
-		return
-	}
-
-	cgClient, err = cg.New(&cg.CFClientAPI{}, &cg.Opts{
-		Creds: &cg.Creds{Username: user, Password: pass},
-	})
-	if err != nil {
-		fmt.Printf("Error getting cloudgovClient = %v", err)
-		return
 	}
 
 	m.Run()
 }
 
 func Test_CFAdapter_AppGet(t *testing.T) {
+	appGetWanted := `[{"Name":"cgd-int-app","GUID":"0cfb2765-da96-4f0f-ad6f-f70cfa9400c2","State":"STARTED"},{"Name":"Some cool app","GUID":"1245231e-91cd-47da-ac5e-e22a1f624f9b","State":"STARTED"}]`
 	apps, err := cgClient.AppsList()
 	if err != nil {
 		t.Errorf("Error running AppsList() = %v", err)
@@ -101,7 +60,7 @@ func Test_Push(t *testing.T) {
 			manifest: &cg.AppManifest{Name: "Fail", OrgName: "bad", SpaceName: "bad"},
 		},
 		"Passes with real org and space": {
-			want: &cg.App{Name: "c0f91804-4d3a-47df-be14-c9eb4fb59324", State: "STARTED"},
+			want: &cg.App{Name: "Some cool app", GUID: "1245231e-91cd-47da-ac5e-e22a1f624f9b", State: "STARTED"},
 			manifest: &cg.AppManifest{
 				OrgName:   "gsa-tts-devtools-prototyping",
 				SpaceName: "cgd-int",
@@ -132,14 +91,14 @@ func Test_Push(t *testing.T) {
 }
 
 func Test_SSHCode(t *testing.T) {
-	c := cgClient
-	want := "hi"
-	got, err := c.SSHCode()
+	got, err := cgClient.SSHCode()
 	if err != nil {
 		t.Errorf("got error = %v", err)
 		return
 	}
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Errorf("mismatch (-got +want):\n%s", diff)
+
+	re := regexp.MustCompile(`[\w-_]{32}`)
+	if !re.MatchString(got) {
+		t.Errorf("wanted string matching /%v/, got %v", re, got)
 	}
 }

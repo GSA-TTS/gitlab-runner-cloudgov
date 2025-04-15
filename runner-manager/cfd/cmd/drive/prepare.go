@@ -34,7 +34,7 @@ https://docs.gitlab.com/runner/executors/custom.html#prepare`,
 type prepStage commonStage
 
 func run(cmd *cobra.Command, args []string) error {
-	s, err := newStage()
+	s, err := newStage(nil)
 	if err != nil {
 		return fmt.Errorf("error initializing prepare stage: %w", err)
 	}
@@ -55,13 +55,20 @@ func (s *prepStage) exec() (err error) {
 	}
 
 	// Pushing the main job config pulled from get_job_config.go
-	_, err = s.client.Push(s.config.Manifest)
+	app, err := s.client.Push(s.config.Manifest)
 	if err != nil {
 		return err
 	}
 
+	s.RunSSH(app.GUID,
+		`source /etc/profile && (command -v git && command -v git-lfs && command -v curl) || \
+        (command -v apk && https_proxy=$http_proxy apk add git git-lfs curl) || \
+        (command -v apt-get && echo "Acquire::http::Proxy \"$http_proxy\";" > /etc/apt/apt.conf.d/proxy.conf && apt-get update && apt-get install -y git git-lfs curl) || \
+        (command -v dnf && dnf -y install git git-lfs curl) || \
+        (echo "[cf-driver] Required packages missing and install attempt failed" && exit 1)'`,
+	)
+
 	// TODO:
-	// install deps
 	// allow access to services
 
 	return err
