@@ -21,10 +21,10 @@ jobs:
       - name: terraform test
         uses: dflook/terraform-test@f203156ff9dbd7e7ae26e7dc2f7c8530262a88ff #v1.47.0
         env:
+          CF_API_URL: "https://api.fr.cloud.gov"
           CF_USER: ${{ secrets.CF_USER }}
           CF_PASSWORD: ${{ secrets.CF_PASSWORD }}
           TF_VAR_cf_org_manager: ${{ secrets.CF_USER }}
-          TF_VAR_cf_community_user: ${{ secrets.CF_USER }}
           TERRAFORM_PRE_RUN: |
             apt-get update
             apt-get install -y zip

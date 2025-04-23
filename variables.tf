@@ -3,11 +3,6 @@ variable "cf_org_manager" {
   description = "The cloud.gov username that is running the root terraform module, must be an OrgManager"
 }
 
-variable "cf_community_user" {
-  type        = string
-  description = "The cloud.gov service-account username that is logged into the cloudfoundry-community provider"
-}
-
 variable "developer_emails" {
   type        = set(string)
   description = "cloud.gov accounts to grant SpaceDeveloper access to the manager, worker, and egress spaces"
