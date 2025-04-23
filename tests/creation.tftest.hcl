@@ -101,7 +101,8 @@ run "test-system-creation" {
       "api.example.gov",
       "objects.githubusercontent.com",
       "*.releases.hashicorp.com",
-      "registry.terraform.io"
+      "registry.terraform.io",
+      "sts.us-gov-west-1.amazonaws.com"
     ])
     error_message = "The egress allowlist contains manager, technology, and worker entries"
   }

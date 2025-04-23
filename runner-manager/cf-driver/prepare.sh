@@ -81,6 +81,9 @@ setup_proxy_access() {
         (command -v update-ca-certificates && update-ca-certificates) || \
         ([ -f /etc/ssl/certs/ca-certificates.crt ] && cat /etc/cf-system-certificates/* >> /etc/ssl/certs/ca-certificates.crt) || \
         (echo "[cf-driver] Could not update system ca certificates. This may or may not be a problem depending on your base image." && exit 0)'
+    cf_ssh "$container_id" \
+        'source /etc/profile && \
+        (command -v apt-get && echo "Acquire::http::Proxy \"$http_proxy\";" > /etc/apt/apt.conf.d/proxy.conf) || exit 0'
 }
 
 start_container () {
@@ -92,11 +95,19 @@ start_container () {
         cf delete -f "$container_id"
     fi
 
+    local worker_memory=$(jq -r '.variables[]? | select(.key == "WORKER_MEMORY") | .value' "$JOB_RESPONSE_FILE")
+    if [ -z "$worker_memory" ]; then
+        worker_memory=$WORKER_MEMORY
+    fi
+    local worker_disk=$(jq -r '.variables[]? | select(.key == "WORKER_DISK") | .value' "$JOB_RESPONSE_FILE")
+    if [ -z "$worker_disk" ]; then
+        worker_disk=$WORKER_DISK_SIZE
+    fi
     push_args=(
         "$container_id"
         -f "$TMPMANIFEST"
-        -m "$WORKER_MEMORY"
-        -k "$WORKER_DISK_SIZE"
+        -m "$worker_memory"
+        -k "$worker_disk"
         --docker-image "$image_name"
     )
 
@@ -236,7 +247,7 @@ start_services () {
     # See: https://docs.gitlab.com/runner/executors/custom.html#job-response
     services=$(jq -rc '.services[]' "$JOB_RESPONSE_FILE")
     job_vars=$(jq -r \
-        '.variables[]? | select((.key | test("^(?!(CI|GITLAB)_)"))) | [.key, .value] | @sh' \
+        '.variables[]? | select(.file == false) | select(.key | test("^(?!(CI|GITLAB)_)")) | [.key, .value] | @sh' \
         "$JOB_RESPONSE_FILE")
 
     for l in $services; do
@@ -291,13 +302,20 @@ install_dependencies () {
     # Build a command to try and install git and git-lfs on common distros.
     # Of course, RedHat/UBI will need more help to add RPM repos with the correct
     # version. TODO - RedHat support
-    echo "[cf-driver] Ensuring git, git-lfs, and curl are installed"
+    echo "[cf-driver] Ensuring git and curl are installed"
     cf_ssh "$container_id" \
-        'source /etc/profile && (command -v git && command -v git-lfs && command -v curl) || \
-        (command -v apk && https_proxy=$http_proxy apk add git git-lfs curl) || \
-        (command -v apt-get && echo "Acquire::http::Proxy \"$http_proxy\";" > /etc/apt/apt.conf.d/proxy.conf && apt-get update && apt-get install -y git git-lfs curl) || \
-        (command -v dnf && dnf -y install git git-lfs curl) || \
+        'source /etc/profile && (command -v git && command -v curl) || \
+        (command -v apk && https_proxy=$http_proxy apk add git curl) || \
+        (command -v apt-get && apt-get update && apt-get install -y git curl) || \
+        (command -v dnf && dnf -y install git curl) || \
         (echo "[cf-driver] Required packages missing and install attempt failed" && exit 1)'
+    echo "[cf-driver] Ensuring git-lfs is installed"
+    cf_ssh "$container_id" \
+        'source /etc/profile && (command -v git-lfs) || \
+        (command -v apk && https_proxy=$http_proxy apk add git-lfs) || \
+        (command -v apt-get && apt-get update && apt-get install -y git-lfs) || \
+        (command -v dnf && dnf -y install git-lfs) || \
+        (echo "[cf-driver] git-lfs install attempt failed, proceeding" && exit 0)'
 
     # gitlab-runner-helper includes a limited subset of gitlab-runner functionality
     # plus Git and Git-LFS. https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/index.html
@@ -307,7 +325,7 @@ install_dependencies () {
     # TODO: Pin the version and support more arches than X86_64
     echo "[cf-driver] Installing gitlab-runner-helper"
 
-    helper_dir='bin'
+    helper_dir='/usr/local/bin'
     helper_path="$helper_dir/gitlab-runner-helper" # PATH'ed in run.sh
 
     cf_ssh "$container_id" \
@@ -322,6 +340,12 @@ install_dependencies () {
 echo "[cf-driver] re-auth to cloud.gov"
 cf auth
 cf target -o "$WORKER_ORG" -s "$WORKER_SPACE"
+
+if [ "$RUNNER_DEBUG" == "true" ]; then
+    echo "[cf-driver] JOB_RESPONSE_FILE ======================================="
+    cat "$JOB_RESPONSE_FILE"
+    echo "[cf-driver] ======================================= JOB_RESPONSE_FILE"
+fi
 
 if [ -n "$CUSTOM_ENV_CI_JOB_SERVICES" ]; then
     echo "[cf-driver] Starting services"
