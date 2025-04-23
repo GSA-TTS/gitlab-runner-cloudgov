@@ -30,6 +30,7 @@ module "sandbox-runner" {
   docker_hub_user         = var.docker_hub_user
   docker_hub_token        = var.docker_hub_token
   manager_instances       = 1
+  runner_concurrency      = 4
   developer_emails        = var.developer_emails
   worker_disk_size        = var.worker_disk_size
   program_technologies    = var.program_technologies

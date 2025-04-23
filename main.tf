@@ -112,11 +112,6 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     CUSTOM_RUN_EXEC          = "/home/vcap/app/cf-driver/run.sh"
     REGISTER_NON_INTERACTIVE = true
     # TODO - Add timeouts like CUSTOM_CLEANUP_EXEC_TIMEOUT
-    #
-    # DANGER: Do not set RUNNER_DEBUG to true without reading
-    # https://docs.gitlab.com/runner/faq/#enable-debug-logging-mode
-    # and ensuring job logs are removed to avoid leaking secrets.
-    RUNNER_DEBUG              = "false"
     RUNNER_CONCURRENCY        = var.runner_concurrency
     OBJECT_STORE_INSTANCE     = var.object_store_instance
     PROXY_CREDENTIAL_INSTANCE = cloudfoundry_service_instance.egress-proxy-credentials.name
@@ -126,6 +121,12 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     CF_PASSWORD               = local.sa_cf_password
     DOCKER_HUB_USER           = var.docker_hub_user
     DOCKER_HUB_TOKEN          = var.docker_hub_token
+    # DANGER: Do not set RUNNER_DEBUG to true without reading
+    # https://docs.gitlab.com/runner/faq/#enable-debug-logging-mode
+    # and ensuring job logs are removed to avoid leaking secrets.
+    RUNNER_DEBUG                 = "false"
+    CUSTOM_ENV_PRESERVE_WORKER   = "false"
+    CUSTOM_ENV_PRESERVE_SERVICES = "false"
   }
   service_bindings = [
     { service_instance = var.object_store_instance },
