@@ -109,6 +109,7 @@ start_container () {
         -m "$worker_memory"
         -k "$worker_disk"
         --docker-image "$image_name"
+        --var "cache_bucket=$CACHE_S3_BUCKET_NAME"
     )
 
     # Entrypoint & command aren't available w/o loading job res file
