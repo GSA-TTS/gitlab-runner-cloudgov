@@ -20,7 +20,7 @@ locals {
 
 # manager_space: cloud.gov space for running the manager app
 module "manager_space" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=395242c571c1e0cbaf5a180c89e15cb8453ebc0b"
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=b28e89af19aa88d3a6132f6a1d7697bf29accf5f" #v2.3.0
 
   cf_org_name   = var.cf_org_name
   cf_space_name = "${var.cf_space_prefix}-manager"
@@ -32,7 +32,7 @@ module "manager_space" {
 
 # worker_space: cloud.gov space for running runner workers and runner services
 module "worker_space" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=395242c571c1e0cbaf5a180c89e15cb8453ebc0b"
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=b28e89af19aa88d3a6132f6a1d7697bf29accf5f" #v2.3.0
 
   cf_org_name          = var.cf_org_name
   cf_space_name        = "${var.cf_space_prefix}-workers"
@@ -45,7 +45,7 @@ module "worker_space" {
 
 # object_store_instance: s3 bucket for caching build dependencies
 module "object_store_instance" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//s3?ref=v2.1.0"
+  source = "github.com/GSA-TTS/terraform-cloudgov//s3?ref=b28e89af19aa88d3a6132f6a1d7697bf29accf5f" #v2.3.0
 
   cf_space_id  = module.manager_space.space_id
   name         = var.object_store_instance
@@ -140,7 +140,7 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
 
 # egress_space: cloud.gov space for running the egress proxy
 module "egress_space" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=395242c571c1e0cbaf5a180c89e15cb8453ebc0b"
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=b28e89af19aa88d3a6132f6a1d7697bf29accf5f" #v2.3.0
 
   cf_org_name          = var.cf_org_name
   cf_space_name        = "${var.cf_space_prefix}-egress"
@@ -161,7 +161,7 @@ resource "cloudfoundry_space_role" "service-account-egress-role" {
 
 # egress_proxy: set up the egress proxy app
 module "egress_proxy" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//egress_proxy?ref=v2.1.0"
+  source = "github.com/GSA-TTS/terraform-cloudgov//egress_proxy?ref=b28e89af19aa88d3a6132f6a1d7697bf29accf5f" #v2.3.0
 
   cf_org_name     = var.cf_org_name
   cf_egress_space = module.egress_space.space
