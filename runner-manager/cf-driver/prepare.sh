@@ -338,8 +338,7 @@ install_dependencies () {
 }
 
 echo "[cf-driver] re-auth to cloud.gov"
-cf auth
-cf target -o "$WORKER_ORG" -s "$WORKER_SPACE"
+cf orgs &> /dev/null || (cf auth && cf target -o "$WORKER_ORG" -s "$WORKER_SPACE")
 
 if [ "$RUNNER_DEBUG" == "true" ]; then
     echo "[cf-driver] JOB_RESPONSE_FILE ======================================="
