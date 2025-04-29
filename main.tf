@@ -2,12 +2,12 @@ locals {
   # the list of egress hosts to allow for runner-manager and always needed by runner workers
   devtools_egress_allowlist = [
     "*.fr.cloud.gov",                      # cf-cli calls from manager
-    var.ci_server_url,                     # connections from both manager and runners
+    var.ci_server_url,                     # connections from both manager and workers
     "deb.debian.org",                      # debian runner dependencies install
     "*.ubuntu.com",                        # ubuntu runner dependencies install
     "dl-cdn.alpinelinux.org",              # alpine runner dependencies install
     "*.fedoraproject.org",                 # fedora runner dependencies install
-    "s3.dualstack.us-east-1.amazonaws.com" # gitlab-runner-helper source for runners
+    "s3.dualstack.us-east-1.amazonaws.com" # gitlab-runner-helper source for workers
   ]
   technology_allowlist = flatten([for t in var.program_technologies : local.allowlist_map[t]])
   proxy_allowlist      = setunion(local.devtools_egress_allowlist, var.worker_egress_allowlist, local.technology_allowlist)
@@ -20,7 +20,7 @@ locals {
 
 # manager_space: cloud.gov space for running the manager app
 module "manager_space" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=395242c571c1e0cbaf5a180c89e15cb8453ebc0b"
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=b28e89af19aa88d3a6132f6a1d7697bf29accf5f" #v2.3.0
 
   cf_org_name   = var.cf_org_name
   cf_space_name = "${var.cf_space_prefix}-manager"
@@ -32,7 +32,7 @@ module "manager_space" {
 
 # worker_space: cloud.gov space for running runner workers and runner services
 module "worker_space" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=395242c571c1e0cbaf5a180c89e15cb8453ebc0b"
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=b28e89af19aa88d3a6132f6a1d7697bf29accf5f" #v2.3.0
 
   cf_org_name          = var.cf_org_name
   cf_space_name        = "${var.cf_space_prefix}-workers"
@@ -45,7 +45,7 @@ module "worker_space" {
 
 # object_store_instance: s3 bucket for caching build dependencies
 module "object_store_instance" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//s3?ref=v2.1.0"
+  source = "github.com/GSA-TTS/terraform-cloudgov//s3?ref=b28e89af19aa88d3a6132f6a1d7697bf29accf5f" #v2.3.0
 
   cf_space_id  = module.manager_space.space_id
   name         = var.object_store_instance
@@ -89,6 +89,7 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
   no_route          = true
   memory            = var.manager_memory
   health_check_type = "process"
+  enable_ssh        = var.allow_ssh
 
   environment = {
     # These are used by .profile
@@ -140,7 +141,7 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
 
 # egress_space: cloud.gov space for running the egress proxy
 module "egress_space" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=395242c571c1e0cbaf5a180c89e15cb8453ebc0b"
+  source = "github.com/GSA-TTS/terraform-cloudgov//cg_space?ref=b28e89af19aa88d3a6132f6a1d7697bf29accf5f" #v2.3.0
 
   cf_org_name          = var.cf_org_name
   cf_space_name        = "${var.cf_space_prefix}-egress"
@@ -161,7 +162,7 @@ resource "cloudfoundry_space_role" "service-account-egress-role" {
 
 # egress_proxy: set up the egress proxy app
 module "egress_proxy" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//egress_proxy?ref=v2.1.0"
+  source = "github.com/GSA-TTS/terraform-cloudgov//egress_proxy?ref=b28e89af19aa88d3a6132f6a1d7697bf29accf5f" #v2.3.0
 
   cf_org_name     = var.cf_org_name
   cf_egress_space = module.egress_space.space

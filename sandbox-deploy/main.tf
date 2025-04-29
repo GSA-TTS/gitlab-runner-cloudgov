@@ -14,7 +14,6 @@ module "sandbox-runner" {
 
   cf_org_manager          = var.cf_org_manager
   cf_space_prefix         = var.cf_space_prefix
-  ci_server_url           = "gsa-0.gitlab-dedicated.us"
   ci_server_token         = var.ci_server_token
   docker_hub_user         = var.docker_hub_user
   docker_hub_token        = var.docker_hub_token
