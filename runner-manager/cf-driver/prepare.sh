@@ -69,7 +69,7 @@ setup_proxy_access() {
         --protocol "tcp" --port "8080"
 
     # set environment variables and restart container to pick them up
-    cf set-env "$container_id" https_proxy "$https_proxy"
+    cf set-env "$container_id" https_proxy "$http_proxy"
     cf set-env "$container_id" http_proxy "$http_proxy"
     cf restart "$container_id"
 
@@ -306,14 +306,14 @@ install_dependencies () {
     echo "[cf-driver] Ensuring git and curl are installed"
     cf_ssh "$container_id" \
         'source /etc/profile && (command -v git && command -v curl) || \
-        (command -v apk && https_proxy=$http_proxy apk add git curl) || \
+        (command -v apk && apk add git curl) || \
         (command -v apt-get && apt-get update && apt-get install -y git curl) || \
         (command -v dnf && dnf -y install git curl) || \
         (echo "[cf-driver] Required packages missing and install attempt failed" && exit 1)'
     echo "[cf-driver] Ensuring git-lfs is installed"
     cf_ssh "$container_id" \
         'source /etc/profile && (command -v git-lfs) || \
-        (command -v apk && https_proxy=$http_proxy apk add git-lfs) || \
+        (command -v apk && apk add git-lfs) || \
         (command -v apt-get && apt-get update && apt-get install -y git-lfs) || \
         (command -v dnf && dnf -y install git-lfs) || \
         (echo "[cf-driver] git-lfs install attempt failed, proceeding" && exit 0)'
