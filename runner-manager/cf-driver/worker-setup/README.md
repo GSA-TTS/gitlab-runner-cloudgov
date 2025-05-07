@@ -1,9 +1,8 @@
 # Worker Setup
 
 The worker setup requires a number of standalone binaries, some packaged in
-tarballs. These compiled assets are not currently version controlled or checked
-into LFS because we have not yet established any kind of real pipeline for them.
-Probably I will check them into LFS before this gets merged to main.
+tarballs. Creating the bundle is currently a manual process. Binaries and the git
+tarball should be checked into git-lfs.
 
 ## Assumed directory structure
 
