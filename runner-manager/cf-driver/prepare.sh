@@ -79,7 +79,15 @@ setup_proxy_access() {
         mkdir -p /usr/local/share/ca-certificates && \
         cat /etc/cf-system-certificates/* > /usr/local/share/ca-certificates/cf-system-certificates.crt && \
         (command -v update-ca-certificates && update-ca-certificates) || \
-        ([ -f /etc/ssl/certs/ca-certificates.crt ] && cat /etc/cf-system-certificates/* >> /etc/ssl/certs/ca-certificates.crt) || \
+        ( \
+            [ -f /etc/ssl/certs/ca-certificates.crt ] && \
+            cat /etc/cf-system-certificates/* >> /etc/ssl/certs/ca-certificates.crt \
+        ) || \
+        ( \
+            [ -f /etc/ssl/cert.pem ] && \
+            cat /etc/cf-system-certificates/* >> /etc/ssl/cert.pem && \
+            ln -s /etc/ssl/cert.pem /etc/ssl/certs/ca-certificates.crt \
+        ) || \
         (echo "[cf-driver] Could not update system ca certificates. This may or may not be a problem depending on your base image." && exit 0)'
     cf_ssh "$container_id" \
         'source /etc/profile && \
