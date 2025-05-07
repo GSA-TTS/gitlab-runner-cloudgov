@@ -13,7 +13,7 @@ sed -e '1a\
 source /etc/profile\
 touch /etc/environment\
 source /etc/environment\
-PATH="$HOME/bin:$PATH"\
+PATH="$PATH:/usr/local/bin"\
 ' "$1" >"$1.tmp"
 mv -- "$1.tmp" "$1"
 
