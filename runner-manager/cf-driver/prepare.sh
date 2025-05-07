@@ -86,7 +86,7 @@ setup_proxy_access() {
         (command -v apt-get && echo "Acquire::http::Proxy \"$http_proxy\";" > /etc/apt/apt.conf.d/proxy.conf) || exit 0'
 }
 
-start_container () {
+start_container() {
     container_id="$1"
     image_name="$CUSTOM_ENV_CI_JOB_IMAGE"
 
@@ -117,14 +117,16 @@ start_container () {
     container_entrypoint=$(echo "$img_data" | jq -r '.entrypoint | select(.)')
     container_command=$(echo "$img_data" | jq -r '.command | select(.)')
 
+    push_args+=('-c')
     if [ -n "$container_entrypoint" ] || [ -n "$container_command" ]; then
-        push_args+=('-c')
         if [ -n "$container_entrypoint" ]; then
             push_args+=("${container_entrypoint[@]}")
         fi
         if [ -n "$container_command" ]; then
             push_args+=("${container_command[@]}")
         fi
+    else
+        push_args+=("/bin/sh")
     fi
 
     local docker_user docker_pass
