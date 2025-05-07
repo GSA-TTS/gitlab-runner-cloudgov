@@ -10,14 +10,14 @@ TMPFILES=()
 
 # Prepare a runner executor application in CloudFoundry
 
-currentDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+currentDir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 source "${currentDir}/base.sh" # Get variables from base.
 if [ -z "${WORKER_MEMORY-}" ]; then
     # Some jobs may fail with less than 512M, e.g., `npm i`
     WORKER_MEMORY="768M"
 fi
 
-get_registry_credentials () {
+get_registry_credentials() {
     image_name="$1"
 
     # Note: the regex for non-docker image locations is not air-tight--
@@ -40,23 +40,23 @@ get_registry_credentials () {
     fi
 }
 
-create_temporary_manifest () {
+create_temporary_manifest() {
     # A less leak-prone way to share secrets into the worker which will not
     # be able to parse VCAP_CONFIGURATION
     TMPMANIFEST=$(mktemp /tmp/gitlab-runner-worker-manifest.XXXXXXXXXX)
     TMPFILES+=("$TMPMANIFEST")
     chmod 600 "$TMPMANIFEST"
-    cat "${currentDir}/worker-manifest.yml" > "$TMPMANIFEST"
+    cat "${currentDir}/worker-manifest.yml" >"$TMPMANIFEST"
 
     # Align additional environment variables with YAML at end of source manifest
     local padding="      "
 
     # Add any CI_SERVICE_x variables populated by start_service()
     for v in "${!CI_SERVICE_@}"; do
-        echo "${padding}${v}: \"${!v}\"" >> "$TMPMANIFEST"
+        echo "${padding}${v}: \"${!v}\"" >>"$TMPMANIFEST"
     done
 
-    echo "[cf-driver] [DEBUG] $(wc -l < "$TMPMANIFEST") lines in $TMPMANIFEST"
+    echo "[cf-driver] [DEBUG] $(wc -l <"$TMPMANIFEST") lines in $TMPMANIFEST"
 }
 
 setup_proxy_access() {
@@ -90,7 +90,7 @@ start_container () {
     container_id="$1"
     image_name="$CUSTOM_ENV_CI_JOB_IMAGE"
 
-    if cf app --guid "$container_id" >/dev/null 2>/dev/null ; then
+    if cf app --guid "$container_id" >/dev/null 2>/dev/null; then
         echo '[cf-driver] Found old instance of runner executor, deleting'
         cf delete -f "$container_id"
     fi
@@ -128,7 +128,7 @@ start_container () {
     fi
 
     local docker_user docker_pass
-    read -r docker_user docker_pass <<< "$(get_registry_credentials "$image_name")"
+    read -r docker_user docker_pass <<<"$(get_registry_credentials "$image_name")"
 
     if [ -z "${RUNNER_DEBUG-}" ] || [ "$RUNNER_DEBUG" != "true" ]; then
         push_args+=('--redact-env')
@@ -146,7 +146,7 @@ start_container () {
     setup_proxy_access "$CONTAINER_ID"
 }
 
-start_service () {
+start_service() {
     alias_name="$1"
     container_id="$2"
     image_name="$3"
@@ -162,7 +162,7 @@ start_service () {
         exit 1
     fi
 
-    if cf app --guid "$container_id" >/dev/null 2>/dev/null ; then
+    if cf app --guid "$container_id" >/dev/null 2>/dev/null; then
         echo '[cf-driver] Found old instance of runner service, deleting'
         cf delete -f "$container_id"
     fi
@@ -220,7 +220,7 @@ start_service () {
     fi
 
     local docker_user docker_pass
-    read -r docker_user docker_pass <<< "$(get_registry_credentials "$image_name")"
+    read -r docker_user docker_pass <<<"$(get_registry_credentials "$image_name")"
 
     if [ -n "$docker_user" ] && [ -n "$docker_pass" ]; then
         push_args+=('--docker-username' "${docker_user}")
@@ -235,13 +235,13 @@ start_service () {
     export "CI_SERVICE_${alias_name}"="${container_id}.apps.internal"
 }
 
-start_services () {
+start_services() {
     container_id_base="$1"
     ci_job_services="$2"
 
     if [ -z "$ci_job_services" ]; then
-       echo "[cf-driver] No services defined in ci_job_services - Skipping service startup"
-       return
+        echo "[cf-driver] No services defined in ci_job_services - Skipping service startup"
+        return
     fi
 
     # GitLab Runner creates JOB_RESPONSE_FILE to provide full job context
@@ -269,7 +269,7 @@ start_services () {
     done
 }
 
-allow_access_to_service () {
+allow_access_to_service() {
     source_app="$1"
     destination_service_app="$2"
 
@@ -282,13 +282,13 @@ allow_access_to_service () {
         --protocol "$protocol" --port "$ports"
 }
 
-allow_access_to_services () {
+allow_access_to_services() {
     container_id_base="$1"
     ci_job_services="$2"
 
     if [ -z "$ci_job_services" ]; then
-       echo "[cf-driver] No services defined in ci_job_services - Skipping service allowance"
-       return
+        echo "[cf-driver] No services defined in ci_job_services - Skipping service allowance"
+        return
     fi
 
     for l in $(echo "$ci_job_services" | jq -rc '.[]'); do
@@ -297,7 +297,7 @@ allow_access_to_services () {
     done
 }
 
-install_dependencies () {
+install_dependencies() {
     container_id="$1"
 
     # Build a command to try and install git and git-lfs on common distros.
