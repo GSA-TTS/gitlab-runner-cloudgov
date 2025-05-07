@@ -79,7 +79,7 @@ variable "worker_memory" {
 
 variable "worker_disk_size" {
   type        = string
-  default     = "2G"
+  default     = "3G"
   description = "Worker Disk Size - Unit required (e.g. 512M or 2G)"
 }
 
