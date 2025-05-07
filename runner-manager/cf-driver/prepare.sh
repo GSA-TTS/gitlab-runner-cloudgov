@@ -26,7 +26,7 @@ get_registry_credentials() {
     #       we're working with more a more robust set of language features
     #       and can better parse the image name.
 
-    if echo "$image_name" | grep -q "registry.gitlab.com"; then
+    if echo "$image_name" | grep -q "$CUSTOM_ENV_CI_REGISTRY"; then
         # Detect GitLab CR and use provided environment to authenticate
         echo "$CUSTOM_ENV_CI_REGISTRY_USER" "$CUSTOM_ENV_CI_REGISTRY_PASSWORD"
 
