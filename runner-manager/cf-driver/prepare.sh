@@ -309,47 +309,39 @@ allow_access_to_services() {
 
 install_dependencies() {
     container_id="$1"
+    local dir="$currentDir/worker-setup"
 
-    # Build a command to try and install git and git-lfs on common distros.
-    # Of course, RedHat/UBI will need more help to add RPM repos with the correct
-    # version. TODO - RedHat support
-    echo "[cf-driver] Ensuring git and curl are installed"
+    echo "[cf-driver] Checking if worker bundle exists"
+    if [ ! -e "$dir/bundle.tgz" ]; then
+        echo "[cf-driver] Creating worker bundle"
+        tar czf "$dir/bundle.tgz" --directory="$dir/bundle" .
+    fi
+
+    echo "[cf-driver] Installing tar"
     cf_ssh "$container_id" \
-        'source /etc/profile && (command -v git && command -v curl) || \
-        (command -v apk && apk add git curl) || \
-        (command -v apt-get && apt-get update && apt-get install -y git curl) || \
-        (command -v dnf && dnf -y install git curl) || \
-        (echo "[cf-driver] Required packages missing and install attempt failed" && exit 1)'
-    echo "[cf-driver] Ensuring git-lfs is installed"
+        "cat > \"\$HOME/tar\" && \
+            cd \$HOME &&
+            chmod +x tar && \
+            mkdir bin && \
+            mv tar bin/" \
+        <"$dir/tar"
+
+    echo "[cf-driver] Sending worker bundle"
     cf_ssh "$container_id" \
-        'source /etc/profile && (command -v git-lfs) || \
-        (command -v apk && apk add git-lfs) || \
-        (command -v apt-get && apt-get update && apt-get install -y git-lfs) || \
-        (command -v dnf && dnf -y install git-lfs) || \
-        (echo "[cf-driver] git-lfs install attempt failed, proceeding" && exit 0)'
-
-    # gitlab-runner-helper includes a limited subset of gitlab-runner functionality
-    # plus Git and Git-LFS. https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/index.html
-    #
-    # Install gitlab-runner-helper binary since we need to manage cache/artifacts.
-    # Symlinks gitlab-runner to avoid having to alter more of the executor.
-    # TODO: Pin the version and support more arches than X86_64
-    echo "[cf-driver] Installing gitlab-runner-helper"
-
-    helper_dir='/usr/local/bin'
-    helper_path="$helper_dir/gitlab-runner-helper" # PATH'ed in run.sh
-
-    cf_ssh "$container_id" \
-        "source /etc/profile && (command -v gitlab-runner) ||
-        (mkdir -p ${helper_dir} && \
-        curl -L --output ${helper_path} \
-        'https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/binaries/gitlab-runner-helper/gitlab-runner-helper.x86_64' && \
-        chmod +x ${helper_path} && \
-        ln -s 'gitlab-runner-helper' ${helper_dir}/gitlab-runner)"
+        "cat > \"\$HOME/bundle.tgz\" && \
+            cd \$HOME &&
+            ./bin/tar xf bundle.tgz && \
+            ./bin/tar xf git.tgz && \
+            echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> .glr-env && \
+            echo 'export GIT_EXEC_PATH=\"\$HOME/libexec/git-core\"' >> .glr-env && \
+            echo 'export GIT_TEMPLATE_DIR=\"\$HOME/share/git-core/templates\"' >> .glr-env && \
+            echo 'export GIT_SSL_CAINFO=\"\$SSL_CERT_FILE\"' >> .glr-env && \
+            echo 'export GIT_PROXY_SSL_CAINFO=\"\$SSL_CERT_FILE\"' >> .glr-env" \
+        <"$dir/bundle.tgz"
 }
 
 echo "[cf-driver] re-auth to cloud.gov"
-cf orgs &> /dev/null || (cf auth && cf target -o "$WORKER_ORG" -s "$WORKER_SPACE")
+cf orgs &>/dev/null || (cf auth && cf target -o "$WORKER_ORG" -s "$WORKER_SPACE")
 
 if [ "$RUNNER_DEBUG" == "true" ]; then
     echo "[cf-driver] JOB_RESPONSE_FILE ======================================="

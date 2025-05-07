@@ -13,6 +13,7 @@ sed -e '1a\
 source /etc/profile\
 touch /etc/environment\
 source /etc/environment\
+source "$HOME/.glr-env"\
 PATH="$PATH:/usr/local/bin"\
 ' "$1" >"$1.tmp"
 mv -- "$1.tmp" "$1"
