@@ -10,14 +10,14 @@ TMPFILES=()
 
 # Prepare a runner executor application in CloudFoundry
 
-currentDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+currentDir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 source "${currentDir}/base.sh" # Get variables from base.
 if [ -z "${WORKER_MEMORY-}" ]; then
     # Some jobs may fail with less than 512M, e.g., `npm i`
     WORKER_MEMORY="768M"
 fi
 
-get_registry_credentials () {
+get_registry_credentials() {
     image_name="$1"
 
     # Note: the regex for non-docker image locations is not air-tight--
@@ -26,7 +26,7 @@ get_registry_credentials () {
     #       we're working with more a more robust set of language features
     #       and can better parse the image name.
 
-    if echo "$image_name" | grep -q "registry.gitlab.com"; then
+    if echo "$image_name" | grep -q "$CUSTOM_ENV_CI_REGISTRY"; then
         # Detect GitLab CR and use provided environment to authenticate
         echo "$CUSTOM_ENV_CI_REGISTRY_USER" "$CUSTOM_ENV_CI_REGISTRY_PASSWORD"
 
@@ -40,23 +40,23 @@ get_registry_credentials () {
     fi
 }
 
-create_temporary_manifest () {
+create_temporary_manifest() {
     # A less leak-prone way to share secrets into the worker which will not
     # be able to parse VCAP_CONFIGURATION
     TMPMANIFEST=$(mktemp /tmp/gitlab-runner-worker-manifest.XXXXXXXXXX)
     TMPFILES+=("$TMPMANIFEST")
     chmod 600 "$TMPMANIFEST"
-    cat "${currentDir}/worker-manifest.yml" > "$TMPMANIFEST"
+    cat "${currentDir}/worker-manifest.yml" >"$TMPMANIFEST"
 
     # Align additional environment variables with YAML at end of source manifest
     local padding="      "
 
     # Add any CI_SERVICE_x variables populated by start_service()
     for v in "${!CI_SERVICE_@}"; do
-        echo "${padding}${v}: \"${!v}\"" >> "$TMPMANIFEST"
+        echo "${padding}${v}: \"${!v}\"" >>"$TMPMANIFEST"
     done
 
-    echo "[cf-driver] [DEBUG] $(wc -l < "$TMPMANIFEST") lines in $TMPMANIFEST"
+    echo "[cf-driver] [DEBUG] $(wc -l <"$TMPMANIFEST") lines in $TMPMANIFEST"
 }
 
 setup_proxy_access() {
@@ -79,18 +79,26 @@ setup_proxy_access() {
         mkdir -p /usr/local/share/ca-certificates && \
         cat /etc/cf-system-certificates/* > /usr/local/share/ca-certificates/cf-system-certificates.crt && \
         (command -v update-ca-certificates && update-ca-certificates) || \
-        ([ -f /etc/ssl/certs/ca-certificates.crt ] && cat /etc/cf-system-certificates/* >> /etc/ssl/certs/ca-certificates.crt) || \
+        ( \
+            [ -f /etc/ssl/certs/ca-certificates.crt ] && \
+            cat /etc/cf-system-certificates/* >> /etc/ssl/certs/ca-certificates.crt \
+        ) || \
+        ( \
+            [ -f /etc/ssl/cert.pem ] && \
+            cat /etc/cf-system-certificates/* >> /etc/ssl/cert.pem && \
+            ln -s /etc/ssl/cert.pem /etc/ssl/certs/ca-certificates.crt \
+        ) || \
         (echo "[cf-driver] Could not update system ca certificates. This may or may not be a problem depending on your base image." && exit 0)'
     cf_ssh "$container_id" \
         'source /etc/profile && \
         (command -v apt-get && echo "Acquire::http::Proxy \"$http_proxy\";" > /etc/apt/apt.conf.d/proxy.conf) || exit 0'
 }
 
-start_container () {
+start_container() {
     container_id="$1"
     image_name="$CUSTOM_ENV_CI_JOB_IMAGE"
 
-    if cf app --guid "$container_id" >/dev/null 2>/dev/null ; then
+    if cf app --guid "$container_id" >/dev/null 2>/dev/null; then
         echo '[cf-driver] Found old instance of runner executor, deleting'
         cf delete -f "$container_id"
     fi
@@ -117,18 +125,20 @@ start_container () {
     container_entrypoint=$(echo "$img_data" | jq -r '.entrypoint | select(.)')
     container_command=$(echo "$img_data" | jq -r '.command | select(.)')
 
+    push_args+=('-c')
     if [ -n "$container_entrypoint" ] || [ -n "$container_command" ]; then
-        push_args+=('-c')
         if [ -n "$container_entrypoint" ]; then
             push_args+=("${container_entrypoint[@]}")
         fi
         if [ -n "$container_command" ]; then
             push_args+=("${container_command[@]}")
         fi
+    else
+        push_args+=("/bin/sh")
     fi
 
     local docker_user docker_pass
-    read -r docker_user docker_pass <<< "$(get_registry_credentials "$image_name")"
+    read -r docker_user docker_pass <<<"$(get_registry_credentials "$image_name")"
 
     if [ -z "${RUNNER_DEBUG-}" ] || [ "$RUNNER_DEBUG" != "true" ]; then
         push_args+=('--redact-env')
@@ -146,7 +156,7 @@ start_container () {
     setup_proxy_access "$CONTAINER_ID"
 }
 
-start_service () {
+start_service() {
     alias_name="$1"
     container_id="$2"
     image_name="$3"
@@ -162,7 +172,7 @@ start_service () {
         exit 1
     fi
 
-    if cf app --guid "$container_id" >/dev/null 2>/dev/null ; then
+    if cf app --guid "$container_id" >/dev/null 2>/dev/null; then
         echo '[cf-driver] Found old instance of runner service, deleting'
         cf delete -f "$container_id"
     fi
@@ -220,7 +230,7 @@ start_service () {
     fi
 
     local docker_user docker_pass
-    read -r docker_user docker_pass <<< "$(get_registry_credentials "$image_name")"
+    read -r docker_user docker_pass <<<"$(get_registry_credentials "$image_name")"
 
     if [ -n "$docker_user" ] && [ -n "$docker_pass" ]; then
         push_args+=('--docker-username' "${docker_user}")
@@ -235,13 +245,13 @@ start_service () {
     export "CI_SERVICE_${alias_name}"="${container_id}.apps.internal"
 }
 
-start_services () {
+start_services() {
     container_id_base="$1"
     ci_job_services="$2"
 
     if [ -z "$ci_job_services" ]; then
-       echo "[cf-driver] No services defined in ci_job_services - Skipping service startup"
-       return
+        echo "[cf-driver] No services defined in ci_job_services - Skipping service startup"
+        return
     fi
 
     # GitLab Runner creates JOB_RESPONSE_FILE to provide full job context
@@ -269,7 +279,7 @@ start_services () {
     done
 }
 
-allow_access_to_service () {
+allow_access_to_service() {
     source_app="$1"
     destination_service_app="$2"
 
@@ -282,13 +292,13 @@ allow_access_to_service () {
         --protocol "$protocol" --port "$ports"
 }
 
-allow_access_to_services () {
+allow_access_to_services() {
     container_id_base="$1"
     ci_job_services="$2"
 
     if [ -z "$ci_job_services" ]; then
-       echo "[cf-driver] No services defined in ci_job_services - Skipping service allowance"
-       return
+        echo "[cf-driver] No services defined in ci_job_services - Skipping service allowance"
+        return
     fi
 
     for l in $(echo "$ci_job_services" | jq -rc '.[]'); do
@@ -297,49 +307,41 @@ allow_access_to_services () {
     done
 }
 
-install_dependencies () {
+install_dependencies() {
     container_id="$1"
+    local dir="$currentDir/worker-setup"
 
-    # Build a command to try and install git and git-lfs on common distros.
-    # Of course, RedHat/UBI will need more help to add RPM repos with the correct
-    # version. TODO - RedHat support
-    echo "[cf-driver] Ensuring git and curl are installed"
+    echo "[cf-driver] Checking if worker bundle exists"
+    if [ ! -e "$dir/bundle.tgz" ]; then
+        echo "[cf-driver] Creating worker bundle"
+        tar czf "$dir/bundle.tgz" --directory="$dir/bundle" .
+    fi
+
+    echo "[cf-driver] Installing tar"
     cf_ssh "$container_id" \
-        'source /etc/profile && (command -v git && command -v curl) || \
-        (command -v apk && apk add git curl) || \
-        (command -v apt-get && apt-get update && apt-get install -y git curl) || \
-        (command -v dnf && dnf -y install git curl) || \
-        (echo "[cf-driver] Required packages missing and install attempt failed" && exit 1)'
-    echo "[cf-driver] Ensuring git-lfs is installed"
+        "cat > \"\$HOME/tar\" && \
+            cd \$HOME &&
+            chmod +x tar && \
+            mkdir bin && \
+            mv tar bin/" \
+        <"$dir/tar"
+
+    echo "[cf-driver] Sending worker bundle"
     cf_ssh "$container_id" \
-        'source /etc/profile && (command -v git-lfs) || \
-        (command -v apk && apk add git-lfs) || \
-        (command -v apt-get && apt-get update && apt-get install -y git-lfs) || \
-        (command -v dnf && dnf -y install git-lfs) || \
-        (echo "[cf-driver] git-lfs install attempt failed, proceeding" && exit 0)'
-
-    # gitlab-runner-helper includes a limited subset of gitlab-runner functionality
-    # plus Git and Git-LFS. https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/index.html
-    #
-    # Install gitlab-runner-helper binary since we need to manage cache/artifacts.
-    # Symlinks gitlab-runner to avoid having to alter more of the executor.
-    # TODO: Pin the version and support more arches than X86_64
-    echo "[cf-driver] Installing gitlab-runner-helper"
-
-    helper_dir='/usr/local/bin'
-    helper_path="$helper_dir/gitlab-runner-helper" # PATH'ed in run.sh
-
-    cf_ssh "$container_id" \
-        "source /etc/profile && (command -v gitlab-runner) ||
-        (mkdir -p ${helper_dir} && \
-        curl -L --output ${helper_path} \
-        'https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/binaries/gitlab-runner-helper/gitlab-runner-helper.x86_64' && \
-        chmod +x ${helper_path} && \
-        ln -s 'gitlab-runner-helper' ${helper_dir}/gitlab-runner)"
+        "cat > \"\$HOME/bundle.tgz\" && \
+            cd \$HOME &&
+            ./bin/tar xf bundle.tgz && \
+            ./bin/tar xf git.tgz && \
+            echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> .glr-env && \
+            echo 'export GIT_EXEC_PATH=\"\$HOME/libexec/git-core\"' >> .glr-env && \
+            echo 'export GIT_TEMPLATE_DIR=\"\$HOME/share/git-core/templates\"' >> .glr-env && \
+            echo 'export GIT_SSL_CAINFO=\"\$SSL_CERT_FILE\"' >> .glr-env && \
+            echo 'export GIT_PROXY_SSL_CAINFO=\"\$SSL_CERT_FILE\"' >> .glr-env" \
+        <"$dir/bundle.tgz"
 }
 
 echo "[cf-driver] re-auth to cloud.gov"
-cf orgs &> /dev/null || (cf auth && cf target -o "$WORKER_ORG" -s "$WORKER_SPACE")
+cf orgs &>/dev/null || (cf auth && cf target -o "$WORKER_ORG" -s "$WORKER_SPACE")
 
 if [ "$RUNNER_DEBUG" == "true" ]; then
     echo "[cf-driver] JOB_RESPONSE_FILE ======================================="
