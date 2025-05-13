@@ -55,6 +55,9 @@ create_temporary_manifest() {
     for v in "${!CI_SERVICE_@}"; do
         echo "${padding}${v}: \"${!v}\"" >>"$TMPMANIFEST"
     done
+    for v in "${!CI_SERVICE_ID_@}"; do
+        echo "${padding}${v}: \"${!v}\"" >>"$TMPMANIFEST"
+    done
 
     echo "[cf-driver] [DEBUG] $(wc -l <"$TMPMANIFEST") lines in $TMPMANIFEST"
 }
@@ -250,7 +253,12 @@ start_service() {
 
     # Map route and export a FQDN. We assume apps.internal as the domain.
     cf map-route "$container_id" apps.internal --hostname "$container_id"
+
+    # For use in inter-container communication
+    # TODO: propose a devtools/cloudgov 'namespace'
+    # TODO: propose rename to, e.g., CG_APP_HOST_X and CG_APP_ID_X
     export "CI_SERVICE_${alias_name}"="${container_id}.apps.internal"
+    export "CI_SERVICE_ID_${alias_name}"="${container_id}"
 }
 
 start_services() {
