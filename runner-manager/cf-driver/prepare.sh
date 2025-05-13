@@ -311,33 +311,11 @@ install_dependencies() {
     container_id="$1"
     local dir="$currentDir/worker-setup"
 
-    echo "[cf-driver] Checking if worker bundle exists"
-    if [ ! -e "$dir/bundle.tgz" ]; then
-        echo "[cf-driver] Creating worker bundle"
-        tar czf "$dir/bundle.tgz" --directory="$dir/bundle" .
-    fi
+    echo "[cf-driver] Copying bundle"
+    cf_scpr "$container_id" "$dir/bundle"
 
-    echo "[cf-driver] Installing tar"
-    cf_ssh "$container_id" \
-        "cat > \"\$HOME/tar\" && \
-            cd \$HOME &&
-            chmod +x tar && \
-            mkdir bin && \
-            mv tar bin/" \
-        <"$dir/tar"
-
-    echo "[cf-driver] Sending worker bundle"
-    cf_ssh "$container_id" \
-        "cat > \"\$HOME/bundle.tgz\" && \
-            cd \$HOME &&
-            ./bin/tar xf bundle.tgz && \
-            ./bin/tar xf git.tgz && \
-            echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> .glr-env && \
-            echo 'export GIT_EXEC_PATH=\"\$HOME/libexec/git-core\"' >> .glr-env && \
-            echo 'export GIT_TEMPLATE_DIR=\"\$HOME/share/git-core/templates\"' >> .glr-env && \
-            echo 'export GIT_SSL_CAINFO=\"\$SSL_CERT_FILE\"' >> .glr-env && \
-            echo 'export GIT_PROXY_SSL_CAINFO=\"\$SSL_CERT_FILE\"' >> .glr-env" \
-        <"$dir/bundle.tgz"
+    echo "[cf-driver] Installing bundle"
+    cf_ssh "$container_id" "./bundle/glrw-setup.sh"
 }
 
 echo "[cf-driver] re-auth to cloud.gov"

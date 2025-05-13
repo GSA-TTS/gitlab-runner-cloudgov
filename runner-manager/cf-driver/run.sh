@@ -8,13 +8,10 @@ source "${currentDir}/base.sh"
 printf "[cf-driver] Using SSH to connect to %s and run '%s' step\n" "$CONTAINER_ID" "$2"
 
 # Add line below script's shebang to source
-# /etc/profile, etc/environment & the $HOME/bin
+# the profile we created during the prepare step.
+# shellcheck disable=2016
 sed -e '1a\
-source /etc/profile\
-touch /etc/environment\
-source /etc/environment\
-source "$HOME/.glr-env"\
-PATH="$PATH:/usr/local/bin"\
+source "$HOME/glrw-profile.sh"\
 ' "$1" >"$1.tmp"
 mv -- "$1.tmp" "$1"
 
