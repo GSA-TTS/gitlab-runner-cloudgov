@@ -276,8 +276,8 @@ start_services() {
         container_id="${container_id_base}-svc-${alias_name}"
 
         # Using jq -r to allow entrypoint, command, and variables to be empty
-        service_entrypoint=$(echo "$l" | jq -r '.entrypoint | select(.)')
-        service_command=$(echo "$l" | jq -r '.command | select(.)')
+        service_entrypoint=$(echo "$l" | jq -r '.entrypoint | select(.)[]')
+        service_command=$(echo "$l" | jq -r '.command | select(.)[]')
 
         # start_service will further process the variables, so just compact it
         service_vars=$(echo "$l" | jq -r '.variables[]? | [.key, .value] | @sh')
