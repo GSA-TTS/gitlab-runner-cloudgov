@@ -7,6 +7,11 @@
 # used to prefix service names.
 CONTAINER_ID="glrw-r$CUSTOM_ENV_CI_RUNNER_ID-p$CUSTOM_ENV_CI_PROJECT_ID-c$CUSTOM_ENV_CI_CONCURRENT_PROJECT_ID-j$CUSTOM_ENV_CI_JOB_ID"
 
+# Set RUNNER_DEBUG if missing and set through CI settings
+if [ "${CUSTOM_ENV_RUNNER_DEBUG:-}" == "true" ]; then
+    RUNNER_DEBUG="true"
+fi
+
 # Set a fallback if not set but complain
 if [ -z "$DEFAULT_JOB_IMAGE" ]; then
     DEFAULT_JOB_IMAGE="ubuntu:24.04"
