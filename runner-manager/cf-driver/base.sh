@@ -12,6 +12,11 @@ if [ "${CUSTOM_ENV_RUNNER_DEBUG:-}" == "true" ]; then
     RUNNER_DEBUG="true"
 fi
 
+# Set xtrace, log commands to aid debugging
+if [ "$RUNNER_DEBUG" == "true" ]; then
+    set -x
+fi
+
 # Set a fallback if not set but complain
 if [ -z "$DEFAULT_JOB_IMAGE" ]; then
     DEFAULT_JOB_IMAGE="ubuntu:24.04"
