@@ -92,9 +92,6 @@ setup_proxy_access() {
             ln -s /etc/ssl/cert.pem /etc/ssl/certs/ca-certificates.crt \
         ) || \
         (echo "[cf-driver] Could not update system ca certificates. This may or may not be a problem depending on your base image." && exit 0)'
-    cf_ssh "$container_id" \
-        'source /etc/profile && \
-        (command -v apt-get && echo "Acquire::http::Proxy \"$http_proxy\";" > /etc/apt/apt.conf.d/proxy.conf) || exit 0'
 }
 
 get_start_command() {
