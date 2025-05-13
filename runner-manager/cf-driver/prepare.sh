@@ -94,6 +94,26 @@ setup_proxy_access() {
         (command -v apt-get && echo "Acquire::http::Proxy \"$http_proxy\";" > /etc/apt/apt.conf.d/proxy.conf) || exit 0'
 }
 
+get_start_command() {
+    local -n args=$1
+    entry="$2"
+    command="$3"
+    sh_fallback="${4:-false}" # some services may fail w/ sh fallback
+
+    if [ -z "$entry" ] && [ -z "$command" ]; then
+        $sh_fallback && args+=('-c' '/bin/sh')
+        return 0
+    fi
+
+    args+=('-c')
+    if [ -n "$entry" ]; then
+        args+=("${entry[@]}")
+    fi
+    if [ -n "$command" ]; then
+        args+=("${command[@]}")
+    fi
+}
+
 start_container() {
     container_id="$1"
     image_name="$CUSTOM_ENV_CI_JOB_IMAGE"
@@ -111,7 +131,7 @@ start_container() {
     if [ -z "$worker_disk" ]; then
         worker_disk=$WORKER_DISK_SIZE
     fi
-    push_args=(
+    local push_args=(
         "$container_id"
         -f "$TMPMANIFEST"
         -m "$worker_memory"
@@ -124,18 +144,7 @@ start_container() {
     img_data=$(jq -rc '.image' "$JOB_RESPONSE_FILE")
     container_entrypoint=$(echo "$img_data" | jq -r '.entrypoint | select(.)')
     container_command=$(echo "$img_data" | jq -r '.command | select(.)')
-
-    push_args+=('-c')
-    if [ -n "$container_entrypoint" ] || [ -n "$container_command" ]; then
-        if [ -n "$container_entrypoint" ]; then
-            push_args+=("${container_entrypoint[@]}")
-        fi
-        if [ -n "$container_command" ]; then
-            push_args+=("${container_command[@]}")
-        fi
-    else
-        push_args+=("/bin/sh")
-    fi
+    get_start_command push_args "${container_entrypoint[@]}" "${container_command[@]}" true
 
     local docker_user docker_pass
     read -r docker_user docker_pass <<<"$(get_registry_credentials "$image_name")"
@@ -150,6 +159,7 @@ start_container() {
     fi
 
     cf push "${push_args[@]}"
+
     # this must be the very first step after `cf push` as it performs a
     # container restart which will wipe out any other changes made via `cf_ssh`
     echo "[cf-driver] Setting up egress proxy access for $CONTAINER_ID"
@@ -177,7 +187,7 @@ start_service() {
         cf delete -f "$container_id"
     fi
 
-    push_args=(
+    local push_args=(
         "$container_id"
         '-m' "$WORKER_MEMORY"
         '--docker-image' "$image_name"
@@ -225,9 +235,7 @@ start_service() {
         fi
     fi
 
-    if [ -n "$service_entrypoint" ] || [ -n "$service_command" ]; then
-        push_args+=('-c' "${service_entrypoint[@]}" "${service_command[@]}")
-    fi
+    get_start_command push_args "${service_entrypoint[@]}" "${service_command[@]}"
 
     local docker_user docker_pass
     read -r docker_user docker_pass <<<"$(get_registry_credentials "$image_name")"
