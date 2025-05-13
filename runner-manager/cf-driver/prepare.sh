@@ -72,6 +72,7 @@ setup_proxy_access() {
         --protocol "tcp" --port "8080"
 
     # set environment variables and restart container to pick them up
+    # shellcheck disable=SC2154 # http_proxy defined in .profile
     cf set-env "$container_id" https_proxy "$http_proxy"
     cf set-env "$container_id" http_proxy "$http_proxy"
     cf restart "$container_id"
