@@ -16,6 +16,11 @@ source "$HOME/glrw-profile.sh"\
 mv -- "$1.tmp" "$1"
 
 if [ -n "${RUNNER_DEBUG-}" ] && [ "$RUNNER_DEBUG" == "true" ]; then
+    if [ "$2" == "cleanup_file_variables" ]; then
+        printf "[cf-driver] RUNNER_DEBUG: skipping cleanup_file_variables"
+        exit 0
+    fi
+
     # DANGER: There may be sensitive information in this output.
     # Generated job logs should be removed after this is used.
     printf "[cf-driver] RUNNER_DEBUG: About to run the following:\n=========\n"
