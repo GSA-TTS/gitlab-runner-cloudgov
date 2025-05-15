@@ -59,6 +59,15 @@ create_temporary_manifest() {
         echo "${padding}${v}: \"${!v}\"" >>"$TMPMANIFEST"
     done
 
+    # set env var with egress-proxy URL
+    #
+    # This will be exported to http(s)_proxy on the worker in
+    # glrw-profile.sh, so it's important to source that whenever
+    # accessing the worker.
+    #
+    # shellcheck disable=SC2154 # http_proxy defined in .profile
+    echo "${padding}egress_proxy: \"$http_proxy\"" >>"$TMPMANIFEST"
+
     echo "[cf-driver] [DEBUG] $(wc -l <"$TMPMANIFEST") lines in $TMPMANIFEST"
 }
 
@@ -70,29 +79,6 @@ setup_proxy_access() {
         --protocol "tcp" --port "61443"
     cf add-network-policy "$container_id" "$PROXY_APP_NAME" -s "$PROXY_SPACE" \
         --protocol "tcp" --port "8080"
-
-    # set environment variables and restart container to pick them up
-    # shellcheck disable=SC2154 # http_proxy defined in .profile
-    cf set-env "$container_id" https_proxy "$http_proxy"
-    cf set-env "$container_id" http_proxy "$http_proxy"
-    cf restart "$container_id"
-
-    # update ssl certs
-    cf_ssh "$container_id" \
-        'source /etc/profile && \
-        mkdir -p /usr/local/share/ca-certificates && \
-        cat /etc/cf-system-certificates/* > /usr/local/share/ca-certificates/cf-system-certificates.crt && \
-        (command -v update-ca-certificates && update-ca-certificates) || \
-        ( \
-            [ -f /etc/ssl/certs/ca-certificates.crt ] && \
-            cat /etc/cf-system-certificates/* >> /etc/ssl/certs/ca-certificates.crt \
-        ) || \
-        ( \
-            [ -f /etc/ssl/cert.pem ] && \
-            cat /etc/cf-system-certificates/* >> /etc/ssl/cert.pem && \
-            ln -s /etc/ssl/cert.pem /etc/ssl/certs/ca-certificates.crt \
-        ) || \
-        (echo "[cf-driver] Could not update system ca certificates. This may or may not be a problem depending on your base image." && exit 0)'
 }
 
 get_start_command() {
@@ -323,12 +309,28 @@ allow_access_to_services() {
 
 install_dependencies() {
     container_id="$1"
-    local dir="$currentDir/worker-setup"
+    local bundle="$currentDir/worker-setup/bundle"
+    local certs_lock="$currentDir/certs.lock"
 
-    echo "[cf-driver] Copying bundle"
-    cf_scpr "$container_id" "$dir/bundle"
+    echo "[cf-driver] Checking for certs in bundle"
+    if [ ! -f "$bundle/certs.tgz" ]; then
+        echo "[cf-driver] Attempting to create cert bundle"
 
-    echo "[cf-driver] Installing bundle"
+        if [ -f "$certs_lock" ]; then
+            echo "[cf-driver] cert bundling already in progress"
+            sleep 5 && install_dependencies "$container_id"
+        else
+            touch "$certs_lock"
+            cp -rL /etc/ssl/certs/ "$currentDir/" # -L to dereference links
+            tar czf "$bundle/certs.tgz" --directory="$currentDir/certs" .
+            rm "$certs_lock"
+        fi
+    fi
+
+    echo "[cf-driver] Copying bundle to worker"
+    cf_scpr "$container_id" "$bundle"
+
+    echo "[cf-driver] Running worker setup"
     cf_ssh "$container_id" "./bundle/glrw-setup.sh"
 }
 
