@@ -25,6 +25,20 @@ tar xf certs.tgz --directory certs
 
 ca_dir=/etc/ssl/certs
 sys_crts=/etc/cf-system-certificates
+custom_dir=/usr/local/share/ca-certificates
+update_cmd=update-ca-certificates
+
+# If we have access to the debian/ubuntu custom CA directory
+# and the `update-ca-certificates` command, then we can just
+# run that and be done.
+if [ ! -e "$custom_dir" ]; then
+    mkdir -p "$custom_dir" ||
+        echo "[glrw-setup] $custom_dir unfound and could not create"
+fi
+if [ -w "$custom_dir" ] && command -v $update_cmd >/dev/null; then
+    cp "$sys_crts"/* "$custom_dir"
+    $update_cmd && exit
+fi
 
 # Some systems & software will look for a CA directory.
 #
