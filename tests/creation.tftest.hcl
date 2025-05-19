@@ -96,7 +96,6 @@ run "test-system-creation" {
       "*.ubuntu.com",
       "dl-cdn.alpinelinux.org",
       "*.fedoraproject.org",
-      "s3.dualstack.us-east-1.amazonaws.com",
       "*.rubygems.org",
       "api.example.gov",
       "objects.githubusercontent.com",

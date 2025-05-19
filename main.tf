@@ -1,13 +1,12 @@
 locals {
   # the list of egress hosts to allow for runner-manager and always needed by runner workers
   devtools_egress_allowlist = [
-    "*.fr.cloud.gov",                      # cf-cli calls from manager
-    var.ci_server_url,                     # connections from both manager and workers
-    "deb.debian.org",                      # debian runner dependencies install
-    "*.ubuntu.com",                        # ubuntu runner dependencies install
-    "dl-cdn.alpinelinux.org",              # alpine runner dependencies install
-    "*.fedoraproject.org",                 # fedora runner dependencies install
-    "s3.dualstack.us-east-1.amazonaws.com" # gitlab-runner-helper source for workers
+    "*.fr.cloud.gov",         # cf-cli calls from manager
+    var.ci_server_url,        # connections from both manager and workers
+    "deb.debian.org",         # debian runner dependencies install
+    "*.ubuntu.com",           # ubuntu runner dependencies install
+    "dl-cdn.alpinelinux.org", # alpine runner dependencies install
+    "*.fedoraproject.org"     # fedora runner dependencies install
   ]
   technology_allowlist = flatten([for t in var.program_technologies : local.allowlist_map[t]])
   proxy_allowlist      = setunion(local.devtools_egress_allowlist, var.worker_egress_allowlist, local.technology_allowlist)
