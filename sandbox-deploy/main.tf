@@ -23,6 +23,6 @@ module "sandbox-runner" {
   developer_emails        = var.developer_emails
   worker_disk_size        = var.worker_disk_size
   program_technologies    = var.program_technologies
-  worker_egress_allowlist = var.worker_egress_allowlist
+  worker_egress_allowlist = setunion(["*.fr-stage.cloud.gov"], var.worker_egress_allowlist)
   allow_ssh               = var.allow_ssh
 }
