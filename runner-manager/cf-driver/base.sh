@@ -14,7 +14,20 @@ fi
 
 # Set xtrace, log commands to aid debugging
 if [ "$RUNNER_DEBUG" == "true" ]; then
-    set -x
+    debug_allowed="false"
+
+    for email in $ALLOWED_DEBUG_USERS; do
+        if [ "$email" == "${CUSTOM_ENV_GITLAB_USER_EMAIL}" ]; then
+            debug_allowed="true"
+            break
+        fi
+    done
+
+    if [ $debug_allowed == "true" ]; then
+        set -x
+    else
+        RUNNER_DEBUG="false"
+    fi
 fi
 
 # Set a fallback if not set but complain

@@ -125,6 +125,7 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     # https://docs.gitlab.com/runner/faq/#enable-debug-logging-mode
     # and ensuring job logs are removed to avoid leaking secrets.
     RUNNER_DEBUG                 = "false"
+    ALLOWED_DEBUG_USERS          = join(" ", var.developer_emails)
     CUSTOM_ENV_PRESERVE_WORKER   = "false"
     CUSTOM_ENV_PRESERVE_SERVICES = "false"
   }
