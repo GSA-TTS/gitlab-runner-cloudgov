@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -eu
+
 # Move to bundle dir
 cd "${0%/*}" || exit 1
 dir=$(pwd -P)
