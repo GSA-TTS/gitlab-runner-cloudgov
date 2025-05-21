@@ -79,6 +79,10 @@ setup_proxy_access() {
         --protocol "tcp" --port "61443"
     cf add-network-policy "$container_id" "$PROXY_APP_NAME" -s "$PROXY_SPACE" \
         --protocol "tcp" --port "8080"
+
+    # TODO: temporary, replace with looping port test.
+    # See https://github.com/GSA-TTS/gitlab-runner-cloudgov/issues/116
+    sleep 5
 }
 
 get_start_command() {
