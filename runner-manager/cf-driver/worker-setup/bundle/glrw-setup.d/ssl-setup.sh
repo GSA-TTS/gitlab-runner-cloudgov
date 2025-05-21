@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -eu
+
 # extract fallback ssl cert bundle
 mkdir certs
 tar xf certs.tgz --directory certs
@@ -17,8 +19,13 @@ if [ ! -e "$custom_dir" ]; then
         echo "[glrw-setup] $custom_dir unfound and could not create"
 fi
 if [ -w "$custom_dir" ] && command -v $update_cmd >/dev/null; then
-    cp "$sys_crts"/* "$custom_dir"
-    $update_cmd && exit
+    echo "[glrw-setup] attempting to update CA certs with $update_cmd"
+    (
+        cp "$sys_crts"/* "$custom_dir" &&
+            $update_cmd &&
+            ln -s /etc/ssl/certs/ca-certificates.crt /etc/ssl/cert.pem
+    ) || echo "[glrw-setup] failed update with $update_cmd"
+    exit
 fi
 
 # Some systems & software will look for a CA directory.
