@@ -313,8 +313,13 @@ allow_access_to_services() {
 
 install_dependencies() {
     container_id="$1"
+    declare -i tries="${2:-1}"
     local bundle="$currentDir/worker-setup/bundle"
     local certs_lock="$currentDir/certs.lock"
+
+    if [ $tries -gt 3 ]; then
+        echo "[cf-driver] Failed to get certs after $tries tries"
+    fi
 
     echo "[cf-driver] Checking for certs in bundle"
     if [ ! -f "$bundle/certs.tgz" ]; then
@@ -322,11 +327,15 @@ install_dependencies() {
 
         if [ -f "$certs_lock" ]; then
             echo "[cf-driver] cert bundling already in progress"
-            sleep 5 && install_dependencies "$container_id"
+            sleep 5 && install_dependencies "$container_id" $tries+=1
         else
             touch "$certs_lock"
-            cp -rL /etc/ssl/certs/ "$currentDir/" # -L to dereference links
-            tar czf "$bundle/certs.tgz" --directory="$currentDir/certs" .
+            (
+                cp -rL /etc/ssl/certs/ "$currentDir/" # -L to dereference links
+                tar czf "$bundle/certs.tgz" --directory="$currentDir/certs" .
+            ) &&
+                echo "[cf-driver] made cert bundle" ||
+                echo "[cf-driver] failed to make cert bundle"
             rm "$certs_lock"
         fi
     fi
