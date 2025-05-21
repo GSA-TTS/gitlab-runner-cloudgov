@@ -12,6 +12,7 @@ provider "cloudfoundry" {}
 module "sandbox-runner" {
   source = "../"
 
+  cg_ssh_host             = "ssh.fr-stage.cloud.gov"
   cf_org_name             = "cloud-gov-devtools-development"
   cf_org_manager          = var.cf_org_manager
   cf_space_prefix         = var.cf_space_prefix

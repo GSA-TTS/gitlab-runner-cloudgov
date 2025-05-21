@@ -120,6 +120,7 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     PROXY_SPACE               = module.egress_space.space_name
     CF_USERNAME               = local.sa_cf_username
     CF_PASSWORD               = local.sa_cf_password
+    CG_SSH_HOST               = var.cg_ssh_host
     DOCKER_HUB_USER           = var.docker_hub_user
     DOCKER_HUB_TOKEN          = var.docker_hub_token
     # DANGER: Do not set RUNNER_DEBUG to true without reading
