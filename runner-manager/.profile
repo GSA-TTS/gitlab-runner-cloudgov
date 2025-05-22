@@ -25,7 +25,7 @@ function setup_proxy_access() {
         ssh_proxy_port=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".http_port")
         mkdir -p /home/vcap/.ssh
         cat << EOC > /home/vcap/.ssh/config
-Host ssh.fr.cloud.gov
+Host $CG_SSH_HOST
     StrictHostKeyChecking accept-new
     ProxyCommand corkscrew $ssh_proxy_host $ssh_proxy_port %h %p /home/vcap/.ssh/ssh_proxy.auth
 EOC

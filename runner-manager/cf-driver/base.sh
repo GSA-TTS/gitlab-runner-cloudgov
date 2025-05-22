@@ -48,7 +48,7 @@ cf_ssh() {
     container_id="$1"
     command="$2"
     app_guid=$(cf app "$container_id" --guid)
-    SSHPASS=$(cf ssh-code) sshpass -e ssh -p 2222 -T "cf:$app_guid/0@ssh.fr.cloud.gov" "$command"
+    SSHPASS=$(cf ssh-code) sshpass -e ssh -p 2222 -T "cf:$app_guid/0@$CG_SSH_HOST" "$command"
 }
 
 cf_scpr() {
@@ -56,5 +56,5 @@ cf_scpr() {
     src_dir="$2"
     dst_dir="${3:-}"
     app_guid=$(cf app "$container_id" --guid)
-    SSHPASS=$(cf ssh-code) sshpass -e scp -r -P 2222 -o User="cf:$app_guid/0" "$src_dir" "ssh.fr.cloud.gov:$dst_dir"
+    SSHPASS=$(cf ssh-code) sshpass -e scp -r -P 2222 -o User="cf:$app_guid/0" "$src_dir" "$CG_SSH_HOST:$dst_dir"
 }

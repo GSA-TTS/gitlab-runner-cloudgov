@@ -15,6 +15,12 @@ variable "auditor_emails" {
   default     = []
 }
 
+variable "cg_ssh_host" {
+  type        = string
+  default     = "ssh.fr.cloud.gov"
+  description = "cloud.gov ssh jumpbox domain name"
+}
+
 variable "cf_org_name" {
   type        = string
   default     = "gsa-tts-devtools-prototyping"
