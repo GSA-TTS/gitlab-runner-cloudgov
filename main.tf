@@ -6,7 +6,13 @@ locals {
     "deb.debian.org",         # debian runner dependencies install
     "*.ubuntu.com",           # ubuntu runner dependencies install
     "dl-cdn.alpinelinux.org", # alpine runner dependencies install
-    "*.fedoraproject.org"     # fedora runner dependencies install
+    "*.fedoraproject.org",    # fedora runner dependencies install
+    # common container registries
+    "*.gcr.io",
+    "*.ghcr.io",
+    "*.docker.io",
+    "*.docker.com",
+    "registry.gsa.gitlab-dedicated.us" # our own container registry
   ]
   technology_allowlist = flatten([for t in var.program_technologies : local.allowlist_map[t]])
   proxy_allowlist      = setunion(local.devtools_egress_allowlist, var.worker_egress_allowlist, local.technology_allowlist)
