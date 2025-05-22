@@ -23,7 +23,7 @@ mv -- "$1.tmp" "$1"
 if [ "$RUNNER_DEBUG" == "true" ]; then
     # turn on xtrace after eval so we don't get double output
     # -- this is very similar to how CI_DEBUG_TRACE though it may do more
-    sed -e 's/eval $'\''export/eval $'\''set -o xtrace\nexport/' "$1" >"$1.tmp"
+    sed -e 's/eval $'\''/eval $'\''set -o xtrace\n/' "$1" >"$1.tmp"
     mv -- "$1.tmp" "$1"
 
     # Skip cleanup to aid postmortem

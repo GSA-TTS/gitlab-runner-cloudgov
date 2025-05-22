@@ -6,7 +6,13 @@ locals {
     "deb.debian.org",         # debian runner dependencies install
     "*.ubuntu.com",           # ubuntu runner dependencies install
     "dl-cdn.alpinelinux.org", # alpine runner dependencies install
-    "*.fedoraproject.org"     # fedora runner dependencies install
+    "*.fedoraproject.org",    # fedora runner dependencies install
+    # common container registries
+    "*.gcr.io",
+    "*.ghcr.io",
+    "*.docker.io",
+    "*.docker.com",
+    "registry.gsa.gitlab-dedicated.us" # our own container registry
   ]
   technology_allowlist = flatten([for t in var.program_technologies : local.allowlist_map[t]])
   proxy_allowlist      = setunion(local.devtools_egress_allowlist, var.worker_egress_allowlist, local.technology_allowlist)
@@ -71,7 +77,7 @@ resource "cloudfoundry_service_credential_binding" "runner-service-account-key" 
 locals {
   sa_bot_credentials = jsondecode(data.cloudfoundry_service_credential_binding.runner-service-account-key.credential_bindings.0.credential_binding).credentials
   sa_cf_username     = nonsensitive(local.sa_bot_credentials.username)
-  sa_cf_password     = local.sa_bot_credentials.password
+  sa_cf_password     = sensitive(local.sa_bot_credentials.password)
 }
 
 # gitlab-runner-manager: the actual runner manager app
@@ -126,7 +132,7 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     # https://docs.gitlab.com/runner/faq/#enable-debug-logging-mode
     # and ensuring job logs are removed to avoid leaking secrets.
     RUNNER_DEBUG                 = "false"
-    ALLOWED_DEBUG_USERS          = join(" ", var.developer_emails)
+    RUNNER_DEBUG_USERS           = join(" ", var.developer_emails)
     CUSTOM_ENV_PRESERVE_WORKER   = "false"
     CUSTOM_ENV_PRESERVE_SERVICES = "false"
   }

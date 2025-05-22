@@ -101,7 +101,12 @@ run "test-system-creation" {
       "objects.githubusercontent.com",
       "*.releases.hashicorp.com",
       "registry.terraform.io",
-      "sts.us-gov-west-1.amazonaws.com"
+      "sts.us-gov-west-1.amazonaws.com",
+      "*.gcr.io",
+      "*.ghcr.io",
+      "*.docker.io",
+      "*.docker.com",
+      "registry.gsa.gitlab-dedicated.us"
     ])
     error_message = "The egress allowlist contains manager, technology, and worker entries"
   }

@@ -16,7 +16,7 @@ fi
 if [ "$RUNNER_DEBUG" == "true" ]; then
     debug_allowed="false"
 
-    for email in $ALLOWED_DEBUG_USERS; do
+    for email in $RUNNER_DEBUG_USERS; do
         if [ "$email" == "${CUSTOM_ENV_GITLAB_USER_EMAIL}" ]; then
             debug_allowed="true"
             break
