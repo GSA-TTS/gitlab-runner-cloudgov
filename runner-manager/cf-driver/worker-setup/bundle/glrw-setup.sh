@@ -1,13 +1,13 @@
 #!/bin/sh
 
-set -eu
-
 # Move to bundle dir
 cd "${0%/*}" || exit 1
 dir=$(pwd -P)
 
 # source expected paths, hedge paths (e.g. /busybox), and simple env
 . ./glrw-profile.sh
+
+set -eu
 
 # Sometimes start dir isn't home and home doesn't exist.
 if [ "$dir" != "$HOME/bundle" ]; then
