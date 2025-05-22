@@ -71,7 +71,7 @@ resource "cloudfoundry_service_credential_binding" "runner-service-account-key" 
 locals {
   sa_bot_credentials = jsondecode(data.cloudfoundry_service_credential_binding.runner-service-account-key.credential_bindings.0.credential_binding).credentials
   sa_cf_username     = nonsensitive(local.sa_bot_credentials.username)
-  sa_cf_password     = local.sa_bot_credentials.password
+  sa_cf_password     = sensitive(local.sa_bot_credentials.password)
 }
 
 # gitlab-runner-manager: the actual runner manager app
