@@ -55,6 +55,18 @@ create_temporary_manifest() {
     for v in "${!CI_SERVICE_@}"; do
         echo "${padding}${v}: \"${!v}\"" >>"$TMPMANIFEST"
     done
+    for v in "${!CI_SERVICE_ID_@}"; do
+        echo "${padding}${v}: \"${!v}\"" >>"$TMPMANIFEST"
+    done
+
+    # set env var with egress-proxy URL
+    #
+    # This will be exported to http(s)_proxy on the worker in
+    # glrw-profile.sh, so it's important to source that whenever
+    # accessing the worker.
+    #
+    # shellcheck disable=SC2154 # http_proxy defined in .profile
+    echo "${padding}egress_proxy: \"$http_proxy\"" >>"$TMPMANIFEST"
 
     echo "[cf-driver] [DEBUG] $(wc -l <"$TMPMANIFEST") lines in $TMPMANIFEST"
 }
@@ -68,30 +80,29 @@ setup_proxy_access() {
     cf add-network-policy "$container_id" "$PROXY_APP_NAME" -s "$PROXY_SPACE" \
         --protocol "tcp" --port "8080"
 
-    # set environment variables and restart container to pick them up
-    cf set-env "$container_id" https_proxy "$http_proxy"
-    cf set-env "$container_id" http_proxy "$http_proxy"
-    cf restart "$container_id"
+    # TODO: temporary, replace with looping port test.
+    # See https://github.com/GSA-TTS/gitlab-runner-cloudgov/issues/116
+    sleep 5
+}
 
-    # update ssl certs
-    cf_ssh "$container_id" \
-        'source /etc/profile && \
-        mkdir -p /usr/local/share/ca-certificates && \
-        cat /etc/cf-system-certificates/* > /usr/local/share/ca-certificates/cf-system-certificates.crt && \
-        (command -v update-ca-certificates && update-ca-certificates) || \
-        ( \
-            [ -f /etc/ssl/certs/ca-certificates.crt ] && \
-            cat /etc/cf-system-certificates/* >> /etc/ssl/certs/ca-certificates.crt \
-        ) || \
-        ( \
-            [ -f /etc/ssl/cert.pem ] && \
-            cat /etc/cf-system-certificates/* >> /etc/ssl/cert.pem && \
-            ln -s /etc/ssl/cert.pem /etc/ssl/certs/ca-certificates.crt \
-        ) || \
-        (echo "[cf-driver] Could not update system ca certificates. This may or may not be a problem depending on your base image." && exit 0)'
-    cf_ssh "$container_id" \
-        'source /etc/profile && \
-        (command -v apt-get && echo "Acquire::http::Proxy \"$http_proxy\";" > /etc/apt/apt.conf.d/proxy.conf) || exit 0'
+get_start_command() {
+    local -n args=$1
+    entry="$2"
+    command="$3"
+    sh_fallback="${4:-false}" # some services may fail w/ sh fallback
+
+    if [ -z "$entry" ] && [ -z "$command" ]; then
+        $sh_fallback && args+=('-c' '/bin/sh')
+        return 0
+    fi
+
+    args+=('-c')
+    if [ -n "$entry" ]; then
+        args+=("${entry[@]}")
+    fi
+    if [ -n "$command" ]; then
+        args+=("${command[@]}")
+    fi
 }
 
 start_container() {
@@ -111,7 +122,7 @@ start_container() {
     if [ -z "$worker_disk" ]; then
         worker_disk=$WORKER_DISK_SIZE
     fi
-    push_args=(
+    local push_args=(
         "$container_id"
         -f "$TMPMANIFEST"
         -m "$worker_memory"
@@ -124,18 +135,7 @@ start_container() {
     img_data=$(jq -rc '.image' "$JOB_RESPONSE_FILE")
     container_entrypoint=$(echo "$img_data" | jq -r '.entrypoint | select(.)')
     container_command=$(echo "$img_data" | jq -r '.command | select(.)')
-
-    push_args+=('-c')
-    if [ -n "$container_entrypoint" ] || [ -n "$container_command" ]; then
-        if [ -n "$container_entrypoint" ]; then
-            push_args+=("${container_entrypoint[@]}")
-        fi
-        if [ -n "$container_command" ]; then
-            push_args+=("${container_command[@]}")
-        fi
-    else
-        push_args+=("/bin/sh")
-    fi
+    get_start_command push_args "${container_entrypoint[@]}" "${container_command[@]}" true
 
     local docker_user docker_pass
     read -r docker_user docker_pass <<<"$(get_registry_credentials "$image_name")"
@@ -150,6 +150,7 @@ start_container() {
     fi
 
     cf push "${push_args[@]}"
+
     # this must be the very first step after `cf push` as it performs a
     # container restart which will wipe out any other changes made via `cf_ssh`
     echo "[cf-driver] Setting up egress proxy access for $CONTAINER_ID"
@@ -177,7 +178,7 @@ start_service() {
         cf delete -f "$container_id"
     fi
 
-    push_args=(
+    local push_args=(
         "$container_id"
         '-m' "$WORKER_MEMORY"
         '--docker-image' "$image_name"
@@ -225,9 +226,7 @@ start_service() {
         fi
     fi
 
-    if [ -n "$service_entrypoint" ] || [ -n "$service_command" ]; then
-        push_args+=('-c' "${service_entrypoint[@]}" "${service_command[@]}")
-    fi
+    get_start_command push_args "${service_entrypoint[@]}" "${service_command[@]}"
 
     local docker_user docker_pass
     read -r docker_user docker_pass <<<"$(get_registry_credentials "$image_name")"
@@ -242,7 +241,12 @@ start_service() {
 
     # Map route and export a FQDN. We assume apps.internal as the domain.
     cf map-route "$container_id" apps.internal --hostname "$container_id"
+
+    # For use in inter-container communication
+    # TODO: propose a devtools/cloudgov 'namespace'
+    # TODO: propose rename to, e.g., CG_APP_HOST_X and CG_APP_ID_X
     export "CI_SERVICE_${alias_name}"="${container_id}.apps.internal"
+    export "CI_SERVICE_ID_${alias_name}"="${container_id}"
 }
 
 start_services() {
@@ -268,8 +272,8 @@ start_services() {
         container_id="${container_id_base}-svc-${alias_name}"
 
         # Using jq -r to allow entrypoint, command, and variables to be empty
-        service_entrypoint=$(echo "$l" | jq -r '.entrypoint | select(.)')
-        service_command=$(echo "$l" | jq -r '.command | select(.)')
+        service_entrypoint=$(echo "$l" | jq -r '.entrypoint | select(.)[]')
+        service_command=$(echo "$l" | jq -r '.command | select(.)[]')
 
         # start_service will further process the variables, so just compact it
         service_vars=$(echo "$l" | jq -r '.variables[]? | [.key, .value] | @sh')
@@ -309,35 +313,38 @@ allow_access_to_services() {
 
 install_dependencies() {
     container_id="$1"
-    local dir="$currentDir/worker-setup"
+    declare -i tries="${2:-1}"
+    local bundle="$currentDir/worker-setup/bundle"
+    local certs_lock="$currentDir/certs.lock"
 
-    echo "[cf-driver] Checking if worker bundle exists"
-    if [ ! -e "$dir/bundle.tgz" ]; then
-        echo "[cf-driver] Creating worker bundle"
-        tar czf "$dir/bundle.tgz" --directory="$dir/bundle" .
+    if [ $tries -gt 3 ]; then
+        echo "[cf-driver] Failed to get certs after $tries tries"
     fi
 
-    echo "[cf-driver] Installing tar"
-    cf_ssh "$container_id" \
-        "cat > \"\$HOME/tar\" && \
-            cd \$HOME &&
-            chmod +x tar && \
-            mkdir bin && \
-            mv tar bin/" \
-        <"$dir/tar"
+    echo "[cf-driver] Checking for certs in bundle"
+    if [ ! -f "$bundle/certs.tgz" ]; then
+        echo "[cf-driver] Attempting to create cert bundle"
 
-    echo "[cf-driver] Sending worker bundle"
-    cf_ssh "$container_id" \
-        "cat > \"\$HOME/bundle.tgz\" && \
-            cd \$HOME &&
-            ./bin/tar xf bundle.tgz && \
-            ./bin/tar xf git.tgz && \
-            echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> .glr-env && \
-            echo 'export GIT_EXEC_PATH=\"\$HOME/libexec/git-core\"' >> .glr-env && \
-            echo 'export GIT_TEMPLATE_DIR=\"\$HOME/share/git-core/templates\"' >> .glr-env && \
-            echo 'export GIT_SSL_CAINFO=\"\$SSL_CERT_FILE\"' >> .glr-env && \
-            echo 'export GIT_PROXY_SSL_CAINFO=\"\$SSL_CERT_FILE\"' >> .glr-env" \
-        <"$dir/bundle.tgz"
+        if [ -f "$certs_lock" ]; then
+            echo "[cf-driver] cert bundling already in progress"
+            sleep 5 && install_dependencies "$container_id" $tries+=1
+        else
+            touch "$certs_lock"
+            (
+                cp -rL /etc/ssl/certs/ "$currentDir/" # -L to dereference links
+                tar czf "$bundle/certs.tgz" --directory="$currentDir/certs" .
+            ) &&
+                echo "[cf-driver] made cert bundle" ||
+                echo "[cf-driver] failed to make cert bundle"
+            rm "$certs_lock"
+        fi
+    fi
+
+    echo "[cf-driver] Copying bundle to worker"
+    cf_scpr "$container_id" "$bundle"
+
+    echo "[cf-driver] Running worker setup"
+    cf_ssh "$container_id" "./bundle/glrw-setup.sh"
 }
 
 echo "[cf-driver] re-auth to cloud.gov"
