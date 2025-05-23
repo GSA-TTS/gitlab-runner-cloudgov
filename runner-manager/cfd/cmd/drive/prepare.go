@@ -70,7 +70,7 @@ func (s *prepStage) startServices() error {
 		//
 		// map-route containerID apps.internal --hostname containerID
 		//
-		// export CI_SERVICE_$alias=$containerID.apps.internal
+		// export WSR_SERVICE_HOST_$alias=$containerID.apps.internal
 		//
 	}
 

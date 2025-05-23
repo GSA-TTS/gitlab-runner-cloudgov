@@ -51,11 +51,8 @@ create_temporary_manifest() {
     # Align additional environment variables with YAML at end of source manifest
     local padding="      "
 
-    # Add any CI_SERVICE_x variables populated by start_service()
-    for v in "${!CI_SERVICE_@}"; do
-        echo "${padding}${v}: \"${!v}\"" >>"$TMPMANIFEST"
-    done
-    for v in "${!CI_SERVICE_ID_@}"; do
+    # Add any WSR_SERVICE_x variables populated by start_service()
+    for v in "${!WSR_SERVICE_@}"; do
         echo "${padding}${v}: \"${!v}\"" >>"$TMPMANIFEST"
     done
 
@@ -239,10 +236,8 @@ start_service() {
     cf map-route "$container_id" apps.internal --hostname "$container_id"
 
     # For use in inter-container communication
-    # TODO: propose a devtools/cloudgov 'namespace'
-    # TODO: propose rename to, e.g., CG_APP_HOST_X and CG_APP_ID_X
-    export "CI_SERVICE_${alias_name}"="${container_id}.apps.internal"
-    export "CI_SERVICE_ID_${alias_name}"="${container_id}"
+    export "WSR_SERVICE_HOST_${alias_name}"="${container_id}.apps.internal"
+    export "WSR_SERVICE_ID_${alias_name}"="${container_id}"
 }
 
 start_services() {

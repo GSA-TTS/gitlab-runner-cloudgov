@@ -21,11 +21,11 @@ and differences in comparison to the Docker executor:
   use of SSH to execute into a running container. This runner attempts to transparently
   work around these limitations where possible. Your CI job may require significant
   modification if it relies on either of these features.
-* __Use CI_SERVICE_alias for service DNS names__ - Ephemeral networks like the Docker networks
+* __Use WSR_SERVICE_HOST_alias for service DNS names__ - Ephemeral networks like the Docker networks
   used for the Docker executor are not available in CloudFoundry. This means
   that each service you create lives in a common internal DNS namespace with
   other services in the same CloudFoundry space. The cloud.gov runner populates
-  a `CI_SERCVCE_<alias>` variable for each service defined in a job. Here is an
+  a `WSR_SERVICE_HOST_<alias>` variable for each service defined in a job. Here is an
   example snippet of GitLab CI Yaml showing the definition of a service and how
   the job steps can then connect to that service:
   ~~~yaml
@@ -35,13 +35,14 @@ and differences in comparison to the Docker executor:
     image: ubuntu:24.04
   services:
   - name: http-https-echo:latest
-    # Note "echo" is the alias name, so the CI_SERVICE_alias variable key name
-    # for this service is CI_SERVICE_echo
+    # Note "echo" is the alias name, so the WSR_SERVICE_HOST_alias variable key name
+    # for this service is WSR_SERVICE_HOST_echo
     alias: echo
   script:
-  # Using the CI_SERVICE_alias to provide the FQDN of the service
-  - curl http://${CI_SERVICE_echo}:8080
+  # Using the WSR_SERVICE_HOST_alias to provide the FQDN of the service
+  - curl http://${WSR_SERVICE_HOST_echo}:8080
   ~~~
+  * `WSR_SERVICE_ID_<alias>` is also available for cases where the ID alone may be useful.
 
 ## How it works
 
