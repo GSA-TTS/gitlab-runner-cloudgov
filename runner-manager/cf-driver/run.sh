@@ -7,12 +7,17 @@ source "${currentDir}/base.sh"
 
 printf "[cf-driver] Using SSH to connect to %s and run '%s' step\n" "$CONTAINER_ID" "$2"
 
-# Add line below script's shebang to source
-# the profile we created during the prepare step.
+# If there are exports we go to the end of them
+# and then source the profile we created during the prepare step.
 #
+# Otherwise we add it in a line below script's shebang
 #
 # shellcheck disable=SC2016 # expands on worker
-sed -i '1 a\\nsource "$HOME/glrw-profile.sh"' "$1"
+if grep 'export' "$1" >/dev/null 2>&1; then
+    perl -pi -e 's|(.*export.*?\\n)|$1source "\$HOME/glrw-profile.sh"\\n|' "$1"
+else
+    sed -i '1 a\\nsource "$HOME/glrw-profile.sh"' "$1"
+fi
 
 # DANGER: There may be sensitive information in this output.
 # Generated job logs should be removed after this is used.
