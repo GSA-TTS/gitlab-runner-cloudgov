@@ -52,7 +52,7 @@ create_temporary_manifest() {
     local padding="      "
 
     # Add any WSR_SERVICE_x variables populated by start_service()
-    for v in "${!WSR_SERVICE_@}"; do
+    for v in "${!WSR_@}"; do
         echo "${padding}${v}: \"${!v}\"" >>"$TMPMANIFEST"
     done
 
