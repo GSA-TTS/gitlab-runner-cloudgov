@@ -9,12 +9,15 @@ printf "[cf-driver] Using SSH to connect to %s and run '%s' step\n" "$CONTAINER_
 
 # If there are exports we go to the end of them
 # and then source the profile we created during the prepare step.
+# (GITLAB_ENV is the clearest endpoint we commonly have available.)
 #
 # Otherwise we add it in a line below script's shebang
 #
 # shellcheck disable=SC2016 # expands on worker
-if grep 'export' "$1" >/dev/null 2>&1; then
-    perl -pi -e 's|(.*export.*?\\n)|$1source "\$HOME/glrw-profile.sh"\\n|' "$1"
+if grep 'export GITLAB_ENV=' "$1" >/dev/null 2>&1; then
+    exportsEnd='(.*?export GITLAB_ENV=.*?done.*?\\n)'
+    profileSrc='$1source "\$HOME/glrw-profile.sh"\\n'
+    perl -pi -e "s|$exportsEnd|$profileSrc|" "$1"
 else
     sed -i '1 a\\nsource "$HOME/glrw-profile.sh"' "$1"
 fi
