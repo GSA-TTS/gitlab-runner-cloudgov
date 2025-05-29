@@ -10,21 +10,16 @@ printf "[cf-driver] Using SSH to connect to %s and run '%s' step\n" "$CONTAINER_
 # Add line below script's shebang to source
 # the profile we created during the prepare step.
 #
-# The -e and temporary file is meant for compatibility.
 #
-# shellcheck disable=SC2016
-sed -e '1a\
-source "$HOME/glrw-profile.sh"\
-' "$1" >"$1.tmp"
-mv -- "$1.tmp" "$1"
+# shellcheck disable=SC2016 # expands on worker
+sed -i '1 a\\nsource "$HOME/glrw-profile.sh"' "$1"
 
 # DANGER: There may be sensitive information in this output.
 # Generated job logs should be removed after this is used.
 if [ "$RUNNER_DEBUG" == "true" ]; then
     # turn on xtrace after eval so we don't get double output
-    # -- this is very similar to how CI_DEBUG_TRACE though it may do more
-    sed -e 's/eval $'\''/eval $'\''set -o xtrace\n/' "$1" >"$1.tmp"
-    mv -- "$1.tmp" "$1"
+    # -- this is very similar to CI_DEBUG_TRACE though it may do more
+    sed -i "s/eval $'/eval $'set -o xtrace\n/" "$1"
 
     # Skip cleanup to aid postmortem
     if [ "$2" == "cleanup_file_variables" ]; then
