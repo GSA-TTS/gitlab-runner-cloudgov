@@ -7,20 +7,9 @@ source "${currentDir}/base.sh"
 
 printf "[cf-driver] Using SSH to connect to %s and run '%s' step\n" "$CONTAINER_ID" "$2"
 
-# If there are exports we go to the end of them
-# and then source the profile we created during the prepare step.
-# (GITLAB_ENV is the clearest endpoint we commonly have available.)
-#
-# Otherwise we add it in a line below script's shebang
-#
+# Source the profile we send with bundle after script shebang.
 # shellcheck disable=SC2016 # expands on worker
-if grep 'export GITLAB_ENV=' "$1" >/dev/null 2>&1; then
-    exportsEnd='(.*?export GITLAB_ENV=.*?done.*?\\n)'
-    profileSrc='$1source "\$HOME/glrw-profile.sh"\\n'
-    perl -pi -e "s|$exportsEnd|$profileSrc|" "$1"
-else
-    sed -i '1 a\\nsource "$HOME/glrw-profile.sh"' "$1"
-fi
+sed -i '1 a\\nsource "$HOME/glrw-profile.sh"' "$1"
 
 # DANGER: There may be sensitive information in this output.
 # Generated job logs should be removed after this is used.
