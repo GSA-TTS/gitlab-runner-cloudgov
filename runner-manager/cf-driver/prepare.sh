@@ -251,12 +251,12 @@ start_services() {
 
     # GitLab Runner creates JOB_RESPONSE_FILE to provide full job context
     # See: https://docs.gitlab.com/runner/executors/custom.html#job-response
-    services=$(jq -rc '.services[]' "$JOB_RESPONSE_FILE")
+    IFS=$'\n' read -ra services "$(jq -rc '.services[]' "$JOB_RESPONSE_FILE")"
     job_vars=$(jq -r \
         '.variables[]? | select(.file == false) | select(.key | test("^(?!(CI|GITLAB)_)")) | [.key, .value] | @sh' \
         "$JOB_RESPONSE_FILE")
 
-    for l in $services; do
+    for l in "${services[@]}"; do
         # Using jq -er to fail of alias or name are not found
         alias_name=$(echo "$l" | jq -er '.alias | select(.)')
         image_name=$(echo "$l" | jq -er '.name | select(.)')
