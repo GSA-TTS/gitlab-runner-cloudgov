@@ -14,5 +14,8 @@ locals {
       "registry.npmjs.org",
       "*.yarnpkg.com"
     ]
+    oscal = [
+      "raw.githubusercontent.com"
+    ]
   }
 }
