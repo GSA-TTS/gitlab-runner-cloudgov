@@ -1,6 +1,6 @@
-variable "cf_org_manager" {
-  type        = string
-  description = "The cloud.gov username that is running the root terraform module, must be an OrgManager"
+variable "cf_org_managers" {
+  type        = set(string)
+  description = "The cloud.gov usernames that may be deploying the root terraform module, must be OrgManagers"
 }
 
 variable "developer_emails" {
