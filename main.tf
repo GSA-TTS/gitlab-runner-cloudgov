@@ -30,7 +30,7 @@ module "manager_space" {
   cf_org_name   = var.cf_org_name
   cf_space_name = "${var.cf_space_prefix}-manager"
   allow_ssh     = var.allow_ssh
-  deployers     = [var.cf_org_manager]
+  deployers     = var.cf_org_managers
   developers    = var.developer_emails
   auditors      = var.auditor_emails
 }
@@ -42,7 +42,7 @@ module "worker_space" {
   cf_org_name          = var.cf_org_name
   cf_space_name        = "${var.cf_space_prefix}-workers"
   allow_ssh            = true # manager must be able to cf ssh into workers
-  deployers            = [var.cf_org_manager]
+  deployers            = var.cf_org_managers
   developers           = var.developer_emails
   auditors             = var.auditor_emails
   security_group_names = ["trusted_local_networks_egress"]
@@ -153,7 +153,7 @@ module "egress_space" {
   cf_org_name          = var.cf_org_name
   cf_space_name        = "${var.cf_space_prefix}-egress"
   allow_ssh            = var.allow_ssh
-  deployers            = [var.cf_org_manager]
+  deployers            = var.cf_org_managers
   developers           = var.developer_emails
   auditors             = var.auditor_emails
   security_group_names = ["public_networks_egress"]
