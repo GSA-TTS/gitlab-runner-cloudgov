@@ -262,7 +262,7 @@ start_services() {
 
     # GitLab Runner creates JOB_RESPONSE_FILE to provide full job context
     # See: https://docs.gitlab.com/runner/executors/custom.html#job-response
-    IFS=$'\n' read -ra services "$(jq -rc '.services[]' "$JOB_RESPONSE_FILE")"
+    readarray -t services < <(jq -rc '.services[]' "$JOB_RESPONSE_FILE")
     job_vars=$(jq -r \
         '.variables[]? | select(.file == false) | select(.key | test("^(?!(CI|GITLAB)_)")) | [.key, .value] | @sh' \
         "$JOB_RESPONSE_FILE")
