@@ -304,6 +304,7 @@ allow_access_to_services() {
     fi
 
     for l in $(echo "$ci_job_services" | jq -rc '.[]'); do
+        alias_name=$(echo "$l" | jq -er '.alias | select(.)')
         container_id="${container_id_base}-svc-${alias_name}"
         allow_access_to_service "$container_id_base" "$container_id"
     done
