@@ -166,6 +166,8 @@ start_service() {
     service_vars="$6"
     job_vars="$7"
 
+    local health_check_type
+
     if [ -z "$container_id" ] || [ -z "$image_name" ]; then
         echo 'Usage: start_service CONTAINER_ID IMAGE_NAME \
             SERVICE_ENTRYPOINT SERVICE_COMMAND \
@@ -182,7 +184,6 @@ start_service() {
         "$container_id"
         '-m' "$WORKER_MEMORY"
         '--docker-image' "$image_name"
-        '--health-check-type' 'process'
         '--no-route'
     )
 
@@ -212,6 +213,7 @@ start_service() {
         while read -r var; do
             IFS="=" read -r key val <<<"$var"
             vars[$key]="$val"
+            test "$key" == "HEALTH_CHECK_TYPE" && health_check_type="$val"
         done <<<"$service_vars"
     fi
 
@@ -225,6 +227,8 @@ start_service() {
             push_args+=('--redact-env')
         fi
     fi
+
+    push_args+=('--health-check-type' "${health_check_type:-process}")
 
     get_start_command push_args "${service_entrypoint[@]}" "${service_command[@]}"
 
