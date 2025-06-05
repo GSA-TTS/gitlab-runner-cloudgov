@@ -210,7 +210,7 @@ start_service() {
 
     if [ -n "$service_vars" ]; then
         while read -r var; do
-            read -r key val <<<"$var"
+            IFS="=" read -r key val <<<"$var"
             vars[$key]="$val"
         done <<<"$service_vars"
     fi
@@ -274,7 +274,7 @@ start_services() {
         service_command=$(echo "$l" | jq -r '.command | select(.)[]')
 
         # start_service will further process the variables, so just compact it
-        service_vars=$(echo "$l" | jq -r '.variables[]? | [.key, .value] | @sh')
+        service_vars=$(echo "$l" | jq -r '.variables[]? | "\(.key)=\(.value)"')
 
         start_service "$alias_name" "$container_id" "$image_name" \
             "$service_entrypoint" "$service_command" "$service_vars" "$job_vars"
