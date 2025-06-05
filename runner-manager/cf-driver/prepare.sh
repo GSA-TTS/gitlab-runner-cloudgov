@@ -98,6 +98,11 @@ get_start_command() {
     fi
 }
 
+get_job_variable() {
+    local key=$1
+    jq --arg k "$key" -r '.variables[]? | select(.key == "$k") | .value' "$JOB_RESPONSE_FILE"
+}
+
 start_container() {
     container_id="$1"
     image_name="$CUSTOM_ENV_CI_JOB_IMAGE"
@@ -107,14 +112,16 @@ start_container() {
         cf delete -f "$container_id"
     fi
 
-    local worker_memory=$(jq -r '.variables[]? | select(.key == "WORKER_MEMORY") | .value' "$JOB_RESPONSE_FILE")
+    local worker_memory worker_disk
+    worker_memory=$(get_job_variable "WORKER_MEMORY")
     if [ -z "$worker_memory" ]; then
         worker_memory=$WORKER_MEMORY
     fi
-    local worker_disk=$(jq -r '.variables[]? | select(.key == "WORKER_DISK") | .value' "$JOB_RESPONSE_FILE")
+    worker_disk=$(get_job_variable "WORKER_DISK")
     if [ -z "$worker_disk" ]; then
         worker_disk=$WORKER_DISK_SIZE
     fi
+
     local push_args=(
         "$container_id"
         -f "$TMPMANIFEST"
