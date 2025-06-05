@@ -268,7 +268,7 @@ start_services() {
         "$JOB_RESPONSE_FILE")
 
     for l in "${services[@]}"; do
-        # Using jq -er to fail of alias or name are not found
+        # jq -e flag causes failure if alias or name are not found
         alias_name=$(echo "$l" | jq -er '.alias | select(.)')
         image_name=$(echo "$l" | jq -er '.name | select(.)')
         container_id="${container_id_base}-svc-${alias_name}"
