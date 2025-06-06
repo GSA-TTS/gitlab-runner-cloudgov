@@ -187,20 +187,20 @@ start_service() {
         '--no-route'
     )
 
-    if [ -n "$job_vars" ] || [ -n "$service_vars" ]; then
-        declare -A vars=()
+    declare -A vars=()
+    vars[no_proxy]='localhost,apps.internal'
+    vars[SSL_CERT_FILE]='/etc/ssl/certs/ca-certificates.crt'
 
-        SVCMANIFEST=$(mktemp /tmp/gitlab-runner-svc-manifest.XXXXXXXXXX)
-        TMPFILES+=("$SVCMANIFEST")
-        chmod 600 "$SVCMANIFEST"
+    SVCMANIFEST=$(mktemp /tmp/gitlab-runner-svc-manifest.XXXXXXXXXX)
+    TMPFILES+=("$SVCMANIFEST")
+    chmod 600 "$SVCMANIFEST"
 
-        {
-            echo "---"
-            echo "applications:"
-            echo "- name: $container_id"
-            echo "  env:"
-        } >>"$SVCMANIFEST"
-    fi
+    {
+        echo "---"
+        echo "applications:"
+        echo "- name: $container_id"
+        echo "  env:"
+    } >>"$SVCMANIFEST"
 
     if [ -n "$job_vars" ]; then
         while read -r var; do
@@ -307,10 +307,22 @@ allow_access_to_services() {
         return
     fi
 
+    declare -a service_list
+
     for l in $(echo "$ci_job_services" | jq -rc '.[]'); do
         alias_name=$(echo "$l" | jq -er '.alias | select(.)')
-        container_id="${container_id_base}-svc-${alias_name}"
-        allow_access_to_service "$container_id_base" "$container_id"
+        service_list+=("${container_id_base}-svc-${alias_name}")
+    done
+
+    for s1 in "${service_list[@]}"; do
+        allow_access_to_service "$container_id_base" "$s1"
+
+        [ ${#service_list[@]} -le 1 ] && continue
+
+        for s2 in "${service_list[@]}"; do
+            [ "$s1" == "$s2" ] && continue
+            allow_access_to_service "$s1" "$s2"
+        done
     done
 }
 
