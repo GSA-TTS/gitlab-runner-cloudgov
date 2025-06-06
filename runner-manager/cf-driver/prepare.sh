@@ -269,6 +269,8 @@ start_services() {
         '.variables[]? | select(.file == false) | select(.key | test("^(?!(CI|GITLAB)_)")) | [.key, .value] | @sh' \
         "$JOB_RESPONSE_FILE")
 
+    declare -a sargs_refs
+
     for l in "${services[@]}"; do
         # jq -e flag causes failure if alias or name are not found
         alias_name=$(echo "$l" | jq -er '.alias | select(.)')
@@ -286,8 +288,29 @@ start_services() {
         export "WSR_SERVICE_ID_${alias_name}"="${container_id}"
         export "WSR_SERVICE_HOST_${alias_name}"="${container_id}.apps.internal"
 
-        start_service "$alias_name" "$container_id" "$image_name" \
-            "$service_entrypoint" "$service_command" "$service_vars" "$job_vars"
+        # This is brittle and bad but maybe not worse than alternatives.
+        #
+        # We have an array of reference names, and then we make an array
+        # under a reference for each of the services. Later we loop
+        # through the references, dereferencing each so we can send the
+        # whole bunch to `start_service`.
+        #
+        # This is so that we can do one loop to set up all the
+        # variables and a second loop to execute, thereby allowing
+        # each service access to all `WSR_SERVICE_*` variables.
+        local sargs_ref="sargs_${alias_name}"
+        sargs_refs+=("$sargs_ref")
+
+        local -n sargs_x="$sargs_ref"
+        sargs_x+=(
+            "$alias_name" "$container_id" "$image_name"
+            "$service_entrypoint" "$service_command" "$service_vars"
+        )
+    done
+
+    for s in "${sargs_refs[@]}"; do
+        local -n sargs_ref="$s"
+        start_service "${sargs_ref[@]}" "$job_vars"
     done
 }
 
