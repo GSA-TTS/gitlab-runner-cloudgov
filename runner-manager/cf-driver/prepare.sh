@@ -51,7 +51,7 @@ create_temporary_manifest() {
     # Align additional environment variables with YAML at end of source manifest
     local padding="      "
 
-    # Add any WSR_SERVICE_x variables populated by start_service()
+    # Add any WSR_SERVICE_x variables populated by start_services()
     for v in "${!WSR_@}"; do
         echo "${padding}${v}: \"${!v}\"" >>"$TMPMANIFEST"
     done
@@ -187,10 +187,6 @@ start_service() {
         '--no-route'
     )
 
-    declare -A vars=()
-    vars[no_proxy]='localhost,apps.internal'
-    vars[SSL_CERT_FILE]='/etc/ssl/certs/ca-certificates.crt'
-
     SVCMANIFEST=$(mktemp /tmp/gitlab-runner-svc-manifest.XXXXXXXXXX)
     TMPFILES+=("$SVCMANIFEST")
     chmod 600 "$SVCMANIFEST"
@@ -201,6 +197,16 @@ start_service() {
         echo "- name: $container_id"
         echo "  env:"
     } >>"$SVCMANIFEST"
+
+    declare -A vars=()
+
+    vars[no_proxy]='localhost,apps.internal'
+    vars[SSL_CERT_FILE]='/etc/ssl/certs/ca-certificates.crt'
+
+    # Add any WSR_SERVICE_x variables populated by start_services()
+    for v in "${!WSR_@}"; do
+        vars[$v]="${!v}"
+    done
 
     if [ -n "$job_vars" ]; then
         while read -r var; do
@@ -245,10 +251,6 @@ start_service() {
 
     # Map route and export a FQDN. We assume apps.internal as the domain.
     cf map-route "$container_id" apps.internal --hostname "$container_id"
-
-    # For use in inter-container communication
-    export "WSR_SERVICE_HOST_${alias_name}"="${container_id}.apps.internal"
-    export "WSR_SERVICE_ID_${alias_name}"="${container_id}"
 }
 
 start_services() {
@@ -279,6 +281,10 @@ start_services() {
 
         # start_service will further process the variables, so just compact it
         service_vars=$(echo "$l" | jq -r '.variables[]? | "\(.key)=\(.value)"')
+
+        # For use in inter-container communication
+        export "WSR_SERVICE_ID_${alias_name}"="${container_id}"
+        export "WSR_SERVICE_HOST_${alias_name}"="${container_id}.apps.internal"
 
         start_service "$alias_name" "$container_id" "$image_name" \
             "$service_entrypoint" "$service_command" "$service_vars" "$job_vars"
