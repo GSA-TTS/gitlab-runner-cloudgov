@@ -103,6 +103,16 @@ get_job_variable() {
     jq --arg k "$key" -r '.variables[]? | select(.key == "$k") | .value' "$JOB_RESPONSE_FILE"
 }
 
+expand_wsr_variables() {
+    val="$1"
+    reg=$'\$(WSR_SERVICE_[a-zA-Z0-9_]+)'
+    while [[ "$val" =~ $reg ]]; do
+        res="${BASH_REMATCH[1]}"
+        val=$(echo "$val" | sed -E "s/$reg/${!res}/")
+    done
+    echo "$val"
+}
+
 start_container() {
     container_id="$1"
     image_name="$CUSTOM_ENV_CI_JOB_IMAGE"
@@ -225,7 +235,9 @@ start_service() {
 
     if [ "${#vars[@]}" -gt 0 ]; then
         for key in "${!vars[@]}"; do
-            echo "    $key: ${vars[$key]}" >>"$SVCMANIFEST"
+            val=${vars[$key]}
+            val=$(expand_wsr_variables "$val")
+            echo "    $key: $val" >>"$SVCMANIFEST"
         done
 
         push_args+=('-f' "$SVCMANIFEST")
