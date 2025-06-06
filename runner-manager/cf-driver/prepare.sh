@@ -225,7 +225,15 @@ start_service() {
 
     if [ "${#vars[@]}" -gt 0 ]; then
         for key in "${!vars[@]}"; do
-            echo "    $key: ${vars[$key]}" >>"$SVCMANIFEST"
+            val=${vars[$key]}
+
+            reg="\$(WSR_SERVICE_[a-zA-Z0-9_]+)"
+            if [[ "$val" =~ $reg ]]; then
+                res="${BASH_REMATCH[1]}"
+                val=$(echo "$val" | sed -E "s/$reg/${!res}/")
+            fi
+
+            echo "    $key: $val" >>"$SVCMANIFEST"
         done
 
         push_args+=('-f' "$SVCMANIFEST")
