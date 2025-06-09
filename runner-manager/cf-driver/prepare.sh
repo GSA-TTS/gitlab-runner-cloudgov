@@ -104,7 +104,7 @@ get_start_command() {
 
 get_job_variable() {
     local key=$1
-    jq --arg k "$key" -r '.variables[]? | select(.key == "$k") | .value' "$JOB_RESPONSE_FILE"
+    jq --arg k "$key" -r '.variables[]? | select(.key == $k) | .value' "$JOB_RESPONSE_FILE"
 }
 
 expand_wsr_variables() {
