@@ -297,8 +297,8 @@ start_services() {
         service_vars=$(echo "$l" | jq -r '.variables[]? | "\(.key)=\(.value)"')
 
         # For use in inter-container communication
-        export "WSR_SERVICE_ID_${alias_name}"="${container_id}"
-        export "WSR_SERVICE_HOST_${alias_name}"="${container_id}.apps.internal"
+        declare -g "WSR_SERVICE_ID_${alias_name}"="${container_id}"
+        declare -g "WSR_SERVICE_HOST_${alias_name}"="${container_id}.apps.internal"
 
         # This is brittle and bad but maybe not worse than alternatives.
         #
