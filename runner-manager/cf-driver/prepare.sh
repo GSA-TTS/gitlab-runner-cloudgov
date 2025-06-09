@@ -51,7 +51,7 @@ create_temporary_manifest() {
     # Align additional environment variables with YAML at end of source manifest
     local padding="      "
 
-    # Add any WSR_SERVICE_x variables populated by start_services()
+    # Add any WSR_* variables populated by start_services()
     for v in "${!WSR_@}"; do
         echo "${padding}${v}: \"${!v}\"" >>"$TMPMANIFEST"
     done
@@ -213,7 +213,7 @@ start_service() {
     vars[no_proxy]='localhost,apps.internal'
     vars[SSL_CERT_FILE]='/etc/ssl/certs/ca-certificates.crt'
 
-    # Add any WSR_SERVICE_x variables populated by start_services()
+    # Add any WSR_* variables populated by start_services()
     for v in "${!WSR_@}"; do
         vars[$v]="${!v}"
     done
