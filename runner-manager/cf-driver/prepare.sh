@@ -51,11 +51,8 @@ create_temporary_manifest() {
     # Align additional environment variables with YAML at end of source manifest
     local padding="      "
 
-    # Add any CI_SERVICE_x variables populated by start_service()
-    for v in "${!CI_SERVICE_@}"; do
-        echo "${padding}${v}: \"${!v}\"" >>"$TMPMANIFEST"
-    done
-    for v in "${!CI_SERVICE_ID_@}"; do
+    # Add any WSR_* variables populated by start_services()
+    for v in "${!WSR_@}"; do
         echo "${padding}${v}: \"${!v}\"" >>"$TMPMANIFEST"
     done
 
@@ -105,6 +102,21 @@ get_start_command() {
     fi
 }
 
+get_job_variable() {
+    local key=$1
+    jq --arg k "$key" -r '.variables[]? | select(.key == $k) | .value' "$JOB_RESPONSE_FILE"
+}
+
+expand_wsr_variables() {
+    val="$1"
+    reg=$'\$(WSR_SERVICE_[a-zA-Z0-9_]+)'
+    while [[ "$val" =~ $reg ]]; do
+        res="${BASH_REMATCH[1]}"
+        val=$(echo "$val" | sed -E "s/$reg/${!res}/")
+    done
+    echo "$val"
+}
+
 start_container() {
     container_id="$1"
     image_name="$CUSTOM_ENV_CI_JOB_IMAGE"
@@ -114,14 +126,16 @@ start_container() {
         cf delete -f "$container_id"
     fi
 
-    local worker_memory=$(jq -r '.variables[]? | select(.key == "WORKER_MEMORY") | .value' "$JOB_RESPONSE_FILE")
+    local worker_memory worker_disk
+    worker_memory=$(get_job_variable "WORKER_MEMORY")
     if [ -z "$worker_memory" ]; then
         worker_memory=$WORKER_MEMORY
     fi
-    local worker_disk=$(jq -r '.variables[]? | select(.key == "WORKER_DISK") | .value' "$JOB_RESPONSE_FILE")
+    worker_disk=$(get_job_variable "WORKER_DISK")
     if [ -z "$worker_disk" ]; then
         worker_disk=$WORKER_DISK_SIZE
     fi
+
     local push_args=(
         "$container_id"
         -f "$TMPMANIFEST"
@@ -166,6 +180,8 @@ start_service() {
     service_vars="$6"
     job_vars="$7"
 
+    local health_check_type
+
     if [ -z "$container_id" ] || [ -z "$image_name" ]; then
         echo 'Usage: start_service CONTAINER_ID IMAGE_NAME \
             SERVICE_ENTRYPOINT SERVICE_COMMAND \
@@ -182,24 +198,29 @@ start_service() {
         "$container_id"
         '-m' "$WORKER_MEMORY"
         '--docker-image' "$image_name"
-        '--health-check-type' 'process'
         '--no-route'
     )
 
-    if [ -n "$job_vars" ] || [ -n "$service_vars" ]; then
-        declare -A vars=()
+    SVCMANIFEST=$(mktemp /tmp/gitlab-runner-svc-manifest.XXXXXXXXXX)
+    TMPFILES+=("$SVCMANIFEST")
+    chmod 600 "$SVCMANIFEST"
 
-        SVCMANIFEST=$(mktemp /tmp/gitlab-runner-svc-manifest.XXXXXXXXXX)
-        TMPFILES+=("$SVCMANIFEST")
-        chmod 600 "$SVCMANIFEST"
+    {
+        echo "---"
+        echo "applications:"
+        echo "- name: $container_id"
+        echo "  env:"
+    } >>"$SVCMANIFEST"
 
-        {
-            echo "---"
-            echo "applications:"
-            echo "- name: $container_id"
-            echo "  env:"
-        } >>"$SVCMANIFEST"
-    fi
+    declare -A vars=()
+
+    vars[no_proxy]='localhost,apps.internal'
+    vars[SSL_CERT_FILE]='/etc/ssl/certs/ca-certificates.crt'
+
+    # Add any WSR_* variables populated by start_services()
+    for v in "${!WSR_@}"; do
+        vars[$v]="${!v}"
+    done
 
     if [ -n "$job_vars" ]; then
         while read -r var; do
@@ -210,14 +231,17 @@ start_service() {
 
     if [ -n "$service_vars" ]; then
         while read -r var; do
-            read -r key val <<<"$var"
+            IFS="=" read -r key val <<<"$var"
             vars[$key]="$val"
+            test "$key" == "HEALTH_CHECK_TYPE" && health_check_type="$val"
         done <<<"$service_vars"
     fi
 
     if [ "${#vars[@]}" -gt 0 ]; then
         for key in "${!vars[@]}"; do
-            echo "    $key: ${vars[$key]}" >>"$SVCMANIFEST"
+            val=${vars[$key]}
+            val=$(expand_wsr_variables "$val")
+            echo "    $key: $val" >>"$SVCMANIFEST"
         done
 
         push_args+=('-f' "$SVCMANIFEST")
@@ -225,6 +249,8 @@ start_service() {
             push_args+=('--redact-env')
         fi
     fi
+
+    push_args+=('--health-check-type' "${health_check_type:-process}")
 
     get_start_command push_args "${service_entrypoint[@]}" "${service_command[@]}"
 
@@ -241,12 +267,6 @@ start_service() {
 
     # Map route and export a FQDN. We assume apps.internal as the domain.
     cf map-route "$container_id" apps.internal --hostname "$container_id"
-
-    # For use in inter-container communication
-    # TODO: propose a devtools/cloudgov 'namespace'
-    # TODO: propose rename to, e.g., CG_APP_HOST_X and CG_APP_ID_X
-    export "CI_SERVICE_${alias_name}"="${container_id}.apps.internal"
-    export "CI_SERVICE_ID_${alias_name}"="${container_id}"
 }
 
 start_services() {
@@ -260,13 +280,15 @@ start_services() {
 
     # GitLab Runner creates JOB_RESPONSE_FILE to provide full job context
     # See: https://docs.gitlab.com/runner/executors/custom.html#job-response
-    services=$(jq -rc '.services[]' "$JOB_RESPONSE_FILE")
+    readarray -t services < <(jq -rc '.services[]' "$JOB_RESPONSE_FILE")
     job_vars=$(jq -r \
         '.variables[]? | select(.file == false) | select(.key | test("^(?!(CI|GITLAB)_)")) | [.key, .value] | @sh' \
         "$JOB_RESPONSE_FILE")
 
-    for l in $services; do
-        # Using jq -er to fail of alias or name are not found
+    declare -a sargs_refs
+
+    for l in "${services[@]}"; do
+        # jq -e flag causes failure if alias or name are not found
         alias_name=$(echo "$l" | jq -er '.alias | select(.)')
         image_name=$(echo "$l" | jq -er '.name | select(.)')
         container_id="${container_id_base}-svc-${alias_name}"
@@ -276,10 +298,35 @@ start_services() {
         service_command=$(echo "$l" | jq -r '.command | select(.)[]')
 
         # start_service will further process the variables, so just compact it
-        service_vars=$(echo "$l" | jq -r '.variables[]? | [.key, .value] | @sh')
+        service_vars=$(echo "$l" | jq -r '.variables[]? | "\(.key)=\(.value)"')
 
-        start_service "$alias_name" "$container_id" "$image_name" \
-            "$service_entrypoint" "$service_command" "$service_vars" "$job_vars"
+        # For use in inter-container communication
+        declare -g "WSR_SERVICE_ID_${alias_name}"="${container_id}"
+        declare -g "WSR_SERVICE_HOST_${alias_name}"="${container_id}.apps.internal"
+
+        # This is brittle and bad but maybe not worse than alternatives.
+        #
+        # We have an array of reference names, and then we make an array
+        # under a reference for each of the services. Later we loop
+        # through the references, dereferencing each so we can send the
+        # whole bunch to `start_service`.
+        #
+        # This is so that we can do one loop to set up all the
+        # variables and a second loop to execute, thereby allowing
+        # each service access to all `WSR_SERVICE_*` variables.
+        local sargs_ref="sargs_${alias_name}"
+        sargs_refs+=("$sargs_ref")
+
+        local -n sargs_x="$sargs_ref"
+        sargs_x+=(
+            "$alias_name" "$container_id" "$image_name"
+            "$service_entrypoint" "$service_command" "$service_vars"
+        )
+    done
+
+    for s in "${sargs_refs[@]}"; do
+        local -n sargs_ref="$s"
+        start_service "${sargs_ref[@]}" "$job_vars"
     done
 }
 
@@ -305,9 +352,22 @@ allow_access_to_services() {
         return
     fi
 
+    declare -a service_list
+
     for l in $(echo "$ci_job_services" | jq -rc '.[]'); do
-        container_id="${container_id_base}-svc-${alias_name}"
-        allow_access_to_service "$container_id_base" "$container_id"
+        alias_name=$(echo "$l" | jq -er '.alias | select(.)')
+        service_list+=("${container_id_base}-svc-${alias_name}")
+    done
+
+    for s1 in "${service_list[@]}"; do
+        allow_access_to_service "$container_id_base" "$s1"
+
+        [ ${#service_list[@]} -le 1 ] && continue
+
+        for s2 in "${service_list[@]}"; do
+            [ "$s1" == "$s2" ] && continue
+            allow_access_to_service "$s1" "$s2"
+        done
     done
 }
 
