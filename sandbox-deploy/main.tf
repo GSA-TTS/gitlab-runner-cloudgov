@@ -14,7 +14,7 @@ module "sandbox-runner" {
 
   cg_ssh_host             = "ssh.fr-stage.cloud.gov"
   cf_org_name             = "cloud-gov-devtools-development"
-  cf_org_manager          = var.cf_org_manager
+  cf_org_managers         = [var.cf_org_manager]
   cf_space_prefix         = var.cf_space_prefix
   ci_server_token         = var.ci_server_token
   docker_hub_user         = var.docker_hub_user

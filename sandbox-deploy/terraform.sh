@@ -43,7 +43,8 @@ if [[ "$1" = "--" ]]; then
   shift 1
 fi
 
-cf org cloud-gov-devtools-development &> /dev/null || cf login -a api.fr-stage.cloud.gov --sso
+dev_org="cloud-gov-devtools-development"
+cf org $dev_org &> /dev/null || cf login -a api.fr-stage.cloud.gov --sso -o $dev_org
 
 terraform init
 echo "=============================================================================================================="
