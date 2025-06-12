@@ -1,9 +1,9 @@
 locals {
   # the list of egress hosts to allow for runner-manager and always needed by runner workers
-  manager_egress_allowlist = [
+  manager_egress_allowlist = toset([
     var.cg_api_wildcard, # cf-cli calls from manager
     var.ci_server_url
-  ]
+  ])
   technology_allowlist    = flatten([for t in var.program_technologies : local.allowlist_map[t]])
   worker_egress_allowlist = setunion([var.ci_server_url], local.technology_allowlist, var.worker_egress_allowlist)
 }

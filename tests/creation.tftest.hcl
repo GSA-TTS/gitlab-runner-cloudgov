@@ -89,25 +89,25 @@ run "test-system-creation" {
   }
 
   assert {
-    condition = local.proxy_allowlist == toset([
+    condition = local.manager_egress_allowlist == toset([
       "*.fr.cloud.gov",
+      "gsa.gitlab-dedicated.us"
+    ])
+    error_message = "The manager egress allowlist contains manager entries only"
+  }
+
+  assert {
+    condition = local.worker_egress_allowlist == toset([
       "gsa.gitlab-dedicated.us",
-      "deb.debian.org",
-      "*.ubuntu.com",
       "dl-cdn.alpinelinux.org",
-      "*.fedoraproject.org",
       "*.rubygems.org",
       "api.example.gov",
       "objects.githubusercontent.com",
+      "release-assets.githubusercontent.com",
       "*.releases.hashicorp.com",
       "registry.terraform.io",
-      "sts.us-gov-west-1.amazonaws.com",
-      "*.gcr.io",
-      "*.ghcr.io",
-      "*.docker.io",
-      "*.docker.com",
-      "registry.gsa.gitlab-dedicated.us"
+      "sts.us-gov-west-1.amazonaws.com"
     ])
-    error_message = "The egress allowlist contains manager, technology, and worker entries"
+    error_message = "The worker egress allowlist contains technology and worker entries"
   }
 }
