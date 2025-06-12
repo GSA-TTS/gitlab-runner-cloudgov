@@ -1,21 +1,11 @@
 locals {
   # the list of egress hosts to allow for runner-manager and always needed by runner workers
-  devtools_egress_allowlist = [
-    "*.fr.cloud.gov",         # cf-cli calls from manager
-    var.ci_server_url,        # connections from both manager and workers
-    "deb.debian.org",         # debian runner dependencies install
-    "*.ubuntu.com",           # ubuntu runner dependencies install
-    "dl-cdn.alpinelinux.org", # alpine runner dependencies install
-    "*.fedoraproject.org",    # fedora runner dependencies install
-    # common container registries
-    "*.gcr.io",
-    "*.ghcr.io",
-    "*.docker.io",
-    "*.docker.com",
-    "registry.gsa.gitlab-dedicated.us" # our own container registry
+  manager_egress_allowlist = [
+    var.cg_api_wildcard, # cf-cli calls from manager
+    var.ci_server_url
   ]
-  technology_allowlist = flatten([for t in var.program_technologies : local.allowlist_map[t]])
-  proxy_allowlist      = setunion(local.devtools_egress_allowlist, var.worker_egress_allowlist, local.technology_allowlist)
+  technology_allowlist    = flatten([for t in var.program_technologies : local.allowlist_map[t]])
+  worker_egress_allowlist = setunion([var.ci_server_url], local.technology_allowlist, var.worker_egress_allowlist)
 }
 
 # the `depends_on` lines for each resource or module is needed to properly sequence initial creation
@@ -118,16 +108,15 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     CUSTOM_RUN_EXEC          = "/home/vcap/app/cf-driver/run.sh"
     REGISTER_NON_INTERACTIVE = true
     # TODO - Add timeouts like CUSTOM_CLEANUP_EXEC_TIMEOUT
-    RUNNER_CONCURRENCY        = var.runner_concurrency
-    OBJECT_STORE_INSTANCE     = var.object_store_instance
-    PROXY_CREDENTIAL_INSTANCE = cloudfoundry_service_instance.egress-proxy-credentials.name
-    PROXY_APP_NAME            = var.egress_app_name
-    PROXY_SPACE               = module.egress_space.space_name
-    CF_USERNAME               = local.sa_cf_username
-    CF_PASSWORD               = local.sa_cf_password
-    CG_SSH_HOST               = var.cg_ssh_host
-    DOCKER_HUB_USER           = var.docker_hub_user
-    DOCKER_HUB_TOKEN          = var.docker_hub_token
+    RUNNER_CONCURRENCY    = var.runner_concurrency
+    OBJECT_STORE_INSTANCE = var.object_store_instance
+    PROXY_APP_NAME        = var.egress_app_name
+    PROXY_SPACE           = module.egress_space.space_name
+    CF_USERNAME           = local.sa_cf_username
+    CF_PASSWORD           = local.sa_cf_password
+    CG_SSH_HOST           = var.cg_ssh_host
+    DOCKER_HUB_USER       = var.docker_hub_user
+    DOCKER_HUB_TOKEN      = var.docker_hub_token
     # DANGER: Do not set RUNNER_DEBUG to true without reading
     # https://docs.gitlab.com/runner/faq/#enable-debug-logging-mode
     # and ensuring job logs are removed to avoid leaking secrets.
@@ -138,11 +127,11 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
   }
   service_bindings = [
     { service_instance = var.object_store_instance },
-    { service_instance = cloudfoundry_service_instance.egress-proxy-credentials.name }
+    { service_instance = cloudfoundry_service_instance.manager-egress-credentials.name }
   ]
   depends_on = [
     module.object_store_instance,
-    cloudfoundry_service_instance.egress-proxy-credentials
+    cloudfoundry_service_instance.manager-egress-credentials
   ]
 }
 
@@ -169,13 +158,21 @@ resource "cloudfoundry_space_role" "service-account-egress-role" {
 
 # egress_proxy: set up the egress proxy app
 module "egress_proxy" {
-  source = "github.com/GSA-TTS/terraform-cloudgov//egress_proxy?ref=b28e89af19aa88d3a6132f6a1d7697bf29accf5f" #v2.3.0
+  source = "github.com/gsa-tts/cg-egress-proxy?ref=multi-client-support"
 
   cf_org_name     = var.cf_org_name
   cf_egress_space = module.egress_space.space
   name            = var.egress_app_name
-  allowports      = [80, 443, 2222]
-  allowlist       = local.proxy_allowlist
+  client_configuration = {
+    "wsr-manager" = {
+      ports     = [443, 2222]
+      allowlist = local.manager_egress_allowlist
+    }
+    "wsr-runner" = {
+      ports     = [80, 443]
+      allowlist = local.worker_egress_allowlist
+    }
+  }
   # see egress_proxy/variables.tf for full list of optional arguments
   depends_on = [module.egress_space]
 }
@@ -197,17 +194,31 @@ resource "cloudfoundry_network_policy" "egress_routing" {
   ]
 }
 
-# egress-proxy-credentials: store the egress proxy credentials in a UPSI for the manager
-# to retrieve, use, and pass on to runner workers
-resource "cloudfoundry_service_instance" "egress-proxy-credentials" {
-  name  = "${var.egress_app_name}-credentials"
+# manager-egress-credentials: store the egress proxy credentials in a UPSI for the manager
+resource "cloudfoundry_service_instance" "manager-egress-credentials" {
+  name  = "manager-egress-credentials"
   space = module.manager_space.space_id
   type  = "user-provided"
   credentials = jsonencode({
-    "https_uri"   = module.egress_proxy.https_proxy
-    "http_uri"    = module.egress_proxy.http_proxy
-    "cred_string" = "${module.egress_proxy.username}:${module.egress_proxy.password}"
-    "domain"      = module.egress_proxy.domain
-    "http_port"   = module.egress_proxy.http_port
+    https_uri   = module.egress_proxy.https_proxy["wsr-manager"]
+    http_uri    = module.egress_proxy.http_proxy["wsr-manager"]
+    cred_string = "${module.egress_proxy.username["wsr-manager"]}:${module.egress_proxy.password["wsr-manager"]}"
+    domain      = module.egress_proxy.domain
+    http_port   = module.egress_proxy.http_port
+  })
+}
+moved {
+  from = cloudfoundry_service_instance.egress-proxy-credentials
+  to   = cloudfoundry_service_instance.manager-egress-credentials
+}
+
+
+# worker-egress-credentials: store the egress proxy credentials in a UPSI for the workers
+resource "cloudfoundry_service_instance" "worker-egress-credentials" {
+  name  = "worker-egress-credentials"
+  space = module.worker_space.space_id
+  type  = "user-provided"
+  credentials = jsonencode({
+    http_uri = module.egress_proxy.http_proxy["wsr-runner"]
   })
 }

@@ -16,7 +16,7 @@ function command_exists() {
 }
 
 function setup_proxy_access() {
-    EGRESS_CREDENTIALS=$(echo "$VCAP_SERVICES" | jq --arg service_name "$PROXY_CREDENTIAL_INSTANCE" ".[][] | select(.name == \$service_name) | .credentials")
+    EGRESS_CREDENTIALS=$(echo "$VCAP_SERVICES" | jq '.[][] | select(.name == "manager-egress-credentials") | .credentials')
     if [ -n "$EGRESS_CREDENTIALS" ]; then
         echo "Configuring HTTPS_PROXY environment variable"
         export https_proxy=$(echo "$EGRESS_CREDENTIALS" | jq --raw-output ".https_uri")

@@ -44,6 +44,12 @@ variable "ci_server_url" {
   description = "Gitlab Dedicated for Government URL"
 }
 
+variable "cg_api_wildcard" {
+  type        = string
+  default     = "*.fr.cloud.gov"
+  description = "Wildcard domain for the various cloud.gov endpoints"
+}
+
 variable "default_job_image" {
   type        = string
   default     = "ubuntu:24.04"
