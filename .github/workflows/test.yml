@@ -29,7 +29,7 @@ jobs:
             apt-get install -y zip
         with:
           variables: |
-            cf_org_managers: ["${{ secrets.CF_USER }}"]
+            cf_org_managers = ["${{ secrets.CF_USER }}"]
 
 
   validate-sandbox:
