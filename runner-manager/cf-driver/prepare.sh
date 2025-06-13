@@ -56,15 +56,6 @@ create_temporary_manifest() {
         echo "${padding}${v}: \"${!v}\"" >>"$TMPMANIFEST"
     done
 
-    # set env var with egress-proxy URL
-    #
-    # This will be exported to http(s)_proxy on the worker in
-    # glrw-profile.sh, so it's important to source that whenever
-    # accessing the worker.
-    #
-    # shellcheck disable=SC2154 # http_proxy defined in .profile
-    echo "${padding}egress_proxy: \"$http_proxy\"" >>"$TMPMANIFEST"
-
     echo "[cf-driver] [DEBUG] $(wc -l <"$TMPMANIFEST") lines in $TMPMANIFEST"
 }
 

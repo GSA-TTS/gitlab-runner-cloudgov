@@ -7,4 +7,4 @@ if [[ $# -ne 1 ]]; then
   exit 1
 fi
 
-TF_VAR_cf_org_manager="$1" terraform test
+terraform test -var "cf_org_managers=[\"$1\"]"
