@@ -133,6 +133,9 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     module.object_store_instance,
     cloudfoundry_service_instance.manager-egress-credentials
   ]
+  lifecycle {
+    replace_triggered_by = [cloudfoundry_service_instance.manager-egress-credentials.credentials]
+  }
 }
 
 # egress_space: cloud.gov space for running the egress proxy
@@ -158,7 +161,7 @@ resource "cloudfoundry_space_role" "service-account-egress-role" {
 
 # egress_proxy: set up the egress proxy app
 module "egress_proxy" {
-  source = "github.com/gsa-tts/cg-egress-proxy?ref=multi-client-support"
+  source = "github.com/gsa-tts/cg-egress-proxy?ref=bafd6df83b4dae381c7f0b5b9c2cc581ef5b1e97"
 
   cf_org_name     = var.cf_org_name
   cf_egress_space = module.egress_space.space
@@ -168,7 +171,7 @@ module "egress_proxy" {
       ports     = [443, 2222]
       allowlist = local.manager_egress_allowlist
     }
-    "wsr-runner" = {
+    "wsr-worker" = {
       ports     = [80, 443]
       allowlist = local.worker_egress_allowlist
     }
@@ -219,6 +222,6 @@ resource "cloudfoundry_service_instance" "worker-egress-credentials" {
   space = module.worker_space.space_id
   type  = "user-provided"
   credentials = jsonencode({
-    http_uri = module.egress_proxy.http_proxy["wsr-runner"]
+    http_uri = module.egress_proxy.http_proxy["wsr-worker"]
   })
 }
