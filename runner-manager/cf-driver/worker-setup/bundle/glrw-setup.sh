@@ -15,6 +15,10 @@ if [ "$dir" != "$HOME/bundle" ]; then
 fi
 
 # started in ./bundle, unpack to home
+if [ -d "$HOME/bin" ]; then
+    mv ./bin/* "$HOME/bin"
+    rmdir ./bin
+fi
 mv ./* "$HOME"
 cd "$HOME" || exit 1
 
