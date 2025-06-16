@@ -5,10 +5,6 @@ name: "CF Driver: Go Build & Test"
 
 on: [pull_request]
 
-defaults:
-  run:
-    working-directory: runner-manager/cfd
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,12 +13,9 @@ jobs:
 
       - name: Set up Go
         uses: actions/setup-go@v5
-        with:
-          go-version-file: runner-manager/cfd/go.mod
-          cache-dependency-path: runner-manager/cfd/go.sum
 
       - name: Install dependencies
-        run: go get .
+        run: go get ./...
 
       - name: Check formatting
         run: test -z "$(gofmt -l .)"

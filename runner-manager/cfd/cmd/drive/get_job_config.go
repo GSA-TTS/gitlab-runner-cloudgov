@@ -9,7 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cfd/cloudgov"
+	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner-manager/cfd/cloudgov"
 )
 
 type JobConfig struct {
