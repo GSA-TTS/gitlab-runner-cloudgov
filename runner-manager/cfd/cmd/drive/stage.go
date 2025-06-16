@@ -3,7 +3,7 @@ package drive
 import (
 	"fmt"
 
-	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cfd/cloudgov"
+	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner-manager/cfd/cloudgov"
 )
 
 type stage struct {

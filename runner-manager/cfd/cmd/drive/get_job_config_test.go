@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cfd/cloudgov"
+	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner-manager/cfd/cloudgov"
 	"github.com/google/go-cmp/cmp"
 )
 

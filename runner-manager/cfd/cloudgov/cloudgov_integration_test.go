@@ -10,7 +10,7 @@ import (
 	"os"
 	"testing"
 
-	cg "github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cfd/cloudgov"
+	cg "github.com/GSA-TTS/gitlab-runner-cloudgov/runner-manager/cfd/cloudgov"
 	"github.com/google/go-cmp/cmp"
 )
 
