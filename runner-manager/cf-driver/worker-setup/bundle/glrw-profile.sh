@@ -2,11 +2,6 @@
 # shellcheck source=./
 # shellcheck disable=1091
 
-# egress_proxy set in manifest during prepare
-# shellcheck disable=SC2154
-export http_proxy="$egress_proxy"
-export https_proxy="$egress_proxy"
-
 if [ -r /etc/profile ]; then
     . /etc/profile
 fi
