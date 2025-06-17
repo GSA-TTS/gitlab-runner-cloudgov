@@ -61,6 +61,9 @@ type CIVar struct {
 	Value string
 }
 
+// match images w/ docker domain, or no domain (i.e. docker by default)
+var domainRegex = regexp.MustCompile(`^((registry-\d+|index)?\.?docker\.io\/|[^.]*(:|$))`)
+
 type VcapAppData struct {
 	CFApi     string `json:"cf_api"`
 	OrgID     string `json:"org_id"`
@@ -159,14 +162,11 @@ func (cfg *JobConfig) processImage(img Image, m *cloudgov.AppManifest) {
 	if img.Name != "" {
 		m.Docker.Image = img.Name
 
-		// match images w/ docker domain, or no domain (i.e. docker by default)
-		re := regexp.MustCompile(`^((registry-\d+|index)?\.?docker\.io\/|[^.]*(:|$))`)
-
 		// TODO: #95
 		if strings.Contains(img.Name, "registry.gitlab.com") {
 			m.Docker.Username = cfg.CIRegistryUser
 			m.Docker.Password = cfg.CIRegistryPass
-		} else if re.FindString(img.Name) != "" {
+		} else if domainRegex.FindString(img.Name) != "" {
 			m.Docker.Username = cfg.DockerHubUser
 			m.Docker.Password = cfg.DockerHubToken
 		}
