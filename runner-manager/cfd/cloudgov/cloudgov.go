@@ -42,7 +42,7 @@ func (e CloudGovClientError) Error() string {
 }
 
 // TODO: we should pull this out of VCAP_APPLICATION
-const apiRootURLDefault = "https://api.fr.cloud.gov"
+const apiRootURLDefault = "https://api.fr-stage.cloud.gov"
 
 func New(i ClientAPI, o *Opts) (*Client, error) {
 	if o == nil {
