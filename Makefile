@@ -14,4 +14,4 @@ integration: vet
 	go test -v -count=1 --tags=integration ./...
 
 build: vet
-	go build
+	go build ./runner-manager/cfd
