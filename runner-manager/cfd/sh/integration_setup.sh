@@ -70,7 +70,7 @@ if [[ -z "$skip_create" ]]; then
 fi
 
 # create a teeny app we can use to test client.AppGet
-cf push -k 8M -m 128M -o busybox -u process -c /bin/sh "$app_name"
+cf push --no-route -k 8M -m 128M -o busybox -u process -c /bin/sh "$app_name"
 
 out_arr=(
     # get the credentials from key and output

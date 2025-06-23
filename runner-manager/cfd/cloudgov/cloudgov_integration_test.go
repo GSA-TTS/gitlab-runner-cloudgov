@@ -3,7 +3,10 @@
 package cloudgov_test
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"os/exec"
 	"regexp"
 	"testing"
 
@@ -111,4 +114,66 @@ func Test_SSHCode(t *testing.T) {
 	if !re.MatchString(got) {
 		t.Errorf("wanted string matching /%v/, got %v", re, got)
 	}
+}
+
+func cleanupRoute(t testing.TB, app *cg.App) error {
+	t.Helper()
+
+	delRouteCmd := exec.Command(
+		"cf", "delete-route", "-f", "apps.internal",
+		fmt.Sprintf("-n%s", app.Name),
+	)
+
+	out, err := delRouteCmd.CombinedOutput()
+	if err != nil {
+		t.Log(string(out))
+		if exErr, ok := err.(*exec.ExitError); ok {
+			t.Log(exErr.Error())
+			t.Fatal(string(exErr.Stderr))
+		} else {
+			t.Fatal(err)
+		}
+	}
+
+	return err
+}
+
+func TestClient_MapServiceRoute(t *testing.T) {
+	setup(t)
+
+	apps, err := cgClient.AppsList()
+	if err != nil {
+		t.Fatal(err)
+	}
+	app := apps[0]
+
+	err = cgClient.MapServiceRoute(app)
+	defer cleanupRoute(t, app)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ckRouteCmd := exec.Command("cf", "curl", fmt.Sprintf("/v3/apps/%s/routes", app.GUID))
+	out, err := ckRouteCmd.CombinedOutput()
+	if err != nil {
+		t.Log(out)
+		t.Fatal(err)
+	}
+
+	var routeOut map[string][]map[string]string
+	if err := json.Unmarshal(out, &routeOut); err != nil {
+		t.Log("partial unmarshalling error expected…")
+		t.Log(err)
+	}
+
+	wantUrl := fmt.Sprintf("%s.apps.internal", app.Name)
+
+	for _, m := range routeOut["resources"] {
+		if m["host"] == app.Name && m["url"] == wantUrl {
+			return
+		}
+	}
+
+	t.Logf("%#v", routeOut["resources"])
+	t.Fatalf("could not find route with %s host and correct url", app.Name)
 }
