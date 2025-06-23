@@ -34,7 +34,7 @@ https://docs.gitlab.com/runner/executors/custom.html#prepare`,
 type prepStage commonStage
 
 func run(cmd *cobra.Command, args []string) error {
-	s, err := newStage()
+	s, err := newStage(nil)
 	if err != nil {
 		return fmt.Errorf("error initializing prepare stage: %w", err)
 	}
