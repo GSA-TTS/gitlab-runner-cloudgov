@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+cf_api="api.fr-stage.cloud.gov"
+cf_api_prod="api.fr.cloud.gov"
+skip_create=
+
+basename="wsr-integration"
+app_name="cfd_integration_test_AppGet"
+
 usage() {
     msg="$1"
     status=0
@@ -9,13 +16,14 @@ usage() {
     fi
 
     cat >&2 <<-EOM
-	Usage: $0 [-ps] BASENAME
+	Usage: $0 [-bps]
 
 	Creates a service account with key and a sample application, outputs to testdata dirs.
 
 	Options:
-	  -p	Use api.fr.cloud.gov (defaults to fr-stage)
-	  -s	Skip creation, only output creds for BASENAME
+	  -b	Basename to use for service account & key (defaults to $basename)
+	  -p	Use $cf_api_prod (defaults to $cf_api)
+	  -s	Skip creation and only get & output credentials
 	EOM
 
     exit $status
@@ -24,14 +32,13 @@ usage() {
 dir=$(dirname "$0")
 cd "$dir"
 
-cf_api="api.fr-stage.cloud.gov"
-app_name="cfd_integration_test_AppGet"
-skip_create=
-
-while getopts ":psh" opt; do
+while getopts ":b:psh" opt; do
     case $opt in
+    b)
+        basename="$OPTARG"
+        ;;
     p)
-        cf_api="api.fr.cloud.gov"
+        cf_api="$cf_api_prod"
         ;;
     s)
         skip_create="true"
@@ -44,9 +51,6 @@ while getopts ":psh" opt; do
         ;;
     esac
 done
-shift $((OPTIND - 1))
-
-name="$1"
 
 set -euo pipefail
 
@@ -59,23 +63,18 @@ if [[ $org != 'sandbox-gsa' ]]; then
     exit 1
 fi
 
-# check name defined, prompt if not
-if [[ -z "$name" ]]; then
-    read -rei "wsr-integration" -p "Please input a basename for the service account: " name
-fi
-
 # create the space deployer, then a key for the deployer
 if [[ -z "$skip_create" ]]; then
-    cf create-service cloud-gov-service-account space-deployer "$name"-deployer
-    cf create-service-key "$name"-deployer "$name"-key
+    cf create-service cloud-gov-service-account space-deployer "$basename"-deployer
+    cf create-service-key "$basename"-deployer "$basename"-key
 fi
 
 # create a teeny app we can use to test client.AppGet
-cf push --no-start -k 8M -m 128M -o busybox -u process -c /bin/sh "$app_name"
+cf push -k 8M -m 128M -o busybox -u process -c /bin/sh "$app_name"
 
 out_arr=(
     # get the credentials from key and output
-    "$(cf service-key "$name"-deployer "$name"-key | tail +2 |
+    "$(cf service-key "$basename"-deployer "$basename"-key | tail +2 |
         jq -r ".credentials | .username,.password")"
     # get target org & space
     "$(cf t | tail -2 | awk '{print $2}')"
