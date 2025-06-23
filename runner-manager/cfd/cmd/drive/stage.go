@@ -3,6 +3,7 @@ package drive
 import (
 	"fmt"
 	"os/exec"
+	"strings"
 
 	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner-manager/cfd/cloudgov"
 )
@@ -55,33 +56,24 @@ func newStage(client *cloudgov.Client) (s *stage, err error) {
 }
 
 func (s *stage) RunSSH(guid string, cmd string) error {
-	// cfg := s.common.config.EgressProxyConfig
-
 	pass, err := s.common.client.SSHCode()
 	if err != nil {
 		return err
 	}
 
-	// sshCmd := exec.Command(
-	// 	"sshpass", "-p", pass,
-	// 	"ssh -p 2222 -T",
-	// 	"-o 'StrictHostKeyChecking=no'",
-	// 	fmt.Sprintf("-o 'ProxyCommand corkscrew %v %v %%h %%p %v'",
-	// 		cfg.ProxyHostSSH, cfg.ProxyPortSSH, cfg.ProxyAuthFile,
-	// 	),
-	// 	fmt.Sprintf("cf:%s/0@ssh.fr.cloud.gov", guid),
-	// 	"cmd",
-	// )
-
+	args := []string{"ssh", "-p 2222", "-T", "-o StrictHostKeyChecking=no"}
 	host := fmt.Sprintf("cf:%s/0@ssh.fr-stage.cloud.gov", guid)
-	sshCmd := exec.Command(
-		"sshpass", "-p", pass,
-		"ssh", "-p 2222", "-T", "-o StrictHostKeyChecking=no", host,
-		cmd,
-	)
 
-	// fmt.Println(sshCmd.String())
-	// fmt.Print(strings.Join(sshCmd.Environ(), "\n"))
+	epCfg := s.common.config.EgressProxyConfig
+	if epCfg != (EgressProxyConfig{}) {
+		proxy := fmt.Sprintf("-o ProxyCommand corkscrew %v %v %%h %%p %v",
+			epCfg.ProxyHostSSH, epCfg.ProxyPortSSH, epCfg.ProxyAuthFile,
+		)
+		args = append(args, proxy)
+	}
+
+	sshCmd := exec.Command("sshpass", append(args, host)...)
+	sshCmd.Stdin = strings.NewReader(pass) // give pass to sshpass through stdin
 
 	out, err := sshCmd.Output()
 	if err != nil {
