@@ -131,3 +131,8 @@ func (cf *CFClientAPI) mapRoute(
 	)
 	return err
 }
+
+// addNetworkPolicy implements ClientAPI.
+func (cf *CFClientAPI) addNetworkPolicy(app *App, dest string, space string, port string) error {
+	panic("unimplemented")
+}
