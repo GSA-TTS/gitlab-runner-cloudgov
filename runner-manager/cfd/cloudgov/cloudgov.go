@@ -1,11 +1,7 @@
 package cloudgov
 
-// Stuff we'll need to implement, for ref
-//
-// mapRoute()
-//
-// addNetworkPolicy()
-// removeNetworkPolicy()
+import "context"
+
 type ClientAPI interface {
 	connect(url string, creds *Creds) error
 
@@ -15,6 +11,8 @@ type ClientAPI interface {
 	appsList() (apps []*App, err error)
 
 	sshCode() (string, error)
+	mapRoute(ctx context.Context, app *App, domain string, space string, host string, path string, port int) error
+	addNetworkPolicy(app *App, dest string, space string, port string) error
 }
 
 type CredsGetter interface {
@@ -42,7 +40,10 @@ func (e CloudGovClientError) Error() string {
 }
 
 // TODO: we should pull this out of VCAP_APPLICATION
-const apiRootURLDefault = "https://api.fr-stage.cloud.gov"
+const (
+	apiRootURLDefault  = "https://api.fr-stage.cloud.gov"
+	internalDomainGUID = "8a5d6a8c-cfc1-4fc4-afc9-aa563ff9df5e"
+)
 
 func New(i ClientAPI, o *Opts) (*Client, error) {
 	if o == nil {
@@ -78,9 +79,10 @@ func (c *Client) Connect() (*Client, error) {
 }
 
 type App struct {
-	Name  string
-	GUID  string
-	State string
+	Name      string
+	GUID      string
+	State     string
+	SpaceGUID string
 }
 
 func (c *Client) AppGet(id string) (*App, error) {
@@ -132,4 +134,8 @@ func (c *Client) ServicesPush(manifests []*AppManifest) ([]*App, error) {
 
 func (c *Client) SSHCode() (string, error) {
 	return c.sshCode()
+}
+
+func (c *Client) MapServiceRoute(app *App) error {
+	return c.mapRoute(context.Background(), app, internalDomainGUID, app.SpaceGUID, app.Name, "", 0)
 }

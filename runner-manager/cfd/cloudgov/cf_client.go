@@ -73,7 +73,7 @@ func castApp(app *resource.App) *App {
 	if app == nil || app.GUID == "" {
 		return nil
 	}
-	return &(App{Name: app.Name, GUID: app.GUID, State: app.State})
+	return &(App{Name: app.Name, GUID: app.GUID, State: app.State, SpaceGUID: app.Relationships.Space.Data.GUID})
 }
 
 func castApps(apps []*resource.App) []*App {
@@ -108,4 +108,26 @@ func (cf *CFClientAPI) appsList() ([]*App, error) {
 func (cf *CFClientAPI) sshCode() (string, error) {
 	ctx := context.Background()
 	return cf.conn().SSHCode(ctx)
+}
+
+func (cf *CFClientAPI) mapRoute(
+	ctx context.Context,
+	app *App,
+	domain string, space string, host string, path string, port int,
+) error {
+	opts := resource.NewRouteCreateWithHost(domain, space, host, path, port)
+
+	route, err := cf.conn().Routes.Create(ctx, opts)
+	if err != nil {
+		return err
+	}
+
+	_, err = cf.conn().Routes.InsertDestinations(
+		ctx,
+		route.GUID,
+		[]*resource.RouteDestinationInsertOrReplace{{
+			App: resource.RouteDestinationApp{GUID: &app.GUID},
+		}},
+	)
+	return err
 }
