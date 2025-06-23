@@ -60,11 +60,12 @@ func (s *prepStage) exec() (err error) {
 		return err
 	}
 
-	// TODO:
-	// install deps
-	// allow access to services
+	err = s.installDeps()
+	if err != nil {
+		return err
+	}
 
-	return err
+	return s.setNetworkPolicies()
 }
 
 // TODO: refactor to include a service manifests slice and
@@ -77,10 +78,21 @@ func (s *prepStage) startServices() error {
 	for _, serv := range s.config.Services {
 		s.client.Push(serv.Manifest)
 		// map-route containerID apps.internal --hostname containerID
-		//
+
+		// TODO: implement WSR_ vars
+		// Leaving this until more is implemented so the form can fit function
 		// export WSR_SERVICE_HOST_$alias=$containerID.apps.internal
-		//
 	}
 
 	return nil
+}
+
+// TODO: implement
+func (s *prepStage) installDeps() error {
+	panic("unimplemented")
+}
+
+// TODO: implement
+func (s *prepStage) setNetworkPolicies() error {
+	panic("unimplemented")
 }
