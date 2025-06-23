@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+cf_api="api.fr-stage.cloud.gov"
+cf_api_prod="api.fr.cloud.gov"
+
+basename="wsr-integration"
+app_name="cfd_integration_test_AppGet"
+
 usage() {
     msg="$1"
     status=0
@@ -9,24 +15,26 @@ usage() {
     fi
 
     cat >&2 <<-EOM
-	Usage: $0 [-pf] BASENAME
+	Usage: $0 [-bpf]
 
 	Deletes testing service account, key and sample application.
 
 	Options:
-	  -p	Use api.fr.cloud.gov (defaults to fr-stage)
+	  -b	Basename to use for service account & key (defaults to $basename)
+	  -p	Use $cf_api_prod (defaults to $cf_api)
 	  -f	Force deletion without confirmation
 	EOM
 
     exit $status
 }
 
-cf_api="api.fr-stage.cloud.gov"
-app_name="cfd_integration_test_AppGet"
 declare -a args
 
-while getopts ":pfh" opt; do
+while getopts ":b:pfh" opt; do
     case $opt in
+    b)
+        basename="$OPTARG"
+        ;;
     p)
         cf_api="api.fr.cloud.gov"
         ;;
@@ -41,9 +49,6 @@ while getopts ":pfh" opt; do
         ;;
     esac
 done
-shift $((OPTIND - 1))
-
-name="$1"
 
 set -euo pipefail
 
@@ -56,16 +61,11 @@ if [[ $org != 'sandbox-gsa' ]]; then
     exit 1
 fi
 
-# check name defined, prompt if not
-if [[ -z "$name" ]]; then
-    read -rei "wsr-integration" -p "Please input a basename for the service account: " name
-fi
-
 # delete the teeny app
 cf delete -r "${args[@]}" "$app_name"
 
 # delete the deployer and key
-cf delete-service-key "${args[@]}" "$name"-deployer "$name"-key
-cf delete-service "${args[@]}" "$name"-deployer
+cf delete-service-key "${args[@]}" "$basename"-deployer "$basename"-key
+cf delete-service "${args[@]}" "$basename"-deployer
 
 echo "WARNING: didn't delete any testdata files, you must remove them manually."
