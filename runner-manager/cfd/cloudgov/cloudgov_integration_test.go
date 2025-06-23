@@ -37,7 +37,7 @@ func Test_CFAdapter_AppGet(t *testing.T) {
 
 	want := []*cg.App{{
 		Name:  app,
-		State: "STOPPED",
+		State: "STARTED",
 	}}
 
 	got, err := cgClient.AppsList()
