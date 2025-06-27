@@ -36,7 +36,7 @@ while getopts ":b:pfh" opt; do
         basename="$OPTARG"
         ;;
     p)
-        cf_api="api.fr.cloud.gov"
+        cf_api="$cf_api_prod"
         ;;
     f)
         args+=("-f")
