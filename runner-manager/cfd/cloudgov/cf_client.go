@@ -4,6 +4,9 @@ import (
 	"context"
 	"os"
 
+	"code.cloudfoundry.org/lager/v3"
+	"code.cloudfoundry.org/policy_client"
+
 	"github.com/cloudfoundry/go-cfclient/v3/client"
 	"github.com/cloudfoundry/go-cfclient/v3/config"
 	"github.com/cloudfoundry/go-cfclient/v3/operation"
@@ -132,7 +135,27 @@ func (cf *CFClientAPI) mapRoute(
 	return err
 }
 
-// addNetworkPolicy implements ClientAPI.
-func (cf *CFClientAPI) addNetworkPolicy(app *App, dest string, space string, port string) error {
-	panic("unimplemented")
+func (cf *CFClientAPI) addNetworkPolicy(app *App, dest string, space string, port int) error {
+	pclient := policy_client.NewExternal(
+		lager.NewLogger("ExternalPolicyClient"),
+		cf.conn().HTTPAuthClient(),
+		cf.conn().ApiURL(""),
+	)
+
+	// TODO: get dest guid?
+	// no, something else should get the guid
+	destGUID := ""
+
+	// TODO: ports
+	// - port should be range maybe?
+	// - might want to support sending multiple routes at once?
+	// - could take a slice of ports where some are ranges and some are singles
+
+	return pclient.AddPolicies("", []policy_client.Policy{{
+		Source: policy_client.Source{ID: app.GUID},
+		Destination: policy_client.Destination{
+			ID:    destGUID,
+			Ports: policy_client.Ports{Start: port, End: port},
+		},
+	}})
 }
