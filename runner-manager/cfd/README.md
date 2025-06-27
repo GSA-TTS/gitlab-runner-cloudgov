@@ -50,12 +50,14 @@ make test
 
 ### Integration tests
 
-We only have one integration test right now, and to get it running you'll need to do a bit of local setup.
+Integration tests take a little effort get working.
 
-1. You will need to first get a username & password for some space on cloud.gov that has at least one app.
-1. Then you can add those credentials to `./cg/testdata/.cg_creds` in the style of the `.cg_creds.sample` file there.
-1. Run the test with `make integration`, which should give you an error and, in its output, show you what the resulting JSON looks like.
-1. Copy that JSON result over to the last line of your `.cg_creds` file and run `make integration` again, this time it should succeed.
+1. Set your `cf target` to `sandbox-gsa`.
+2. Run `./sh/integration_setup.sh`.
+   a. This will output credentials and `cf target` info to the `testdata` directories for `./cloudgov` and `./cmd/drive`.
+   b. It will also create a sample app in your sandbox account to be used for testing.
+3. Run integration tests with `make integration`
+4. Whenever you're ready, you can clean up the credentials & app made during setup with `./sh/integration_teardown.sh`.
 
 ## Builds
 
