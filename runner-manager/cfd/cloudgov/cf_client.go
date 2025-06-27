@@ -3,6 +3,8 @@ package cloudgov
 import (
 	"context"
 	"os"
+	"strconv"
+	"strings"
 
 	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/policy_client"
@@ -135,27 +137,45 @@ func (cf *CFClientAPI) mapRoute(
 	return err
 }
 
-func (cf *CFClientAPI) addNetworkPolicy(app *App, dest string, space string, port int) error {
+func parsePortRange(prange string) (start int, end int, err error) {
+	ports := strings.Split(prange, "-")
+
+	start, err = strconv.Atoi(ports[0])
+	if err != nil {
+		return
+	}
+
+	if len(ports) == 1 {
+		end = start
+		return
+	}
+	end, err = strconv.Atoi(ports[1])
+	return
+}
+
+func (cf *CFClientAPI) addNetworkPolicy(app *App, destGUID string, portRanges []string) error {
 	pclient := policy_client.NewExternal(
 		lager.NewLogger("ExternalPolicyClient"),
 		cf.conn().HTTPAuthClient(),
 		cf.conn().ApiURL(""),
 	)
 
-	// TODO: get dest guid?
-	// no, something else should get the guid
-	destGUID := ""
+	policies := make([]policy_client.Policy, 0, len(portRanges))
 
-	// TODO: ports
-	// - port should be range maybe?
-	// - might want to support sending multiple routes at once?
-	// - could take a slice of ports where some are ranges and some are singles
+	for i, prange := range portRanges {
+		start, end, err := parsePortRange(prange)
+		if err != nil {
+			return err
+		}
 
-	return pclient.AddPolicies("", []policy_client.Policy{{
-		Source: policy_client.Source{ID: app.GUID},
-		Destination: policy_client.Destination{
-			ID:    destGUID,
-			Ports: policy_client.Ports{Start: port, End: port},
-		},
-	}})
+		policies[i] = policy_client.Policy{
+			Source: policy_client.Source{ID: app.GUID},
+			Destination: policy_client.Destination{
+				ID:    destGUID,
+				Ports: policy_client.Ports{Start: start, End: end},
+			},
+		}
+	}
+
+	return pclient.AddPolicies("", policies)
 }
