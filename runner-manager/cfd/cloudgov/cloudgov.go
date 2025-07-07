@@ -1,3 +1,4 @@
+// Package cloudgov provides methods to interact CloudFoundry on cloud.gov.
 package cloudgov
 
 import "context"
@@ -12,7 +13,7 @@ type ClientAPI interface {
 
 	sshCode() (string, error)
 	mapRoute(ctx context.Context, app *App, domain string, space string, host string, path string, port int) error
-	addNetworkPolicy(app *App, dest string, space string, port string) error
+	addNetworkPolicy(app *App, destGUID string, portRanges []string) error
 }
 
 type CredsGetter interface {
