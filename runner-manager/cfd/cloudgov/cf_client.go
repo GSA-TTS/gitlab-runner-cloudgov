@@ -145,7 +145,7 @@ func parsePortRange(prange string) (start int, end int, err error) {
 		return
 	}
 
-	if len(ports) == 1 {
+	if len(ports) == 1 || ports[1] == "" {
 		end = start
 		return
 	}
