@@ -153,14 +153,14 @@ func parsePortRange(prange string) (start int, end int, err error) {
 	return
 }
 
-func (cf *CFClientAPI) addNetworkPolicy(app *App, destGUID string, portRanges []string) error {
+func (cf *CFClientAPI) addNetworkPolicy(fromGUID string, toGUID string, portRanges []string) error {
 	pclient := policy_client.NewExternal(
 		lager.NewLogger("ExternalPolicyClient"),
 		cf.conn().HTTPAuthClient(),
 		cf.conn().ApiURL(""),
 	)
 
-	policies := make([]policy_client.Policy, 0, len(portRanges))
+	policies := make([]policy_client.Policy, len(portRanges))
 
 	for i, prange := range portRanges {
 		start, end, err := parsePortRange(prange)
@@ -169,10 +169,11 @@ func (cf *CFClientAPI) addNetworkPolicy(app *App, destGUID string, portRanges []
 		}
 
 		policies[i] = policy_client.Policy{
-			Source: policy_client.Source{ID: app.GUID},
+			Source: policy_client.Source{ID: fromGUID},
 			Destination: policy_client.Destination{
-				ID:    destGUID,
-				Ports: policy_client.Ports{Start: start, End: end},
+				ID:       toGUID,
+				Ports:    policy_client.Ports{Start: start, End: end},
+				Protocol: "tcp",
 			},
 		}
 	}

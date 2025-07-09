@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os/exec"
 	"regexp"
+	"strings"
 	"testing"
 
 	cg "github.com/GSA-TTS/gitlab-runner-cloudgov/runner-manager/cfd/cloudgov"
@@ -176,4 +177,81 @@ func TestClient_MapServiceRoute(t *testing.T) {
 
 	t.Logf("%#v", routeOut["resources"])
 	t.Fatalf("could not find route with %s host and correct url", app.Name)
+}
+
+func cleanupNetPolicy(
+	t testing.TB, fromApp *cg.App, toApp *cg.App, pranges []string,
+) error {
+	t.Helper()
+
+	for _, prange := range pranges {
+		delPolCmd := exec.Command(
+			"cf", "remove-network-policy", fromApp.Name, toApp.Name,
+			"--port", prange,
+			"--protocol", "tcp",
+		)
+
+		out, err := delPolCmd.CombinedOutput()
+		if err != nil {
+			t.Log(string(out))
+			if exErr, ok := err.(*exec.ExitError); ok {
+				t.Log(exErr.Error())
+				t.Fatal(string(exErr.Stderr))
+			} else {
+				t.Fatal(err)
+			}
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func getNetPolicyRe(elems ...any) *regexp.Regexp {
+	var b strings.Builder
+	for i := len(elems); i >= 1; i-- {
+		fmt.Fprintf(&b, `%%v\s+`)
+	}
+	b.WriteString(`\s+`) // to make sure last value terminates
+	return regexp.MustCompile(fmt.Sprintf(b.String(), elems...))
+}
+
+func TestClient_AddNetworkPolicy(t *testing.T) {
+	setup(t)
+
+	apps, err := cgClient.AppsList()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(apps) < 2 {
+		t.Fatalf("can't test without >= 2 apps, got %v", len(apps))
+	}
+
+	pranges := []string{"80-85", "443"}
+	err = cgClient.AddNetworkPolicy(apps[0], apps[1], pranges)
+	defer cleanupNetPolicy(t, apps[0], apps[1], pranges)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ckNetPolCmd := exec.Command("cf", "network-policies", "--source", apps[0].Name)
+	out, err := ckNetPolCmd.CombinedOutput()
+	got := string(out)
+	if err != nil {
+		t.Log(got)
+		t.Fatal(err)
+	}
+
+	re := getNetPolicyRe(apps[0].Name, apps[1].Name, "tcp", pranges[0])
+	if !re.MatchString(got) {
+		t.Errorf("wanted string matching /%v/, got:\n%v", re, got)
+	}
+
+	re = getNetPolicyRe(apps[0].Name, apps[1].Name, "tcp", pranges[1])
+	if !re.MatchString(got) {
+		t.Errorf("wanted string matching /%v/, got:\n%v", re, got)
+	}
 }
