@@ -20,7 +20,7 @@ func Test_parsePortRange(t *testing.T) {
 		{name: "fails to parse range with non-int", prange: "60-cat", wantErr: true},
 		{name: "fails to parse single with non-int", prange: "cat", wantErr: true},
 		{name: "fails with empty string", prange: "", wantErr: true},
-		{name: "fails with only separator", prange: "", wantErr: true},
+		{name: "fails with only separator", prange: "-", wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
