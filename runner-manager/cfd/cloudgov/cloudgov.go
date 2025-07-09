@@ -97,9 +97,9 @@ func (c *Client) AppsList() ([]*App, error) {
 	return c.appsList()
 }
 
-// TODO: this abstraction might belong in /cmd,
-// unless it can be further generalized to all pushes
 func (c *Client) Push(manifest *AppManifest) (*App, error) {
+	// TODO: this abstraction might belong in /cmd,
+	// unless it can be further generalized to all pushes
 	containerID := manifest.Name
 
 	if containerID == "" {
@@ -113,8 +113,8 @@ func (c *Client) Push(manifest *AppManifest) (*App, error) {
 	return c.appPush(manifest)
 }
 
-// TODO: use this in prepare or get rid of it
 func (c *Client) ServicesPush(manifests []*AppManifest) ([]*App, error) {
+	// TODO: use this in prepare or get rid of it
 	if len(manifests) < 1 {
 		return nil, nil
 	}

@@ -167,10 +167,10 @@ func TestClient_MapServiceRoute(t *testing.T) {
 		t.Log(err)
 	}
 
-	wantUrl := fmt.Sprintf("%s.apps.internal", app.Name)
+	wantURL := fmt.Sprintf("%s.apps.internal", app.Name)
 
 	for _, m := range routeOut["resources"] {
-		if m["host"] == app.Name && m["url"] == wantUrl {
+		if m["host"] == app.Name && m["url"] == wantURL {
 			return
 		}
 	}
