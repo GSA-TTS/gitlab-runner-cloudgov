@@ -13,7 +13,7 @@ type ClientAPI interface {
 
 	sshCode() (string, error)
 	mapRoute(ctx context.Context, app *App, domain string, space string, host string, path string, port int) error
-	addNetworkPolicy(app *App, destGUID string, portRanges []string) error
+	addNetworkPolicy(fromGUID string, toGUID string, portRanges []string) error
 }
 
 type CredsGetter interface {
@@ -137,5 +137,14 @@ func (c *Client) SSHCode() (string, error) {
 }
 
 func (c *Client) MapServiceRoute(app *App) error {
-	return c.mapRoute(context.Background(), app, internalDomainGUID, app.SpaceGUID, app.Name, "", 0)
+	return c.mapRoute(
+		context.Background(), app, internalDomainGUID, app.SpaceGUID, app.Name, "", 0,
+	)
+}
+
+// AddNetworkPolicy opens portRanges (e.g. "80", "80-85") on toApp for fromApp.
+func (c *Client) AddNetworkPolicy(
+	fromApp *App, toApp *App, portRanges []string,
+) error {
+	return c.addNetworkPolicy(fromApp.GUID, toApp.GUID, portRanges)
 }

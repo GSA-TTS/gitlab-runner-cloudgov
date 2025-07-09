@@ -61,8 +61,9 @@ if [[ $org != 'sandbox-gsa' ]]; then
     exit 1
 fi
 
-# delete the teeny app
+# delete the teeny apps
 cf delete -r "${args[@]}" "$app_name"
+cf delete -r "${args[@]}" "${app_name}_2"
 
 # delete the deployer and key
 cf delete-service-key "${args[@]}" "$basename"-deployer "$basename"-key
