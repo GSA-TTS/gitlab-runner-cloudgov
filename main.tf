@@ -209,6 +209,7 @@ resource "cloudfoundry_service_instance" "manager-egress-credentials" {
     domain      = module.egress_proxy.domain
     http_port   = module.egress_proxy.http_port
   })
+  depends_on = [module.manager_space]
 }
 moved {
   from = cloudfoundry_service_instance.egress-proxy-credentials
@@ -224,4 +225,5 @@ resource "cloudfoundry_service_instance" "worker-egress-credentials" {
   credentials = jsonencode({
     http_uri = module.egress_proxy.http_proxy["wsr-worker"]
   })
+  depends_on = [module.worker_space]
 }
