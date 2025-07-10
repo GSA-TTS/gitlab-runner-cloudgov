@@ -134,7 +134,7 @@ func Test_parseVcapAppJSON(t *testing.T) {
 }
 
 func Test_parseVcapServicesJSON(t *testing.T) {
-	sample := `{"s3":[{"label":"s3","provider":null,"plan":"basic-sandbox","name":"glr-dependency-cache","tags":["AWS","S3","object-storage","terraform-cloudgov-managed"],"instance_guid":"d1541026","instance_name":"glr-dependency-cache","binding_guid":"9f316c56","binding_name":null,"credentials":{"uri":"s3://goooo:booo@s3-fips.us-gov-west-1.aaws.com/cg-d1541026","insecure_skip_verify":false,"access_key_id":"jjjjj","secret_access_key":"ssssssss","region":"us-gov-west-1","bucket":"cg-d1541026","endpoint":"s3-fips.us-gov-west-1.amazonaws.com","fips_endpoint":"s3-fips.us-gov-west-1.amazonaws.com","additional_buckets":[]},"syslog_drain_url":null,"volume_mounts":[]}],"user-provided":[{"label":"user-provided","name":"glr-egress-proxy-credentials","tags":[],"instance_guid":"608e3f73","instance_name":"glr-egress-proxy-credentials","binding_guid":"7530ea7b","binding_name":null,"credentials":{"cred_string":"018052ba:ukgZ","domain":"egress-proxy.apps.internal","http_port":8080,"http_uri":"http://018052b:ukHK@egress-proxy.apps.internal:8080","https_uri":"https://018052ba:ukHK1@egress-proxy.apps.internal:61443"},"syslog_drain_url":null,"volume_mounts":[]}]}`
+	sample := `{"s3":[{"label":"s3","provider":null,"plan":"basic-sandbox","name":"glr-dependency-cache","tags":["AWS","S3","object-storage","terraform-cloudgov-managed"],"instance_guid":"d1541026","instance_name":"glr-dependency-cache","binding_guid":"9f316c56","binding_name":null,"credentials":{"uri":"s3://goooo:booo@s3-fips.us-gov-west-1.aaws.com/cg-d1541026","insecure_skip_verify":false,"access_key_id":"jjjjj","secret_access_key":"ssssssss","region":"us-gov-west-1","bucket":"cg-d1541026","endpoint":"s3-fips.us-gov-west-1.amazonaws.com","fips_endpoint":"s3-fips.us-gov-west-1.amazonaws.com","additional_buckets":[]},"syslog_drain_url":null,"volume_mounts":[]}],"user-provided":[{"label":"user-provided","name":"glr-egress-proxy-credentials","tags":[],"instance_guid":"608e3f73","instance_name":"glr-egress-proxy-credentials","binding_guid":"7530ea7b","binding_name":null,"credentials":{"cred_string":"bingo:dingo","domain":"egress-proxy.apps.internal","http_port":8080,"http_uri":"http://bingo:dingo@egress-proxy.apps.internal:8080","https_uri":"https://bingo:dingo@egress-proxy.apps.internal:61443"},"syslog_drain_url":null,"volume_mounts":[]}]}`
 	t.Setenv("VCAP_SERVICES", sample)
 	t.Setenv("PROXY_CREDENTIAL_INSTANCE", "glr-egress-proxy-credentials")
 
@@ -146,7 +146,7 @@ func Test_parseVcapServicesJSON(t *testing.T) {
 	authFile := filepath.Join(dir, "ssh_proxy.auth")
 	t.Setenv("PROXY_AUTH_FILE", authFile)
 
-	credStringWanted := "018052ba:ukgZ"
+	credStringWanted := "bingo:dingo"
 
 	wantedServices := VcapServicesData{
 		"s3": []VcapServiceInstance{{
@@ -157,16 +157,16 @@ func Test_parseVcapServicesJSON(t *testing.T) {
 			Credentials: VcapServiceCredentials{
 				Domain:     "egress-proxy.apps.internal",
 				HTTPPort:   8080,
-				HTTPURI:    "http://018052b:ukHK@egress-proxy.apps.internal:8080",
-				HTTPSURI:   "https://018052ba:ukHK1@egress-proxy.apps.internal:61443",
+				HTTPURI:    "http://bingo:dingo@egress-proxy.apps.internal:8080",
+				HTTPSURI:   "https://bingo:dingo@egress-proxy.apps.internal:61443",
 				CredString: credStringWanted,
 			},
 		}},
 	}
 
 	wantedEgressConfig := EgressProxyConfig{
-		ProxyHostHTTP:  "http://018052b:ukHK@egress-proxy.apps.internal:8080",
-		ProxyHostHTTPS: "https://018052ba:ukHK1@egress-proxy.apps.internal:61443",
+		ProxyHostHTTP:  "http://bingo:dingo@egress-proxy.apps.internal:8080",
+		ProxyHostHTTPS: "https://bingo:dingo@egress-proxy.apps.internal:61443",
 		ProxyHostSSH:   "egress-proxy.apps.internal",
 		ProxyPortSSH:   8080,
 		ProxyAuthFile:  authFile,
