@@ -1,0 +1,17 @@
+{
+  "cf_api": "https://api.fr-stage.cloud.gov",
+  "limits": { "fds": 16384, "mem": 128, "disk": 8 },
+  "application_name": "cfd_integration_test_AppGet_2",
+  "application_uris": [],
+  "name": "cfd_integration_test_AppGet_2",
+  "space_name": "zachary.rollyson",
+  "space_id": "a9ec0873-e8a5-4d39-99d2-4a934f0ea23d",
+  "organization_id": "da8e238d-c24a-4528-95db-ae11e76bb8f1",
+  "organization_name": "sandbox-gsa",
+  "uris": [],
+  "process_id": "5d5bea40-e3ba-49a6-b46a-1645b0eac86b",
+  "process_type": "web",
+  "application_id": "5d5bea40-e3ba-49a6-b46a-1645b0eac86b",
+  "version": "141686d8-4b7a-4f27-8cde-8d698c3ef750",
+  "application_version": "141686d8-4b7a-4f27-8cde-8d698c3ef750"
+}
