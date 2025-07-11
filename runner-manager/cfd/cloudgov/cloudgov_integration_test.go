@@ -33,7 +33,7 @@ func setup(t testing.TB) {
 }
 
 func getCmpOpts() cmp.Option {
-	return cmpopts.IgnoreFields(cg.App{}, "GUID")
+	return cmpopts.IgnoreFields(cg.App{}, "GUID", "SpaceGUID")
 }
 
 func Test_CFAdapter_AppGet(t *testing.T) {
@@ -41,6 +41,9 @@ func Test_CFAdapter_AppGet(t *testing.T) {
 
 	want := []*cg.App{{
 		Name:  app,
+		State: "STARTED",
+	}, {
+		Name:  fmt.Sprintf("%v_2", app),
 		State: "STARTED",
 	}}
 
