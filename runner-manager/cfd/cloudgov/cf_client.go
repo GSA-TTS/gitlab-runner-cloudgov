@@ -3,6 +3,11 @@ package cloudgov
 import (
 	"context"
 	"os"
+	"strconv"
+	"strings"
+
+	"code.cloudfoundry.org/lager/v3"
+	"code.cloudfoundry.org/policy_client"
 
 	"github.com/cloudfoundry/go-cfclient/v3/client"
 	"github.com/cloudfoundry/go-cfclient/v3/config"
@@ -132,7 +137,46 @@ func (cf *CFClientAPI) mapRoute(
 	return err
 }
 
-// addNetworkPolicy implements ClientAPI.
-func (cf *CFClientAPI) addNetworkPolicy(app *App, dest string, space string, port string) error {
-	panic("unimplemented")
+func parsePortRange(prange string) (start int, end int, err error) {
+	ports := strings.Split(prange, "-")
+
+	start, err = strconv.Atoi(ports[0])
+	if err != nil {
+		return
+	}
+
+	if len(ports) == 1 || ports[1] == "" {
+		end = start
+		return
+	}
+	end, err = strconv.Atoi(ports[1])
+	return
+}
+
+func (cf *CFClientAPI) addNetworkPolicy(fromGUID string, toGUID string, portRanges []string) error {
+	pclient := policy_client.NewExternal(
+		lager.NewLogger("ExternalPolicyClient"),
+		cf.conn().HTTPAuthClient(),
+		cf.conn().ApiURL(""),
+	)
+
+	policies := make([]policy_client.Policy, len(portRanges))
+
+	for i, prange := range portRanges {
+		start, end, err := parsePortRange(prange)
+		if err != nil {
+			return err
+		}
+
+		policies[i] = policy_client.Policy{
+			Source: policy_client.Source{ID: fromGUID},
+			Destination: policy_client.Destination{
+				ID:       toGUID,
+				Ports:    policy_client.Ports{Start: start, End: end},
+				Protocol: "tcp",
+			},
+		}
+	}
+
+	return pclient.AddPolicies("", policies)
 }
