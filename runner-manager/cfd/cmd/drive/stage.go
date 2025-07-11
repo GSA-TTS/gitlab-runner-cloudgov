@@ -67,6 +67,8 @@ func (s *stage) RunSSH(guid string, cmd string) error {
 	args := []string{"ssh", "-p 2222", "-T", "-o StrictHostKeyChecking=no"}
 	host := fmt.Sprintf("cf:%s/0@ssh.fr-stage.cloud.gov", guid)
 
+	// TODO: can we rely on the Bash runner's .profile's edits to SSH Config?
+	// See: https://github.com/GSA-TTS/gitlab-runner-cloudgov/issues/136
 	epCfg := s.common.config.EgressProxyConfig
 	if epCfg != (EgressProxyConfig{}) {
 		proxy := fmt.Sprintf("-o ProxyCommand corkscrew %v %v %%h %%p %v",
