@@ -1,9 +1,11 @@
 package drive
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
-	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cfd/cloudgov"
+	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner-manager/cfd/cloudgov"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -12,16 +14,17 @@ import (
 // think about that later.
 func Test_GetJobConfig(t *testing.T) {
 	cfgWant := &JobConfig{
-		JobResponse:     JobResponse{},
-		CIRegistryUser:  "foo",
-		CIRegistryPass:  "bar",
-		DockerHubUser:   "foo",
-		DockerHubToken:  "1234",
-		WorkerMemory:    "1024M",
-		WorkerDiskSize:  "1024M",
-		JobResponseFile: "",
-		VcapAppJSON:     "",
-		ContainerID:     "glrw-p-c-j",
+		JobResponse:      JobResponse{},
+		CIRegistryUser:   "foo",
+		CIRegistryPass:   "bar",
+		DockerHubUser:    "foo",
+		DockerHubToken:   "1234",
+		WorkerMemory:     "1024M",
+		WorkerDiskSize:   "1024M",
+		JobResponseFile:  "",
+		VcapAppJSON:      "",
+		VcapServicesData: VcapServicesData{},
+		ContainerID:      "glrw-p-c-j",
 		Manifest: &cloudgov.AppManifest{
 			Name:    "glrw-p-c-j",
 			NoRoute: true,
@@ -50,7 +53,7 @@ func Test_GetJobConfig(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	if diff := cmp.Diff(cfgWant, parsedCfg); diff != "" {
+	if diff := cmp.Diff(parsedCfg, cfgWant); diff != "" {
 		t.Error(diff)
 	}
 }
@@ -80,8 +83,9 @@ func Test_parseJobResponseFile(t *testing.T) {
 				Process: cloudgov.AppManifestProcess{Command: "j k l g h i", HealthCheckType: "process"},
 			},
 			Config: &JobConfig{
-				ContainerID:     "glrw-p-c-j",
-				JobResponseFile: "./testdata/sample_job_response.json",
+				ContainerID:      "glrw-p-c-j",
+				JobResponseFile:  "./testdata/sample_job_response.json",
+				VcapServicesData: VcapServicesData{},
 				Manifest: &cloudgov.AppManifest{
 					Name:    "glrw-p-c-j",
 					Env:     map[string]string{"foo": "bar"},
@@ -114,7 +118,7 @@ func Test_parseVcapAppJSON(t *testing.T) {
 	wanted := VcapAppData{
 		CFApi:     "https://api.fr.cloud.gov",
 		OrgName:   "gsa-tts-devtools-prototyping",
-		SpaceId:   "8969a4b6-01aa-431d-9790-77cc4c47e3e7",
+		SpaceID:   "8969a4b6-01aa-431d-9790-77cc4c47e3e7",
 		SpaceName: "zjr-gl-test",
 	}
 
@@ -126,5 +130,71 @@ func Test_parseVcapAppJSON(t *testing.T) {
 
 	if diff := cmp.Diff(cfg.VcapAppData, wanted); diff != "" {
 		t.Errorf("mismatch (-got +want):\n%s", diff)
+	}
+}
+
+func Test_parseVcapServicesJSON(t *testing.T) {
+	sample := `{"s3":[{"label":"s3","provider":null,"plan":"basic-sandbox","name":"glr-dependency-cache","tags":["AWS","S3","object-storage","terraform-cloudgov-managed"],"instance_guid":"d1541026","instance_name":"glr-dependency-cache","binding_guid":"9f316c56","binding_name":null,"credentials":{"uri":"s3://goooo:booo@s3-fips.us-gov-west-1.aaws.com/cg-d1541026","insecure_skip_verify":false,"access_key_id":"jjjjj","secret_access_key":"ssssssss","region":"us-gov-west-1","bucket":"cg-d1541026","endpoint":"s3-fips.us-gov-west-1.amazonaws.com","fips_endpoint":"s3-fips.us-gov-west-1.amazonaws.com","additional_buckets":[]},"syslog_drain_url":null,"volume_mounts":[]}],"user-provided":[{"label":"user-provided","name":"glr-egress-proxy-credentials","tags":[],"instance_guid":"608e3f73","instance_name":"glr-egress-proxy-credentials","binding_guid":"7530ea7b","binding_name":null,"credentials":{"cred_string":"bingo:dingo","domain":"egress-proxy.apps.internal","http_port":8080,"http_uri":"http://bingo:dingo@egress-proxy.apps.internal:8080","https_uri":"https://bingo:dingo@egress-proxy.apps.internal:61443"},"syslog_drain_url":null,"volume_mounts":[]}]}`
+	t.Setenv("VCAP_SERVICES", sample)
+	t.Setenv("PROXY_CREDENTIAL_INSTANCE", "glr-egress-proxy-credentials")
+
+	dir, err := os.MkdirTemp("", "temp_auth_files")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+	authFile := filepath.Join(dir, "ssh_proxy.auth")
+	t.Setenv("PROXY_AUTH_FILE", authFile)
+
+	credStringWanted := "bingo:dingo"
+
+	wantedServices := VcapServicesData{
+		"s3": []VcapServiceInstance{{
+			Name: "glr-dependency-cache",
+		}},
+		"user-provided": []VcapServiceInstance{{
+			Name: "glr-egress-proxy-credentials",
+			Credentials: VcapServiceCredentials{
+				Domain:     "egress-proxy.apps.internal",
+				HTTPPort:   8080,
+				HTTPURI:    "http://bingo:dingo@egress-proxy.apps.internal:8080",
+				HTTPSURI:   "https://bingo:dingo@egress-proxy.apps.internal:61443",
+				CredString: credStringWanted,
+			},
+		}},
+	}
+
+	wantedEgressConfig := EgressProxyConfig{
+		ProxyHostHTTP:  "http://bingo:dingo@egress-proxy.apps.internal:8080",
+		ProxyHostHTTPS: "https://bingo:dingo@egress-proxy.apps.internal:61443",
+		ProxyHostSSH:   "egress-proxy.apps.internal",
+		ProxyPortSSH:   8080,
+		ProxyAuthFile:  authFile,
+	}
+
+	cfg, err := getJobConfig()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if diff := cmp.Diff(cfg.VcapServicesData, wantedServices); diff != "" {
+		t.Errorf("mismatch (-got +want):\n%s", diff)
+	}
+
+	if diff := cmp.Diff(cfg.VcapServicesData["user-provided"][0], wantedServices["user-provided"][0]); diff != "" {
+		t.Fatalf("mismatch (-got +want):\n%s", diff)
+	}
+
+	if diff := cmp.Diff(cfg.EgressProxyConfig, wantedEgressConfig); diff != "" {
+		t.Fatalf("mismatch (-got +want):\n%s", diff)
+	}
+
+	credString, err := os.ReadFile(cfg.ProxyAuthFile)
+	if err != nil {
+		t.Fatalf("error reading ProxyAuthFile: %v", err)
+	}
+	if diff := cmp.Diff(string(credString), credStringWanted); diff != "" {
+		t.Fatalf("mismatch (-got +want):\n%s", diff)
 	}
 }

@@ -1,18 +1,7 @@
 package cloudgov
 
-import (
-	"errors"
-	"fmt"
+import "context"
 
-	"github.com/cloudfoundry/go-cfclient/v3/resource"
-)
-
-// Stuff we'll need to implement, for ref
-//
-// mapRoute()
-//
-// addNetworkPolicy()
-// removeNetworkPolicy()
 type ClientAPI interface {
 	connect(url string, creds *Creds) error
 
@@ -20,6 +9,10 @@ type ClientAPI interface {
 	appPush(m *AppManifest) (*App, error)
 	appDelete(id string) error
 	appsList() (apps []*App, err error)
+
+	sshCode() (string, error)
+	mapRoute(ctx context.Context, app *App, domain string, space string, host string, path string, port int) error
+	addNetworkPolicy(app *App, dest string, space string, port string) error
 }
 
 type CredsGetter interface {
@@ -46,8 +39,10 @@ func (e CloudGovClientError) Error() string {
 	return e.msg
 }
 
-// TODO: we should pull this out of VCAP_APPLICATION
-const apiRootURLDefault = "https://api.fr.cloud.gov"
+const (
+	apiRootURLDefault  = "https://api.fr-stage.cloud.gov"
+	internalDomainGUID = "8a5d6a8c-cfc1-4fc4-afc9-aa563ff9df5e"
+)
 
 func New(i ClientAPI, o *Opts) (*Client, error) {
 	if o == nil {
@@ -83,9 +78,10 @@ func (c *Client) Connect() (*Client, error) {
 }
 
 type App struct {
-	Name  string
-	GUID  string
-	State string
+	Name      string
+	GUID      string
+	State     string
+	SpaceGUID string
 }
 
 func (c *Client) AppGet(id string) (*App, error) {
@@ -102,34 +98,15 @@ func (c *Client) AppsList() ([]*App, error) {
 
 // TODO: this abstraction might belong in /cmd,
 // unless it can be further generalized to all pushes
-func (c *Client) ServicePush(manifest *AppManifest) (*App, error) {
+func (c *Client) Push(manifest *AppManifest) (*App, error) {
 	containerID := manifest.Name
 
 	if containerID == "" {
-		return nil, CloudGovClientError{"ServicePush: AppManifest.Name must be defined"}
+		return nil, CloudGovClientError{"Push: AppManifest.Name must be defined"}
 	}
 
 	if manifest.OrgName == "" || manifest.SpaceName == "" {
-		return nil, CloudGovClientError{"ServicePush: AppManifest must have Org and Space names"}
-	}
-
-	// check for an old instance of the service, delete if found
-	app, err := c.AppGet(containerID)
-	if err != nil {
-		var cferr resource.CloudFoundryError
-		if errors.As(err, &cferr) {
-			err = nil
-			if cferr.Code != 10010 {
-				return nil, fmt.Errorf("unexpected cferr checking for existing app: %w", cferr)
-			}
-		} else {
-			return nil, fmt.Errorf("error checking for existing service (%v): %w", containerID, err)
-		}
-	}
-	if app != nil {
-		if err := c.AppDelete(containerID); err != nil {
-			return nil, fmt.Errorf("error deleting existing service (%v): %w", containerID, err)
-		}
+		return nil, CloudGovClientError{"Push: AppManifest must have Org and Space names"}
 	}
 
 	return c.appPush(manifest)
@@ -144,7 +121,7 @@ func (c *Client) ServicesPush(manifests []*AppManifest) ([]*App, error) {
 	apps := make([]*App, len(manifests))
 
 	for i, s := range manifests {
-		app, err := c.ServicePush(s)
+		app, err := c.Push(s)
 		if err != nil {
 			return nil, err
 		}
@@ -152,4 +129,12 @@ func (c *Client) ServicesPush(manifests []*AppManifest) ([]*App, error) {
 	}
 
 	return apps, nil
+}
+
+func (c *Client) SSHCode() (string, error) {
+	return c.sshCode()
+}
+
+func (c *Client) MapServiceRoute(app *App) error {
+	return c.mapRoute(context.Background(), app, internalDomainGUID, app.SpaceGUID, app.Name, "", 0)
 }

@@ -6,9 +6,10 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 
-	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner/cfd/cloudgov"
+	"github.com/GSA-TTS/gitlab-runner-cloudgov/runner-manager/cfd/cloudgov"
 )
 
 type JobConfig struct {
@@ -17,6 +18,12 @@ type JobConfig struct {
 
 	VcapAppData
 	VcapAppJSON string `env:"VCAP_APPLICATION"`
+
+	VcapServicesData
+	VcapServicesJSON  string `env:"VCAP_SERVICES"`
+	EgressServiceName string `env:"PROXY_CREDENTIAL_INSTANCE"`
+
+	EgressProxyConfig
 
 	Manifest *cloudgov.AppManifest
 
@@ -65,8 +72,32 @@ type VcapAppData struct {
 	CFApi     string `json:"cf_api"`
 	OrgID     string `json:"org_id"`
 	OrgName   string `json:"organization_name"`
-	SpaceId   string `json:"space_id"`
+	SpaceID   string `json:"space_id"`
 	SpaceName string `json:"space_name"`
+}
+
+type (
+	VcapServicesData    map[string][]VcapServiceInstance
+	VcapServiceInstance struct {
+		Name        string
+		Credentials VcapServiceCredentials
+	}
+)
+
+type VcapServiceCredentials struct {
+	Domain     string `json:"domain"`
+	HTTPPort   int    `json:"http_port"`
+	HTTPURI    string `json:"http_uri"`
+	HTTPSURI   string `json:"https_uri"`
+	CredString string `json:"cred_string"`
+}
+
+type EgressProxyConfig struct {
+	ProxyHostHTTP  string
+	ProxyHostHTTPS string
+	ProxyHostSSH   string
+	ProxyPortSSH   int
+	ProxyAuthFile  string
 }
 
 func parseCfgJSON[R any](j []byte, r *R) (*R, error) {
@@ -109,6 +140,13 @@ func (c *JobConfig) parseVcapAppJSON() (err error) {
 	ref := &VcapAppData{}
 	ref, err = parseCfgJSON([]byte(c.VcapAppJSON), ref)
 	c.VcapAppData = *ref
+	return err
+}
+
+func (c *JobConfig) parseVcapServicesJSON() (err error) {
+	ref := &map[string][]VcapServiceInstance{}
+	ref, err = parseCfgJSON([]byte(c.VcapServicesJSON), ref)
+	c.VcapServicesData = *ref
 	return err
 }
 
@@ -182,6 +220,42 @@ func (cfg *JobConfig) processImage(img Image, m *cloudgov.AppManifest) {
 	}
 }
 
+func (cfg *JobConfig) processEgressProxyCfg() (err error) {
+	defer (func() {
+		if err != nil {
+			err = fmt.Errorf("error processEgressProxyCfg: %w", err)
+		}
+	})()
+
+	userServices := cfg.VcapServicesData["user-provided"]
+	if len(userServices) < 1 {
+		return nil
+	}
+
+	egressIdx := slices.IndexFunc(userServices, func(vsi VcapServiceInstance) bool {
+		return vsi.Name == cfg.EgressServiceName
+	})
+	if egressIdx < 0 {
+		return nil
+	}
+
+	esc := userServices[egressIdx].Credentials
+
+	cfg.EgressProxyConfig = EgressProxyConfig{
+		ProxyHostHTTP:  esc.HTTPURI,
+		ProxyHostHTTPS: esc.HTTPSURI,
+		ProxyHostSSH:   esc.Domain,
+		ProxyPortSSH:   esc.HTTPPort,
+		ProxyAuthFile:  os.Getenv("PROXY_AUTH_FILE"),
+	}
+
+	if cfg.ProxyAuthFile == "" {
+		cfg.ProxyAuthFile = "/home/vcap/app/ssh_proxy.auth"
+	}
+
+	return os.WriteFile(cfg.ProxyAuthFile, []byte(esc.CredString), 0600)
+}
+
 func getJobConfig() (cfg *JobConfig, err error) {
 	defer func() {
 		if err != nil {
@@ -195,6 +269,12 @@ func getJobConfig() (cfg *JobConfig, err error) {
 		return nil, err
 	}
 	if err = cfg.parseVcapAppJSON(); err != nil {
+		return nil, err
+	}
+	if err = cfg.parseVcapServicesJSON(); err != nil {
+		return nil, err
+	}
+	if err = cfg.processEgressProxyCfg(); err != nil {
 		return nil, err
 	}
 

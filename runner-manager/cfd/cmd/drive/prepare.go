@@ -28,31 +28,44 @@ job log.
 
 Read more in GitLab's documentation:
 https://docs.gitlab.com/runner/executors/custom.html#prepare`,
-	Run: run,
+	RunE: run,
 }
 
 type prepStage commonStage
 
-func run(cmd *cobra.Command, args []string) {
-	// Move this stuff into a setup, add methods.
-	s, err := newStage()
+func run(cmd *cobra.Command, args []string) error {
+	s, err := newStage(nil)
 	if err != nil {
-		panic(fmt.Errorf("error getting cgClient: %w", err))
+		return fmt.Errorf("error initializing prepare stage: %w", err)
 	}
 
-	s.prep.startServices()
+	err = s.prep.exec()
+	if err != nil {
+		return fmt.Errorf("error executing prepare stage: %w", err)
+	}
 
-	// if services, start services
+	return nil
+}
 
-	// if os.Getenv("")
+func (s *prepStage) exec() (err error) {
+	// Looping service manifests to run `cf push`
+	err = s.startServices()
+	if err != nil {
+		return err
+	}
 
-	// create temp manifest
+	// Pushing the main job config pulled from get_job_config.go
+	_, err = s.client.Push(s.config.Manifest)
+	if err != nil {
+		return err
+	}
 
-	// start container
+	err = s.installDeps()
+	if err != nil {
+		return err
+	}
 
-	// install deps
-
-	// allow access to services
+	return s.setNetworkPolicies()
 }
 
 // TODO: refactor to include a service manifests slice and
@@ -63,16 +76,23 @@ func (s *prepStage) startServices() error {
 	}
 
 	for _, serv := range s.config.Services {
-		s.client.ServicePush(serv.Manifest)
-		// add docker user/pass
-		//
-		// push
-		//
+		s.client.Push(serv.Manifest)
 		// map-route containerID apps.internal --hostname containerID
-		//
+
+		// TODO: implement WSR_ vars
+		// Leaving this until more is implemented so the form can fit function
 		// export WSR_SERVICE_HOST_$alias=$containerID.apps.internal
-		//
 	}
 
 	return nil
+}
+
+// TODO: implement
+func (s *prepStage) installDeps() error {
+	panic("unimplemented")
+}
+
+// TODO: implement
+func (s *prepStage) setNetworkPolicies() error {
+	panic("unimplemented")
 }
