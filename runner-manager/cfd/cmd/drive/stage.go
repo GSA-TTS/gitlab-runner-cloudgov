@@ -33,18 +33,21 @@ func newStage(client *cloudgov.Client) (s *stage, err error) {
 	s = &stage{}
 	s.common.stage = s
 
-	if client != nil {
-		s.common.client = client
-	} else {
-		s.common.client, err = cloudgov.New(&cloudgov.CFClientAPI{}, nil)
-		if err != nil {
-			return
-		}
-	}
-
 	s.common.config, err = getJobConfig()
 	if err != nil {
 		return
+	}
+
+	if client != nil {
+		s.common.client = client
+	} else {
+		s.common.client, err = cloudgov.New(
+			&cloudgov.CFClientAPI{},
+			&cloudgov.Opts{APIRootURL: s.common.config.CFApi},
+		)
+		if err != nil {
+			return
+		}
 	}
 
 	// conf

@@ -39,7 +39,6 @@ func (e CloudGovClientError) Error() string {
 	return e.msg
 }
 
-// TODO: we should pull this out of VCAP_APPLICATION
 const (
 	apiRootURLDefault  = "https://api.fr-stage.cloud.gov"
 	internalDomainGUID = "8a5d6a8c-cfc1-4fc4-afc9-aa563ff9df5e"
