@@ -248,13 +248,10 @@ func TestClient_AddNetworkPolicy(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	re := getNetPolicyRe(apps[0].Name, apps[1].Name, "tcp", pranges[0])
-	if !re.MatchString(got) {
-		t.Errorf("wanted string matching /%v/, got:\n%v", re, got)
-	}
-
-	re = getNetPolicyRe(apps[0].Name, apps[1].Name, "tcp", pranges[1])
-	if !re.MatchString(got) {
-		t.Errorf("wanted string matching /%v/, got:\n%v", re, got)
+	for _, prange := range pranges {
+		re := getNetPolicyRe(apps[0].Name, apps[1].Name, "tcp", prange)
+		if !re.MatchString(got) {
+			t.Errorf("wanted string matching /%v/, got:\n%v", re, got)
+		}
 	}
 }
