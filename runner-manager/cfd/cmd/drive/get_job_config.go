@@ -72,7 +72,7 @@ type VcapAppData struct {
 	CFApi     string `json:"cf_api"`
 	OrgID     string `json:"org_id"`
 	OrgName   string `json:"organization_name"`
-	SpaceId   string `json:"space_id"`
+	SpaceID   string `json:"space_id"`
 	SpaceName string `json:"space_name"`
 }
 

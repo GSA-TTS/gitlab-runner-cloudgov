@@ -118,7 +118,7 @@ func Test_parseVcapAppJSON(t *testing.T) {
 	wanted := VcapAppData{
 		CFApi:     "https://api.fr.cloud.gov",
 		OrgName:   "gsa-tts-devtools-prototyping",
-		SpaceId:   "8969a4b6-01aa-431d-9790-77cc4c47e3e7",
+		SpaceID:   "8969a4b6-01aa-431d-9790-77cc4c47e3e7",
 		SpaceName: "zjr-gl-test",
 	}
 
