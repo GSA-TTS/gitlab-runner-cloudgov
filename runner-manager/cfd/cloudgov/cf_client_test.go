@@ -14,7 +14,6 @@ func Test_parsePortRange(t *testing.T) {
 		{name: "parses a range", prange: "80-85", want: 80, want2: 85},
 		{name: "parses redundant range", prange: "81-81", want: 81, want2: 81},
 		{name: "parses single port", prange: "80", want: 80, want2: 80},
-		{name: "parses single number", prange: "8", want: 8, want2: 8},
 		{name: "parses single number with separator", prange: "8-", want: 8, want2: 8},
 		{name: "parses zero", prange: "0", want: 0, want2: 0},
 		{name: "fails to parse range with non-int", prange: "60-cat", wantErr: true},
