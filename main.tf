@@ -161,7 +161,7 @@ resource "cloudfoundry_space_role" "service-account-egress-role" {
 
 # egress_proxy: set up the egress proxy app
 module "egress_proxy" {
-  source = "github.com/gsa-tts/cg-egress-proxy?ref=bafd6df83b4dae381c7f0b5b9c2cc581ef5b1e97"
+  source = "github.com/gsa-tts/cg-egress-proxy?ref=f0856cbf84af96b1ce6088a49c71cd8aa414b9b3"
 
   cf_org_name     = var.cf_org_name
   cf_egress_space = module.egress_space.space
