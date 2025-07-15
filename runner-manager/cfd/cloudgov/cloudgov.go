@@ -1,3 +1,4 @@
+// Package cloudgov provides methods to interact CloudFoundry on cloud.gov.
 package cloudgov
 
 import "context"
@@ -12,7 +13,7 @@ type ClientAPI interface {
 
 	sshCode() (string, error)
 	mapRoute(ctx context.Context, app *App, domain string, space string, host string, path string, port int) error
-	addNetworkPolicy(app *App, dest string, space string, port string) error
+	addNetworkPolicy(fromGUID string, toGUID string, portRanges []string) error
 }
 
 type CredsGetter interface {
@@ -96,9 +97,9 @@ func (c *Client) AppsList() ([]*App, error) {
 	return c.appsList()
 }
 
-// TODO: this abstraction might belong in /cmd,
-// unless it can be further generalized to all pushes
 func (c *Client) Push(manifest *AppManifest) (*App, error) {
+	// TODO: this abstraction might belong in /cmd,
+	// unless it can be further generalized to all pushes
 	containerID := manifest.Name
 
 	if containerID == "" {
@@ -112,8 +113,8 @@ func (c *Client) Push(manifest *AppManifest) (*App, error) {
 	return c.appPush(manifest)
 }
 
-// TODO: use this in prepare or get rid of it
 func (c *Client) ServicesPush(manifests []*AppManifest) ([]*App, error) {
+	// TODO: use this in prepare or get rid of it
 	if len(manifests) < 1 {
 		return nil, nil
 	}
@@ -136,5 +137,14 @@ func (c *Client) SSHCode() (string, error) {
 }
 
 func (c *Client) MapServiceRoute(app *App) error {
-	return c.mapRoute(context.Background(), app, internalDomainGUID, app.SpaceGUID, app.Name, "", 0)
+	return c.mapRoute(
+		context.Background(), app, internalDomainGUID, app.SpaceGUID, app.Name, "", 0,
+	)
+}
+
+// AddNetworkPolicy opens portRanges (e.g. "80", "80-85") on toApp for fromApp.
+func (c *Client) AddNetworkPolicy(
+	fromApp *App, toApp *App, portRanges []string,
+) error {
+	return c.addNetworkPolicy(fromApp.GUID, toApp.GUID, portRanges)
 }

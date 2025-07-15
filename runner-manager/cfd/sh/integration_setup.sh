@@ -71,6 +71,8 @@ fi
 
 # create a teeny app we can use to test client.AppGet
 cf push --no-route -k 8M -m 128M -o busybox -u process -c /bin/sh "$app_name"
+# and another to test communication betwixt them
+cf push --no-route -k 8M -m 128M -o busybox -u process -c /bin/sh "${app_name}_2"
 
 out_arr=(
     # get the credentials from key and output
