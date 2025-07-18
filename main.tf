@@ -6,6 +6,7 @@ locals {
   ])
   technology_allowlist    = flatten([for t in var.program_technologies : local.allowlist_map[t]])
   worker_egress_allowlist = setunion([var.ci_server_url], local.technology_allowlist, var.worker_egress_allowlist)
+  cg_space_users          = setunion(var.cf_org_managers, var.developer_emails)
 }
 
 # the `depends_on` lines for each resource or module is needed to properly sequence initial creation
@@ -20,8 +21,7 @@ module "manager_space" {
   cf_org_name   = var.cf_org_name
   cf_space_name = "${var.cf_space_prefix}-manager"
   allow_ssh     = var.allow_ssh
-  deployers     = var.cf_org_managers
-  developers    = var.developer_emails
+  developers    = local.cg_space_users
   auditors      = var.auditor_emails
 }
 
@@ -32,8 +32,7 @@ module "worker_space" {
   cf_org_name          = var.cf_org_name
   cf_space_name        = "${var.cf_space_prefix}-workers"
   allow_ssh            = true # manager must be able to cf ssh into workers
-  deployers            = var.cf_org_managers
-  developers           = var.developer_emails
+  developers           = local.cg_space_users
   auditors             = var.auditor_emails
   security_group_names = ["trusted_local_networks_egress"]
 }
@@ -145,8 +144,7 @@ module "egress_space" {
   cf_org_name          = var.cf_org_name
   cf_space_name        = "${var.cf_space_prefix}-egress"
   allow_ssh            = var.allow_ssh
-  deployers            = var.cf_org_managers
-  developers           = var.developer_emails
+  developers           = local.cg_space_users
   auditors             = var.auditor_emails
   security_group_names = ["public_networks_egress"]
 }
