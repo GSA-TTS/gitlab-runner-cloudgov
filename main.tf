@@ -1,7 +1,7 @@
 locals {
   # the list of egress hosts to allow for runner-manager and always needed by runner workers
   manager_egress_allowlist = toset([
-    var.cg_api_wildcard, # cf-cli calls from manager
+    "*.${var.cf_api_base}", # cf-cli calls from manager
     var.ci_server_url
   ])
   technology_allowlist    = flatten([for t in var.program_technologies : local.allowlist_map[t]])
@@ -111,9 +111,10 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     OBJECT_STORE_INSTANCE = var.object_store_instance
     PROXY_APP_NAME        = var.egress_app_name
     PROXY_SPACE           = module.egress_space.space_name
+    WORKER_PROXY_MODE     = var.worker_egress_https_mode
     CF_USERNAME           = local.sa_cf_username
     CF_PASSWORD           = local.sa_cf_password
-    CG_SSH_HOST           = var.cg_ssh_host
+    CG_SSH_HOST           = "ssh.${var.cf_api_base}"
     DOCKER_HUB_USER       = var.docker_hub_user
     DOCKER_HUB_TOKEN      = var.docker_hub_token
     # DANGER: Do not set RUNNER_DEBUG to true without reading
@@ -170,7 +171,7 @@ module "egress_proxy" {
       allowlist = local.manager_egress_allowlist
     }
     "wsr-worker" = {
-      ports     = [80, 443]
+      ports     = var.worker_egress_ports
       allowlist = local.worker_egress_allowlist
     }
   }
@@ -184,13 +185,12 @@ resource "cloudfoundry_network_policy" "egress_routing" {
     {
       source_app      = cloudfoundry_app.gitlab-runner-manager.id
       destination_app = module.egress_proxy.app_id
-      port            = "61443"
+      port            = module.egress_proxy.https_port
     },
-
     {
       source_app      = cloudfoundry_app.gitlab-runner-manager.id
       destination_app = module.egress_proxy.app_id
-      port            = "8080"
+      port            = module.egress_proxy.http_port
     }
   ]
 }
@@ -202,7 +202,7 @@ resource "cloudfoundry_service_instance" "manager-egress-credentials" {
   type  = "user-provided"
   credentials = jsonencode({
     https_uri   = module.egress_proxy.https_proxy["wsr-manager"]
-    http_uri    = module.egress_proxy.http_proxy["wsr-manager"]
+    http_uri    = module.egress_proxy.https_proxy["wsr-manager"]
     cred_string = "${module.egress_proxy.username["wsr-manager"]}:${module.egress_proxy.password["wsr-manager"]}"
     domain      = module.egress_proxy.domain
     http_port   = module.egress_proxy.http_port
@@ -221,7 +221,8 @@ resource "cloudfoundry_service_instance" "worker-egress-credentials" {
   space = module.worker_space.space_id
   type  = "user-provided"
   credentials = jsonencode({
-    http_uri = module.egress_proxy.http_proxy["wsr-worker"]
+    http_uri  = (var.worker_egress_https_mode == "https" ? module.egress_proxy.https_proxy["wsr-worker"] : module.egress_proxy.http_proxy["wsr-worker"])
+    https_uri = (var.worker_egress_https_mode == "http" ? module.egress_proxy.http_proxy["wsr-worker"] : module.egress_proxy.https_proxy["wsr-worker"])
   })
   depends_on = [module.worker_space]
 }

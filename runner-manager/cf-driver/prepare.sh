@@ -63,10 +63,16 @@ setup_proxy_access() {
     container_id="$1"
 
     # setup network policy to egress-proxy
-    cf add-network-policy "$container_id" "$PROXY_APP_NAME" -s "$PROXY_SPACE" \
-        --protocol "tcp" --port "61443"
-    cf add-network-policy "$container_id" "$PROXY_APP_NAME" -s "$PROXY_SPACE" \
-        --protocol "tcp" --port "8080"
+    if [[ "$WORKER_PROXY_MODE" != "http" ]]; then
+        # mode must be https or both, open network policy to https port
+        cf add-network-policy "$container_id" "$PROXY_APP_NAME" -s "$PROXY_SPACE" \
+            --protocol "tcp" --port "61443"
+    fi
+    if [[ "$WORKER_PROXY_MODE" != "https" ]]; then
+        # mode must be http or both, open network policy to http port
+        cf add-network-policy "$container_id" "$PROXY_APP_NAME" -s "$PROXY_SPACE" \
+            --protocol "tcp" --port "8080"
+    fi
 }
 
 get_start_command() {
