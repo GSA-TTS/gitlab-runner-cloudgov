@@ -184,13 +184,12 @@ resource "cloudfoundry_network_policy" "egress_routing" {
     {
       source_app      = cloudfoundry_app.gitlab-runner-manager.id
       destination_app = module.egress_proxy.app_id
-      port            = "61443"
+      port            = module.egress_proxy.https_port
     },
-
     {
       source_app      = cloudfoundry_app.gitlab-runner-manager.id
       destination_app = module.egress_proxy.app_id
-      port            = "8080"
+      port            = module.egress_proxy.http_port
     }
   ]
 }
@@ -202,7 +201,7 @@ resource "cloudfoundry_service_instance" "manager-egress-credentials" {
   type  = "user-provided"
   credentials = jsonencode({
     https_uri   = module.egress_proxy.https_proxy["wsr-manager"]
-    http_uri    = module.egress_proxy.http_proxy["wsr-manager"]
+    http_uri    = module.egress_proxy.https_proxy["wsr-manager"]
     cred_string = "${module.egress_proxy.username["wsr-manager"]}:${module.egress_proxy.password["wsr-manager"]}"
     domain      = module.egress_proxy.domain
     http_port   = module.egress_proxy.http_port
