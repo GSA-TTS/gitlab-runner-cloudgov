@@ -15,12 +15,6 @@ variable "auditor_emails" {
   default     = []
 }
 
-variable "cg_ssh_host" {
-  type        = string
-  default     = "ssh.fr.cloud.gov"
-  description = "cloud.gov ssh jumpbox domain name"
-}
-
 variable "cf_org_name" {
   type        = string
   default     = "gsa-tts-devtools-prototyping"
@@ -44,10 +38,10 @@ variable "ci_server_url" {
   description = "Gitlab Dedicated for Government URL"
 }
 
-variable "cg_api_wildcard" {
+variable "cf_api_base" {
   type        = string
-  default     = "*.fr.cloud.gov"
-  description = "Wildcard domain for the various cloud.gov endpoints"
+  default     = "fr.cloud.gov"
+  description = "Hostname under which all api and ssh endpoints fall"
 }
 
 variable "default_job_image" {

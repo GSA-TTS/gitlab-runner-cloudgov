@@ -1,7 +1,7 @@
 locals {
   # the list of egress hosts to allow for runner-manager and always needed by runner workers
   manager_egress_allowlist = toset([
-    var.cg_api_wildcard, # cf-cli calls from manager
+    "*.${var.cf_api_base}", # cf-cli calls from manager
     var.ci_server_url
   ])
   technology_allowlist    = flatten([for t in var.program_technologies : local.allowlist_map[t]])
@@ -114,7 +114,7 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     WORKER_PROXY_MODE     = var.worker_egress_https_mode
     CF_USERNAME           = local.sa_cf_username
     CF_PASSWORD           = local.sa_cf_password
-    CG_SSH_HOST           = var.cg_ssh_host
+    CG_SSH_HOST           = "ssh.${var.cf_api_base}"
     DOCKER_HUB_USER       = var.docker_hub_user
     DOCKER_HUB_TOKEN      = var.docker_hub_token
     # DANGER: Do not set RUNNER_DEBUG to true without reading
