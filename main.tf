@@ -111,6 +111,7 @@ resource "cloudfoundry_app" "gitlab-runner-manager" {
     OBJECT_STORE_INSTANCE = var.object_store_instance
     PROXY_APP_NAME        = var.egress_app_name
     PROXY_SPACE           = module.egress_space.space_name
+    WORKER_PROXY_MODE     = var.worker_egress_https_mode
     CF_USERNAME           = local.sa_cf_username
     CF_PASSWORD           = local.sa_cf_password
     CG_SSH_HOST           = var.cg_ssh_host
@@ -170,7 +171,7 @@ module "egress_proxy" {
       allowlist = local.manager_egress_allowlist
     }
     "wsr-worker" = {
-      ports     = [80, 443]
+      ports     = var.worker_egress_ports
       allowlist = local.worker_egress_allowlist
     }
   }
@@ -220,7 +221,8 @@ resource "cloudfoundry_service_instance" "worker-egress-credentials" {
   space = module.worker_space.space_id
   type  = "user-provided"
   credentials = jsonencode({
-    http_uri = module.egress_proxy.http_proxy["wsr-worker"]
+    http_uri  = (var.worker_egress_https_mode == "https" ? module.egress_proxy.https_proxy["wsr-worker"] : module.egress_proxy.http_proxy["wsr-worker"])
+    https_uri = (var.worker_egress_https_mode == "http" ? module.egress_proxy.http_proxy["wsr-worker"] : module.egress_proxy.https_proxy["wsr-worker"])
   })
   depends_on = [module.worker_space]
 }

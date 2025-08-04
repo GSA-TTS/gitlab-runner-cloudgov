@@ -155,6 +155,23 @@ variable "worker_egress_allowlist" {
   description = "A list of external domain names that runner workers must be able to connect to"
 }
 
+variable "worker_egress_ports" {
+  type        = list(number)
+  default     = [443]
+  description = "List of ports that the egress proxy will forward traffic to from the runner workers"
+}
+
+variable "worker_egress_https_mode" {
+  type        = string
+  default     = "https"
+  description = "Which egress proxy protocol to send traffic over. Must be http, https, or both"
+
+  validation {
+    condition     = contains(["http", "https", "both"], var.worker_egress_https_mode)
+    error_message = "worker_egress_https_mode must be one of 'http', 'https', or 'both'"
+  }
+}
+
 variable "allow_ssh" {
   type        = bool
   default     = false

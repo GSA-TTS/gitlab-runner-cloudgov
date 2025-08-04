@@ -29,6 +29,14 @@ variable "program_technologies" {
 variable "worker_egress_allowlist" {
   type = set(string)
 }
+variable "worker_proxy_https_mode" {
+  type    = string
+  default = "http"
+}
+variable "worker_proxy_ports" {
+  type    = list(number)
+  default = [443, 80]
+}
 variable "allow_ssh" {
   type = bool
 }

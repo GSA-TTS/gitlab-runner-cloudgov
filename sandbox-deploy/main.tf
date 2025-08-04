@@ -12,21 +12,23 @@ provider "cloudfoundry" {}
 module "sandbox-runner" {
   source = "../"
 
-  cg_api_wildcard         = "*.fr-stage.cloud.gov"
-  cg_ssh_host             = "ssh.fr-stage.cloud.gov"
-  cf_org_name             = "cloud-gov-devtools-development"
-  cf_org_managers         = [var.cf_org_manager]
-  cf_space_prefix         = var.cf_space_prefix
-  ci_server_token         = var.ci_server_token
-  docker_hub_user         = var.docker_hub_user
-  docker_hub_token        = var.docker_hub_token
-  manager_instances       = 1
-  runner_concurrency      = 10
-  developer_emails        = var.developer_emails
-  worker_disk_size        = var.worker_disk_size
-  program_technologies    = var.program_technologies
-  worker_egress_allowlist = setunion(["*.fr-stage.cloud.gov"], var.worker_egress_allowlist)
-  allow_ssh               = var.allow_ssh
+  cg_api_wildcard          = "*.fr-stage.cloud.gov"
+  cg_ssh_host              = "ssh.fr-stage.cloud.gov"
+  cf_org_name              = "cloud-gov-devtools-development"
+  cf_org_managers          = [var.cf_org_manager]
+  cf_space_prefix          = var.cf_space_prefix
+  ci_server_token          = var.ci_server_token
+  docker_hub_user          = var.docker_hub_user
+  docker_hub_token         = var.docker_hub_token
+  manager_instances        = 1
+  runner_concurrency       = 10
+  developer_emails         = var.developer_emails
+  worker_disk_size         = var.worker_disk_size
+  program_technologies     = var.program_technologies
+  worker_egress_allowlist  = setunion(["*.fr-stage.cloud.gov"], var.worker_egress_allowlist)
+  worker_egress_ports      = var.worker_proxy_ports
+  worker_egress_https_mode = var.worker_proxy_https_mode
+  allow_ssh                = var.allow_ssh
 }
 
 locals {
